@@ -10,6 +10,11 @@ const seo = () => import("./SeoTools");
 const dev = () => import("./DevTools");
 const text = () => import("./TextTools");
 const calc = () => import("./CalcTools");
+const pdf = () => import("./PdfTools");
+const crop = () => import("./CropTool");
+const scan = () => import("./ScannerTool");
+const mini = () => import("./MinifyTools");
+const seo2 = () => import("./SeoExtraTools");
 
 const loading = () => <div className="muted" style={{ padding: "48px 0", textAlign: "center" }}>Loading tool…</div>;
 // Marks <html data-tool-ready> once the tool has hydrated and is interactive
@@ -54,6 +59,22 @@ export const toolComponents: Record<(typeof toolComponentSlugs)[number], Compone
   "loan-calculator": d(calc, (m) => m.LoanCalculator),
   "compound-interest-calculator": d(calc, (m) => m.CompoundInterestCalculator),
   "unit-converter": d(calc, (m) => m.UnitConverter),
+  "pdf-merger": d(pdf, (m) => m.PdfMerger),
+  "pdf-splitter": d(pdf, (m) => m.PdfSplitter),
+  "pdf-compressor": d(pdf, (m) => m.PdfCompressor),
+  "pdf-to-image": d(pdf, (m) => m.PdfToImage),
+  "image-to-pdf": d(pdf, (m) => m.ImageToPdf),
+  "rotate-pdf": d(pdf, (m) => m.RotatePdf),
+  "image-cropper": d(crop, (m) => m.ImageCropper),
+  "qr-code-scanner": d(scan, (m) => m.QrScanner),
+  "html-minifier": d(mini, (m) => m.HtmlMinifier),
+  "css-minifier": d(mini, (m) => m.CssMinifier),
+  "javascript-minifier": d(mini, (m) => m.JsMinifier),
+  "sitemap-generator": d(seo2, (m) => m.SitemapGenerator),
+  "schema-markup-generator": d(seo2, (m) => m.SchemaGenerator),
+  "open-graph-preview": d(seo2, (m) => m.OgPreview),
+  "keyword-idea-generator": d(seo2, (m) => m.KeywordIdeaGenerator),
+  "seo-title-generator": d(seo2, (m) => m.SeoTitleGenerator),
 };
 
 export function ToolRenderer({ slug }: { slug: string }) {

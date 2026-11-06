@@ -2,6 +2,7 @@ export type CategoryId =
   | "social"
   | "qr"
   | "image"
+  | "pdf"
   | "seo"
   | "developer"
   | "text"
@@ -56,6 +57,6 @@ export interface Tool {
 
 export interface PlannedTool {
   name: string;
-  category: CategoryId | "pdf";
+  category: CategoryId;
   keywords: string[];
 }

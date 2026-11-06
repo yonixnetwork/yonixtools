@@ -1,4 +1,5 @@
 import type { PlannedTool, Tool } from "./types";
+import { extraTools } from "./tools-extra";
 
 const PHASE1 = "2026-11-06";
 
@@ -13,7 +14,7 @@ const downloaderFaqsCommon = [
   },
 ];
 
-export const tools: Tool[] = [
+const baseTools: Tool[] = [
   // ─────────────────────────── Social media downloaders ───────────────────────────
   {
     slug: "social-media-downloader",
@@ -983,23 +984,13 @@ export const tools: Tool[] = [
   },
 ];
 
+export const tools: Tool[] = [...baseTools, ...extraTools];
+
 /**
  * Tools that are planned but not built yet. They have NO pages. Search uses
  * them only to say "not available yet" instead of an unhelpful empty result.
  */
 export const plannedTools: PlannedTool[] = [
-  { name: "PDF Merger", category: "pdf", keywords: ["pdf merge", "combine pdf", "join pdf"] },
-  { name: "PDF Splitter", category: "pdf", keywords: ["split pdf", "extract pdf pages"] },
-  { name: "PDF Compressor", category: "pdf", keywords: ["compress pdf", "reduce pdf size", "pdf compressor"] },
-  { name: "PDF to Image", category: "pdf", keywords: ["pdf to jpg", "pdf to png", "pdf to image"] },
-  { name: "Image to PDF", category: "pdf", keywords: ["jpg to pdf", "image to pdf", "png to pdf"] },
-  { name: "PDF Page Rotation", category: "pdf", keywords: ["rotate pdf", "pdf rotate pages"] },
-  { name: "Image Cropper", category: "image", keywords: ["crop image", "image cropper", "crop photo"] },
-  { name: "Background Remover", category: "image", keywords: ["remove background", "background remover", "transparent background"] },
-  { name: "QR Code Scanner", category: "qr", keywords: ["qr scanner", "scan qr code", "qr reader", "read qr code"] },
-  { name: "HTML / CSS / JS Minifier", category: "developer", keywords: ["html minifier", "css minifier", "javascript minifier", "minify js", "minify css"] },
-  { name: "Sitemap Generator", category: "seo", keywords: ["sitemap generator", "xml sitemap"] },
-  { name: "Schema Markup Generator", category: "seo", keywords: ["schema markup generator", "json-ld generator", "structured data"] },
-  { name: "Open Graph Preview", category: "seo", keywords: ["open graph preview", "og preview", "facebook share preview"] },
-  { name: "Keyword Idea Generator", category: "seo", keywords: ["keyword generator", "keyword ideas", "keyword research"] },
+  // No reliable, permissively licensed in-browser model is available yet (see docs/KNOWN_LIMITATIONS.md).
+  { name: "Background Remover", category: "image", keywords: ["remove background", "background remover", "transparent background", "remove bg"] },
 ];

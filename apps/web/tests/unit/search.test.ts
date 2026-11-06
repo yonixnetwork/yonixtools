@@ -33,9 +33,12 @@ describe("tool search", () => {
     ["instgram downlader", "instagram-downloader"],
     ["pasword generater", "password-generator"],
     ["jsn formater", "json-formatter"],
-    ["compresor", "image-compressor"],
     ["calculater bmi", "bmi-calculator"],
   ])("tolerates the typo %s", (q, slug) => expect(top(q)).toBe(slug));
+
+  it("tolerates a typo shared by two tools", () => {
+    expect(searchTools("compresor").results.slice(0, 2).map((r) => r.tool.slug).sort()).toEqual(["image-compressor", "pdf-compressor"]);
+  });
 
   it("suggests while typing (prefix match)", () => {
     expect(top("insta")).toBe("instagram-downloader");
@@ -56,11 +59,22 @@ describe("tool search", () => {
   });
 
   it("reports planned tools honestly instead of pretending", () => {
-    const r = searchTools("PDF compressor");
-    expect(r.planned.map((p) => p.name)).toContain("PDF Compressor");
-    expect(r.partial).toBe(true);
-    expect(r.results[0].tool.slug).toBe("image-compressor");
+    const r = searchTools("background remover");
+    expect(r.planned.map((p) => p.name)).toContain("Background Remover");
+    expect(r.results.every((x) => x.tool.slug !== "background-remover")).toBe(true);
   });
+
+  it.each([
+    ["PDF compressor", "pdf-compressor"],
+    ["merge pdf", "pdf-merger"],
+    ["jpg to pdf", "image-to-pdf"],
+    ["pdf to jpg", "pdf-to-image"],
+    ["crop photo", "image-cropper"],
+    ["scan qr code", "qr-code-scanner"],
+    ["minify js", "javascript-minifier"],
+    ["json-ld", "schema-markup-generator"],
+    ["sitemap", "sitemap-generator"],
+  ])("finds new tool %s", (q, slug) => expect(top(q)).toBe(slug));
 
   it("returns nothing for nonsense", () => {
     const r = searchTools("zzqxv blorpt");

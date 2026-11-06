@@ -1,7 +1,8 @@
 import {
   AlignLeft, Binary, Bot, Braces, Calculator, CalendarDays, CaseSensitive, Code, Contact, Diff, Download, Fingerprint, Hash,
   HeartPulse, Image, KeyRound, Landmark, Link, Link2, Lock, Minimize2, Percent, QrCode, RefreshCw, Regex, Ruler, Scaling,
-  Search, Tags, TrendingUp, Type, Wifi, type LucideIcon,
+  Search, Tags, TrendingUp, Type, Wifi, FileText, Merge, Scissors, FileArchive, FileImage, FilePlus, RotateCw, Crop, ScanLine, FileCode,
+  Network, Share2, Lightbulb, Heading, type LucideIcon,
 } from "lucide-react";
 import { siFacebook, siInstagram, siPinterest, siReddit, siTiktok, siVimeo, siX, siYoutube } from "simple-icons";
 import type { ToolCardData } from "@/lib/registry/cards";
@@ -9,7 +10,8 @@ import type { ToolCardData } from "@/lib/registry/cards";
 const ICONS: Record<string, LucideIcon> = {
   AlignLeft, Binary, Bot, Braces, Calculator, CalendarDays, CaseSensitive, Code, Contact, Diff, Download, Fingerprint, Hash,
   HeartPulse, Image, KeyRound, Landmark, Link, Link2, Lock, Minimize2, Percent, QrCode, RefreshCw, Regex, Ruler, Scaling,
-  Search, Tags, TrendingUp, Type, Wifi,
+  Search, Tags, TrendingUp, Type, Wifi, FileText, Merge, Scissors, FileArchive, FileImage, FilePlus, RotateCw, Crop, ScanLine, FileCode,
+  Network, Share2, Lightbulb, Heading,
 };
 
 export function Icon({ name, ...props }: { name: string; className?: string; "aria-hidden"?: boolean }) {

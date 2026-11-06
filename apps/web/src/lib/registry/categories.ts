@@ -23,6 +23,13 @@ export const categories: Category[] = [
     icon: "Image",
   },
   {
+    id: "pdf",
+    slug: "pdf-tools",
+    name: "PDF tools",
+    description: "Merge, split, compress, rotate and convert PDFs without uploading them.",
+    icon: "FileText",
+  },
+  {
     id: "seo",
     slug: "seo-tools",
     name: "SEO tools",

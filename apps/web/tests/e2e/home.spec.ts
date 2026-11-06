@@ -90,9 +90,10 @@ test.describe("search & discovery", () => {
   });
 
   test("all-tools page: query string, planned tools, empty state, category filter", async ({ page }) => {
-    await page.goto("/tools/?q=pdf%20compressor");
-    await expect(page.getByText("PDF Compressor is planned but not available yet.")).toBeVisible();
-    await expect(page.locator(".tool-card").first()).toContainText("Image Compressor");
+    await page.goto("/tools/?q=background%20remover");
+    await expect(page.getByText("Background Remover is planned but not available yet.")).toBeVisible();
+    await page.getByRole("searchbox", { name: "Search tools" }).last().fill("pdf compressor");
+    await expect(page.locator(".tool-card").first()).toContainText("PDF Compressor");
     const input = page.getByRole("searchbox", { name: "Search tools" }).last();
     await input.fill("zzqxv blorpt");
     await expect(page.getByText("No tools match")).toBeVisible();

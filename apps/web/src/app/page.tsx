@@ -43,7 +43,7 @@ export default function Home() {
         <div className="container">
           <span className="eyebrow">Universal downloader</span>
           <h1>Download from any social platform with one link</h1>
-          <p className="lede">Paste a public link from Instagram, TikTok, YouTube, Facebook, X, Pinterest or Reddit, and pick the quality you want. There are also 28 free tools that run privately in your browser.</p>
+          <p className="lede">Paste a public link from Instagram, TikTok, YouTube, Facebook, X, Pinterest or Reddit, and pick the quality you want. There are also {tools.filter((t) => t.runsIn === "browser").length} free tools that run privately in your browser.</p>
           <Downloader />
           <div className="platform-row" aria-label="Supported platforms">
             {Object.values(PLATFORMS)
