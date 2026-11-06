@@ -8,6 +8,9 @@ export const site = {
   googleVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
 };
 
+/** True when this build is wired to a downloader backend (NEXT_PUBLIC_DOWNLOADER_API_URL). */
+export const backendConfigured = site.downloaderApiUrl.length > 0;
+
 export function absoluteUrl(path: string): string {
   return `${site.url}${path.startsWith("/") ? path : `/${path}`}`;
 }

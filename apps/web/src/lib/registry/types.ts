@@ -9,10 +9,10 @@ export type CategoryId =
 
 /**
  * live             – fully working in the browser today.
- * awaiting-backend – the interface and URL detection work, but media
- *                    extraction needs the downloader service (Phase 2).
- *                    These pages are noindex and kept out of the sitemap
- *                    until the backend is live.
+ * awaiting-backend – needs the downloader service. Available (and indexable)
+ *                    only in builds where NEXT_PUBLIC_DOWNLOADER_API_URL is set;
+ *                    otherwise the page says downloading is not live, is
+ *                    noindex and is left out of the sitemap.
  */
 export type ToolStatus = "live" | "awaiting-backend";
 

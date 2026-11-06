@@ -8,7 +8,7 @@ import { ToolIcon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
 import { ToolRenderer } from "@/components/tools/registry";
 import { VisitRecorder } from "@/components/VisitRecorder";
-import { getCategory, getTool, relatedTools, tools } from "@/lib/registry";
+import { getCategory, getTool, isAvailable, relatedTools, tools } from "@/lib/registry";
 import { breadcrumbLd, faqLd, toolBreadcrumbs, toolLd, toolMetadata } from "@/lib/seo";
 import { categoryPath, toolPath } from "@/lib/site";
 
@@ -48,7 +48,7 @@ export default async function ToolPage({ params }: Props) {
             <h1>{tool.name}</h1>
             <p>{tool.content.intro}</p>
             <div className="row">
-              {tool.status === "awaiting-backend" ? (
+              {!isAvailable(tool) ? (
                 <span className="badge badge-pending">
                   <Clock aria-hidden /> Link detection works · downloading launches with the backend
                 </span>

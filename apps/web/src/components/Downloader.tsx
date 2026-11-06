@@ -3,7 +3,7 @@ import { CircleAlert, CircleCheck, ClipboardPaste, Clock, Download, Info, Link a
 import { useEffect, useMemo, useRef, useState } from "react";
 import { PlatformIcon } from "./Icon";
 import { detectUrl, PLATFORMS } from "@/lib/downloader/detect";
-import { createJob, DownloaderError, extractMedia, getJob, jobReady, type ExtractResult, type MediaFormat } from "@/lib/downloader/client";
+import { createJob, DownloaderError, extractMedia, getJob, jobReady, resolveDownloadUrl, type ExtractResult, type MediaFormat } from "@/lib/downloader/client";
 import { site } from "@/lib/site";
 
 type State =
@@ -91,7 +91,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
         await new Promise((r) => setTimeout(r, POLL_MS));
         j = await getJob(api, j.id);
       }
-      if (jobReady(j)) setJob({ key, status: "ready", href: j.downloadUrl });
+      if (jobReady(j)) setJob({ key, status: "ready", href: resolveDownloadUrl(site.downloaderApiUrl, j.downloadUrl) });
       else setJob({ key, status: "failed", message: j.error?.message || (j.status === "expired" ? "The file expired. Start the download again." : "The download failed. Nothing was saved.") });
     } catch (err) {
       setJob({ key, status: "failed", message: err instanceof DownloaderError ? err.message : "The download failed. Nothing was saved." });
@@ -188,7 +188,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
         <div className="card card-pad media-result" style={{ marginTop: 16 }}>
           {state.data.thumbnail ? (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="media-thumb" src={state.data.thumbnail} alt="" referrerPolicy="no-referrer" loading="lazy" />
+            <img className="media-thumb" src={state.data.thumbnail} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
           ) : (
             <div className="media-thumb" />
           )}

@@ -5,6 +5,7 @@ import { ToolIcon } from "./Icon";
 import { getRecent } from "@/lib/recent";
 import { toolPath } from "@/lib/site";
 import type { Tool } from "@/lib/registry";
+import { isAvailable } from "@/lib/registry/availability";
 import type { SearchResponse } from "@/lib/search";
 
 type SearchModule = typeof import("@/lib/search-client");
@@ -143,7 +144,7 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
                   <span className="s-text">
                     <span className="s-name">{o.tool.name}</span>
                     <span className="s-tag" style={{ display: "block" }}>
-                      {o.tool.status === "awaiting-backend" ? "Backend coming soon · " : ""}
+                      {!isAvailable(o.tool) ? "Backend coming soon · " : ""}
                       {o.tool.tagline}
                     </span>
                   </span>

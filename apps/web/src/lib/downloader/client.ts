@@ -31,17 +31,35 @@ export interface ExtractResult {
   items: MediaItem[];
 }
 
+/** Mirrors services/downloader/app/errors.py plus client-side codes. */
 export type ErrorCode =
   | "not_configured"
   | "network"
-  | "timeout"
   | "invalid_response"
+  | "invalid_request"
   | "unsupported_url"
+  | "unsupported_content"
+  | "unsafe_url"
   | "unavailable"
   | "private"
-  | "rate_limited"
+  | "login_required"
+  | "age_restricted"
+  | "geo_blocked"
+  | "drm_protected"
+  | "live_stream"
   | "too_large"
+  | "too_long"
+  | "no_media"
+  | "invalid_format"
+  | "not_found"
+  | "expired"
+  | "payload_too_large"
+  | "rate_limited"
+  | "busy"
+  | "platform_blocked"
+  | "network_error"
   | "extractor_failed"
+  | "timeout"
   | "server_error";
 
 export class DownloaderError extends Error {
@@ -116,9 +134,18 @@ export function extractMedia(opts: ClientOptions, url: string): Promise<ExtractR
 export interface Job {
   id: string;
   status: "queued" | "running" | "done" | "failed" | "expired";
+  platform?: string;
   progress?: number;
   error?: { code: ErrorCode; message: string };
+  /** Path relative to the API base (e.g. "/v1/jobs/{id}/file") or an absolute URL. */
   downloadUrl?: string;
+  filesize?: number;
+}
+
+/** Turn a job's downloadUrl into something the browser can open. */
+export function resolveDownloadUrl(baseUrl: string, downloadUrl: string): string {
+  if (/^https?:\/\//i.test(downloadUrl)) return downloadUrl;
+  return `${baseUrl}${downloadUrl.startsWith("/") ? "" : "/"}${downloadUrl}`;
 }
 
 function isJob(b: unknown): b is Job {

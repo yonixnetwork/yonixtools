@@ -1,5 +1,6 @@
 import { categories } from "./categories";
 import { plannedTools, tools } from "./tools";
+import { isAvailable } from "./availability";
 import type { Category, CategoryId, Tool } from "./types";
 
 export { categories, tools, plannedTools };
@@ -12,7 +13,9 @@ export const getTool = (slug: string): Tool | undefined => bySlug.get(slug);
 export const getCategory = (id: CategoryId): Category => categoryById.get(id)!;
 export const getCategoryBySlug = (slug: string): Category | undefined => categories.find((c) => c.slug === slug);
 export const toolsInCategory = (id: CategoryId): Tool[] => tools.filter((t) => t.category === id);
-export const isIndexable = (t: Tool) => t.status === "live";
+/** Usable in this build: browser tools always; backend tools only when a backend is configured. */
+export { isAvailable };
+export const isIndexable = (t: Tool) => isAvailable(t);
 
 /** Explicit related tools first, then same-category tools, never the tool itself. */
 export function relatedTools(slug: string, limit = 4): Tool[] {

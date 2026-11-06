@@ -99,3 +99,12 @@ describe("downloader client never reports false success", () => {
     expect(r.items[0].formats[0].id).toBe("18");
   });
 });
+
+describe("download URL resolution", () => {
+  it("prefixes relative paths with the API base", async () => {
+    const { resolveDownloadUrl } = await import("@/lib/downloader/client");
+    expect(resolveDownloadUrl("/api", "/v1/jobs/abc/file")).toBe("/api/v1/jobs/abc/file");
+    expect(resolveDownloadUrl("https://dl.example", "/v1/jobs/abc/file")).toBe("https://dl.example/v1/jobs/abc/file");
+    expect(resolveDownloadUrl("/api", "https://cdn.example/x.mp4")).toBe("https://cdn.example/x.mp4");
+  });
+});

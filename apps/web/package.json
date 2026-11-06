@@ -9,7 +9,9 @@
     "start": "node scripts/serve-static.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
-    "test:e2e": "playwright test --trace off"
+    "test:e2e": "playwright test --trace off",
+    "build:integrated": "NEXT_PUBLIC_DOWNLOADER_API_URL=http://localhost:8788 next build && rm -rf out-integrated && mv out out-integrated",
+    "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",
