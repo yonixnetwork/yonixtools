@@ -1,4 +1,4 @@
-import { Clock, MonitorSmartphone } from "lucide-react";
+import { Clock, MonitorSmartphone, Server } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
@@ -51,6 +51,10 @@ export default async function ToolPage({ params }: Props) {
               {!isAvailable(tool) ? (
                 <span className="badge badge-pending">
                   <Clock aria-hidden /> Link detection works · downloading launches with the backend
+                </span>
+              ) : tool.runsIn === "server" ? (
+                <span className="badge badge-live">
+                  <Server aria-hidden /> Processed on our server · files deleted after 15 minutes
                 </span>
               ) : (
                 <span className="badge badge-live">

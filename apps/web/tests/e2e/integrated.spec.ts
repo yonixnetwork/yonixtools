@@ -76,6 +76,8 @@ test("downloader pages are indexable once the backend is configured", async ({ p
   await page.goto("/instagram-downloader/");
   await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /^index/);
   await expect(page.locator(".badge-pending")).toHaveCount(0);
+  await expect(page.getByText("Processed on our server · files deleted after 15 minutes")).toBeVisible();
+  await expect(page.getByText("Runs in your browser · nothing uploaded")).toHaveCount(0);
   const xml = await (await request.get("/sitemap.xml")).text();
   expect(xml).toContain("https://yonixtools.com/instagram-downloader/");
 });

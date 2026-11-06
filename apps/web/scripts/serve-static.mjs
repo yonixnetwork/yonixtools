@@ -4,6 +4,7 @@
 import { createServer } from "node:http";
 import { readFile, stat } from "node:fs/promises";
 import { extname, join, normalize, resolve } from "node:path";
+import { gzipSync } from "node:zlib";
 
 const root = resolve(process.argv[2] || "out");
 const port = Number(process.env.PORT || 4173);
@@ -29,6 +30,13 @@ createServer(async (req, res) => {
   }
   const found = (await file(target)) || (await file(target + ".html"));
   const p = found || join(root, "404.html");
-  res.writeHead(found ? 200 : 404, { "content-type": types[extname(p)] || "application/octet-stream", "cache-control": p.includes("/_next/static/") ? "public, max-age=31536000, immutable" : "no-cache" });
-  res.end(await readFile(p));
+  const headers = { "content-type": types[extname(p)] || "application/octet-stream", "cache-control": p.includes("/_next/static/") ? "public, max-age=31536000, immutable" : "no-cache", vary: "accept-encoding" };
+  let body = await readFile(p);
+  // gzip text like the production Nginx does (parity for performance measurements).
+  if (/gzip/.test(req.headers["accept-encoding"] || "") && /\.(html|js|css|json|svg|xml|txt)$/.test(p) && body.length > 1024) {
+    body = gzipSync(body, { level: 6 });
+    headers["content-encoding"] = "gzip";
+  }
+  res.writeHead(found ? 200 : 404, headers);
+  res.end(body);
 }).listen(port, () => console.log(`Serving ${root} on http://localhost:${port}`));

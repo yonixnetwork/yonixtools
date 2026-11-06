@@ -1,54 +1,70 @@
-# Downloader API contract (draft for Phase 2)
+# Downloader API (v1)
 
-The frontend (`apps/web/src/lib/downloader/client.ts`) is written against this contract. The backend is
-not built yet. Until `NEXT_PUBLIC_DOWNLOADER_API_URL` is set, the UI makes **no** requests and tells the user
-that downloading is not live.
+Base path: `/api` in production (Nginx strips the prefix). All bodies are JSON, and POST requests require `content-type: application/json` (max 8 KB).
 
-All responses are JSON. Errors always use:
+## Errors
+
+Every error has the same shape:
 
 ```json
-{ "error": { "code": "private", "message": "This Instagram post is private.", "platform": "instagram" } }
+{ "error": { "code": "private", "message": "This content is private, so it can't be downloaded.", "platform": "instagram" } }
 ```
 
-`code` ∈ `unsupported_url | unavailable | private | rate_limited | too_large | extractor_failed | timeout | server_error`.
-`platform` names the adapter that failed, so the UI can say "Instagram extraction failed".
+`platform` names the adapter involved, when known.
 
-## POST /v1/extract
+| Codes | HTTP |
+|---|---|
+| `invalid_request` | 400 |
+| `unsupported_url`, `unsupported_content`, `unsafe_url`, `unavailable`, `private`, `login_required`, `age_restricted`, `geo_blocked`, `drm_protected`, `live_stream`, `too_large`, `too_long`, `no_media`, `invalid_format` | 422 |
+| `not_found` | 404 |
+| `expired` | 410 |
+| `payload_too_large` | 413 |
+| `rate_limited` (with `Retry-After`) | 429 |
+| `platform_blocked`, `network_error`, `extractor_failed` | 502 |
+| `busy` (with `Retry-After`) | 503 |
+| `timeout` | 504 |
+| `server_error` | 500 |
 
-Request: `{ "url": "https://www.instagram.com/reel/…" }`
+## `POST /v1/extract`
 
-Response 200:
+Request: `{"url": "https://www.instagram.com/reel/…"}`. Short links are resolved first.
+
+Response `200`:
 
 ```json
 {
-  "platform": "instagram",
-  "title": "…",
-  "author": "…",
-  "thumbnail": "https://…",
-  "durationSeconds": 31,
-  "items": [
-    { "index": 0, "kind": "video", "thumbnail": "…",
-      "formats": [ { "id": "hd", "label": "1080p MP4", "ext": "mp4", "kind": "video", "filesize": 8123456 } ] }
-  ]
+  "platform": "youtube", "title": "…", "author": "…", "thumbnail": "https://…", "durationSeconds": 31,
+  "items": [{ "index": 0, "kind": "video", "thumbnail": "https://…",
+              "formats": [{ "id": "v:best", "label": "Best quality (1080p) · MP4", "ext": "mp4", "kind": "video", "filesize": 9500000 },
+                          { "id": "v:720", "label": "720p · MP4", "ext": "mp4", "kind": "video" },
+                          { "id": "a:best", "label": "Audio only · M4A", "ext": "m4a", "kind": "audio" }] }]
 }
 ```
 
-A 200 response with no items, or items without formats, is treated by the client as a failure.
+Format ids are opaque. They match `^(v:(best|\d{3,4})|a:best|i:best|f:best|g:\d{1,3})$`, and a job may only use ids that extraction returned. Results are cached for 10 minutes.
 
-## POST /v1/jobs
+## `POST /v1/jobs` → `202`
 
-Request: `{ "url": "…", "itemIndex": 0, "formatId": "hd" }` → `{ "id": "…", "status": "queued" }`
+Request: `{"url": "…", "itemIndex": 0, "formatId": "v:720"}`
 
-## GET /v1/jobs/{id}
+Response: `{"id": "<token>", "status": "queued", "platform": "youtube"}`
 
-`{ "id": "…", "status": "queued|running|done|failed|expired", "progress": 42, "downloadUrl": "https://…/v1/jobs/{id}/file", "error": { … } }`
+## `GET /v1/jobs/{id}`
 
-The client only offers "Save file" when `status == "done"` **and** `downloadUrl` is present.
+```json
+{ "id": "…", "status": "queued|running|done|failed|expired", "platform": "youtube", "progress": 42.5,
+  "downloadUrl": "/v1/jobs/{id}/file", "filesize": 1234567, "expiresAt": 1762450000,
+  "error": { "code": "…", "message": "…" } }
+```
 
-## Backend requirements carried into Phase 2
+`downloadUrl` is present only when `status` is `done`. It is relative to the API base.
 
-- An adapter per platform behind `detect(url)`. yt-dlp is the generic fallback, restricted to an allowlist.
-- SSRF protection: a domain allowlist, plus a check that resolved IPs are public unicast on every redirect hop.
-  No user-controlled proxying.
-- A bounded job queue with per-IP rate limits, size and time limits, temp directories per job, and TTL cleanup.
-- No cookies or logins, and no DRM or private-content bypass.
+## `GET /v1/jobs/{id}/file`
+
+Streams the file as `Content-Disposition: attachment; filename="yonixtools-<platform>-<id8>.<ext>"`, with `Cache-Control: no-store`. Returns `410 expired` after `FILE_TTL_SECONDS`.
+
+## Health
+
+- `GET /healthz`: liveness.
+- `GET /readyz`: temporary directory writable with free space, FFmpeg present, extractor importable (`503` otherwise).
+- `GET /internal/stats`: counters per platform, backend and outcome. Loopback only; never proxied.

@@ -60,7 +60,7 @@ export function PdfMerger() {
     if (big) return setError(big);
     const withPages = await Promise.all(pdfs.map(async (f): Promise<Picked | null> => {
       try {
-        return { id: uid(), name: f.name, size: f.size, file: f, note: `${await pageCount(await readBytes(f))} pages` };
+        return { id: uid(), name: f.name, size: f.size, file: f, note: ((n) => `${n} page${n === 1 ? "" : "s"}`)(await pageCount(await readBytes(f))) };
       } catch (e) {
         setError(`${f.name}: ${(e as Error).message}`);
         return null;

@@ -437,3 +437,6 @@ table.data tr:last-child td { border-bottom: 0; }
 .og-card .d { font-size: 14px; color: #65676b; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .og-card.x { border-radius: 16px; border-color: #cfd9de; } .og-card.x .body { background: #fff; }
 .og-card.li .body { background: #fff; } .og-card.li .t { font-size: 14px; }
+
+@media (min-width: 640px) { .media-result.no-thumb { grid-template-columns: 1fr; } }
+.media-thumb { max-height: 240px; }

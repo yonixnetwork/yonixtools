@@ -1,0 +1,56 @@
+# YoniXTools production stack. Isolated compose project ("yonixtools"):
+# own network, own volumes, only 127.0.0.1:8090 published. It does not touch
+# any other stack on the server (e.g. YonixAlpha).
+name: yonixtools
+
+services:
+  web:
+    build:
+      context: ../apps/web
+      additional_contexts:
+        deploy: ./nginx
+      args:
+        NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://yonixtools.com}
+        NEXT_PUBLIC_DOWNLOADER_API_URL: /api
+        NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+    image: yonixtools-web:latest
+    restart: unless-stopped
+    depends_on:
+      downloader:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${WEB_PORT:-8090}:80"
+    read_only: true
+    tmpfs:
+      - /var/cache/nginx:size=64m
+      - /var/run:size=1m
+      - /tmp:size=16m
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    cpus: 0.5
+    logging: { driver: json-file, options: { max-size: "10m", max-file: "3" } }
+
+  downloader:
+    build: ../services/downloader
+    image: yonixtools-downloader:latest
+    restart: unless-stopped
+    env_file: ../services/downloader/.env
+    environment:
+      APP_ENV: production
+      TEMP_ROOT: /var/lib/yonixtools/tmp
+      TRUST_PROXY_HEADERS: "1"
+    expose: ["8787"]
+    read_only: true
+    tmpfs:
+      - /tmp:size=64m
+    volumes:
+      - downloads:/var/lib/yonixtools/tmp
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: ["ALL"]
+    pids_limit: 256
+    mem_limit: ${DOWNLOADER_MEM_LIMIT:-1g}
+    cpus: ${DOWNLOADER_CPUS:-1.0}
+    logging: { driver: json-file, options: { max-size: "20m", max-file: "5" } }
+
+volumes:
+  downloads: {}

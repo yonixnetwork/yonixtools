@@ -34,6 +34,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   const [state, setState] = useState<State>({ kind: "idle" });
   const [job, setJob] = useState<JobState | null>(null);
   const [canPaste, setCanPaste] = useState(false);
+  const [thumbFailed, setThumbFailed] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const cancelled = useRef(false);
   const detection = useMemo(() => (value.trim() ? detectUrl(value) : null), [value]);
@@ -72,6 +73,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
     setState({ kind: "loading" });
     try {
       const data = await extractMedia(api, d.url);
+      setThumbFailed(false);
       setState({ kind: "result", data, url: d.url });
     } catch (err) {
       const e2 = err instanceof DownloaderError ? err : new DownloaderError("server_error", "Something went wrong. Nothing was downloaded.");
@@ -185,12 +187,10 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
       )}
 
       {state.kind === "result" && (
-        <div className="card card-pad media-result" style={{ marginTop: 16 }}>
-          {state.data.thumbnail ? (
+        <div className={`card card-pad media-result${!state.data.thumbnail || thumbFailed ? " no-thumb" : ""}`} style={{ marginTop: 16 }}>
+          {state.data.thumbnail && !thumbFailed && (
             // eslint-disable-next-line @next/next/no-img-element
-            <img className="media-thumb" src={state.data.thumbnail} alt="" referrerPolicy="no-referrer" loading="lazy" onError={(e) => (e.currentTarget.style.visibility = "hidden")} />
-          ) : (
-            <div className="media-thumb" />
+            <img className="media-thumb" src={state.data.thumbnail} alt="" referrerPolicy="no-referrer" loading="lazy" onError={() => setThumbFailed(true)} />
           )}
           <div style={{ minWidth: 0 }}>
             <h3 style={{ overflowWrap: "anywhere" }}>{state.data.title}</h3>
@@ -204,7 +204,8 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
                   return (
                     <div key={f.id} className="format-item">
                       <span>
-                        <strong>{f.label}</strong> <span className="muted">{[f.ext.toUpperCase(), formatSize(f.filesize)].filter(Boolean).join(" · ")}</span>
+                        <strong>{f.label}</strong>{" "}
+                        <span className="muted">{[f.label.toUpperCase().includes(f.ext.toUpperCase()) ? "" : f.ext.toUpperCase(), formatSize(f.filesize)].filter(Boolean).join(" · ")}</span>
                       </span>
                       {mine?.status === "ready" ? (
                         <a className="btn btn-sm btn-primary" href={mine.href} download>
