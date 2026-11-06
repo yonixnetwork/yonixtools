@@ -1,0 +1,24 @@
+# Dependencies & build output
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+next-env.d.ts
+
+# Test output
+test-results/
+playwright-report/
+
+# Secrets: never commit
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Downloaded / temporary media (downloader backend, Phase 2)
+tmp/
+downloads/
+*.part
+
+.DS_Store

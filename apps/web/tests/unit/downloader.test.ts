@@ -1,0 +1,101 @@
+import { describe, expect, it, vi } from "vitest";
+import { detectUrl, extractUrl } from "@/lib/downloader/detect";
+import { createJob, DownloaderError, extractMedia, jobReady } from "@/lib/downloader/client";
+
+const ok = (u: string) => {
+  const d = detectUrl(u);
+  if (!d.ok) throw new Error(`${u}: ${d.message}`);
+  return [d.platform.id, d.contentType];
+};
+
+describe("URL detection", () => {
+  it.each([
+    ["https://www.instagram.com/reel/C9xAbCdEfGh/", "instagram", "Reel"],
+    ["https://www.instagram.com/p/C9xAbCdEfGh/?img_index=2", "instagram", "Post (photo, video or carousel)"],
+    ["instagram.com/someuser/reel/C9xAbCdEfGh", "instagram", "Reel"],
+    ["https://www.tiktok.com/@creator.name/video/7350000000000000000", "tiktok", "Video"],
+    ["https://www.tiktok.com/@creator/photo/7350000000000000001", "tiktok", "Photo post"],
+    ["https://vm.tiktok.com/ZMabc123/", "tiktok", "Short link"],
+    ["https://www.youtube.com/watch?v=dQw4w9WgXcQ", "youtube", "Video"],
+    ["https://youtu.be/dQw4w9WgXcQ?t=10", "youtube", "Video"],
+    ["https://youtube.com/shorts/abcdEFGhijk", "youtube", "Short"],
+    ["https://m.youtube.com/watch?v=dQw4w9WgXcQ", "youtube", "Video"],
+    ["https://www.facebook.com/reel/1234567890", "facebook", "Reel"],
+    ["https://www.facebook.com/somepage/videos/1234567890/", "facebook", "Video"],
+    ["https://fb.watch/abcDEF/", "facebook", "Video"],
+    ["https://www.facebook.com/share/r/1AbCdE/", "facebook", "Reel"],
+    ["https://x.com/user/status/1790000000000000000", "x", "Post video or GIF"],
+    ["https://twitter.com/user/status/1790000000000000000", "x", "Post video or GIF"],
+    ["https://www.pinterest.com/pin/123456789/", "pinterest", "Pin"],
+    ["https://pin.it/abc123", "pinterest", "Pin (short link)"],
+    ["https://www.reddit.com/r/videos/comments/abc123/some_title/", "reddit", "Post"],
+    ["https://v.redd.it/abc123", "reddit", "Media"],
+    ["https://vimeo.com/76979871", "vimeo", "Video"],
+  ])("recognises %s", (url, platform, type) => expect(ok(url)).toEqual([platform, type]));
+
+  it("pulls the URL out of pasted share text", () => {
+    expect(extractUrl("Watch this! https://youtu.be/dQw4w9WgXcQ.")).toBe("https://youtu.be/dQw4w9WgXcQ");
+  });
+
+  it.each([
+    ["https://www.instagram.com/stories/someone/123/", "unsupported-content"],
+    ["https://www.instagram.com/someone/", "unsupported-content"],
+    ["https://www.youtube.com/playlist?list=PL123", "unsupported-content"],
+    ["https://example.com/video.mp4", "unsupported-platform"],
+    ["https://evil-instagram.com/reel/abc", "unsupported-platform"],
+    ["https://instagram.com.evil.io/reel/abc", "unsupported-platform"],
+    ["http://127.0.0.1/reel/abc", "unsafe"],
+    ["http://localhost:8080/", "unsafe"],
+    ["http://[::1]/", "unsafe"],
+    ["https://user:pass@www.instagram.com/reel/abc", "unsafe"],
+    ["https://www.instagram.com:8443/reel/abc", "unsafe"],
+    ["ftp://www.instagram.com/reel/abc", "unsafe"],
+    ["javascript:alert(1)", "unsafe"],
+    ["", "empty"],
+  ])("rejects %s (%s)", (url, reason) => {
+    const d = detectUrl(url);
+    expect(d.ok).toBe(false);
+    if (!d.ok) expect(d.reason).toBe(reason);
+  });
+});
+
+const res = (status: number, body: unknown) => Promise.resolve(new Response(typeof body === "string" ? body : JSON.stringify(body), { status }));
+
+describe("downloader client never reports false success", () => {
+  it("refuses to run without a configured backend", async () => {
+    await expect(extractMedia({ baseUrl: "" }, "https://youtu.be/x")).rejects.toMatchObject({ code: "not_configured" });
+  });
+
+  it("maps backend errors to typed errors with the failing platform", async () => {
+    const fetchImpl = vi.fn(() => res(422, { error: { code: "private", message: "This Instagram post is private.", platform: "instagram" } }));
+    const err = await extractMedia({ baseUrl: "https://api.test", fetchImpl }, "https://instagram.com/p/x").catch((e) => e);
+    expect(err).toBeInstanceOf(DownloaderError);
+    expect(err).toMatchObject({ code: "private", platform: "instagram" });
+  });
+
+  it("treats a 200 with an empty or malformed body as a failure", async () => {
+    for (const body of [{}, { platform: "youtube", title: "x", items: [] }, "not json"]) {
+      const fetchImpl = vi.fn(() => res(200, body));
+      await expect(extractMedia({ baseUrl: "https://api.test", fetchImpl }, "https://youtu.be/x")).rejects.toMatchObject({ code: "invalid_response" });
+    }
+  });
+
+  it("maps network failures and HTTP 429", async () => {
+    await expect(extractMedia({ baseUrl: "https://api.test", fetchImpl: vi.fn(() => Promise.reject(new TypeError("Failed to fetch"))) }, "u")).rejects.toMatchObject({ code: "network" });
+    await expect(extractMedia({ baseUrl: "https://api.test", fetchImpl: vi.fn(() => res(429, {})) }, "u")).rejects.toMatchObject({ code: "rate_limited" });
+  });
+
+  it("only treats a finished job with a download URL as ready", async () => {
+    const fetchImpl = vi.fn(() => res(200, { id: "j1", status: "done" }));
+    const job = await createJob({ baseUrl: "https://api.test", fetchImpl }, "u", 0, "f");
+    expect(jobReady(job)).toBe(false);
+    expect(jobReady({ id: "j", status: "failed", downloadUrl: "https://x" })).toBe(false);
+    expect(jobReady({ id: "j", status: "done", downloadUrl: "https://api.test/v1/jobs/j/file" })).toBe(true);
+  });
+
+  it("parses a well-formed extract result", async () => {
+    const body = { platform: "youtube", title: "Clip", items: [{ index: 0, kind: "video", formats: [{ id: "18", label: "360p MP4", ext: "mp4", kind: "video" }] }] };
+    const r = await extractMedia({ baseUrl: "https://api.test", fetchImpl: vi.fn(() => res(200, body)) }, "https://youtu.be/x");
+    expect(r.items[0].formats[0].id).toBe("18");
+  });
+});
