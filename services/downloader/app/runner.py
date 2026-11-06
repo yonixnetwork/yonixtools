@@ -6,9 +6,13 @@ import json
 import os
 import signal
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Awaitable, Callable
 
 MAX_LINE = 1024 * 1024
+# Directory containing the "app" package. Workers run with cwd = the job's temp
+# directory, so "python -m app.worker" needs this on PYTHONPATH explicitly.
+APP_ROOT = str(Path(__file__).resolve().parents[1])
 
 
 @dataclass
@@ -26,6 +30,7 @@ def _child_env(extra: dict[str, str] | None = None) -> dict[str, str]:
     env.setdefault("PATH", "/usr/local/bin:/usr/bin:/bin")
     env["PYTHONDONTWRITEBYTECODE"] = "1"
     env["PYTHONUNBUFFERED"] = "1"
+    env["PYTHONPATH"] = APP_ROOT + (os.pathsep + env["PYTHONPATH"] if env.get("PYTHONPATH") else "")
     if extra:
         env.update(extra)
     return env

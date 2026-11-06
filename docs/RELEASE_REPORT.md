@@ -43,7 +43,7 @@ Unsupported, with explicit messages: Instagram Stories and profiles, YouTube pla
 
 | Suite | Passed | Failed | Skipped |
 |---|---|---|---|
-| Downloader pytest (unit, security, API integration, real pipeline, load) | 184 | 0 | 12 (opt-in live tests) |
+| Downloader pytest (unit, security, API integration, real pipeline, load) | 185 | 0 | 12 (opt-in live tests) |
 | Live platform tests (separate run) | 0 | 2 (YouTube, Vimeo: DNS blocked) | 10 (no sample URLs) |
 | Website unit (Vitest) | 130 | 0 | 0 |
 | Website e2e (Playwright, desktop + mobile) | 95 | 0 | 0 |
@@ -52,6 +52,10 @@ Unsupported, with explicit messages: Instagram Stories and profiles, YouTube pla
 | Browser run under production CSP | 11 | 0 | 0 (0 CSP violations) |
 | npm audit / pip-audit | 0 vulnerabilities / none known | | |
 | shellcheck (all scripts) | no warnings | | |
+
+## Defects found by CI and fixed
+
+- **Download workers could not import the app inside the container** (`ModuleNotFoundError: app`). They run with their working directory set to the job's temp folder, and `PYTHONPATH` was not set. Local runs had masked this. Fixed in `runner.py`; the regression test `test_real_worker_runs_from_job_directory` fails without the fix and passes with it.
 
 ## Performance
 

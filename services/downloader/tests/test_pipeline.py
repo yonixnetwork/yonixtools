@@ -41,7 +41,6 @@ def media_server(tmp_path_factory):
 def allow_test_backend(monkeypatch):
     monkeypatch.setenv("YTX_ALLOW_TEST_BACKEND", "1")
     monkeypatch.setenv("APP_ENV", "test")
-    monkeypatch.setenv("PYTHONPATH", str(Path(__file__).resolve().parents[1]))
 
 
 def cfg(**kw):
@@ -108,6 +107,18 @@ async def test_test_backend_refused_in_production(media_server, monkeypatch):
     # Falls back to the real YouTube extractor on the real URL; it must never touch the local server.
     assert ex.result is None or ex.result.get("info", {}).get("backend") == "yt-dlp"
     assert not ex.ok or "127.0.0.1" not in str(ex.result)
+
+
+async def test_real_worker_runs_from_job_directory(media_server, tmp_path, monkeypatch):
+    """Regression: the API runs download workers with cwd = job dir (as in the container)."""
+    monkeypatch.delenv("PYTHONPATH", raising=False)
+    job_dir = tmp_path / "job"
+    job_dir.mkdir()
+    req = {"op": "download", "url": PLATFORM_URL, "platform": "youtube", "raw_test_url": f"{media_server}/clip.mp4", "backend": "yt-dlp",
+           "item_index": 0, "format_id": "f:best", "out_dir": str(job_dir), "config": cfg()}
+    r = await run_worker(WORKER, req, timeout=60, cwd=str(job_dir))
+    assert r.ok, r
+    assert (job_dir / r.result["file"]).stat().st_size > 10_000
 
 
 async def test_worker_rejects_tampered_requests(tmp_path):
