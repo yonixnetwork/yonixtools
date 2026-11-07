@@ -1,0 +1,52 @@
+# Real-platform diagnostics from a datacenter IP (like the droplet).
+# Runs on demand: a push whose commit message contains "[live-matrix]", or manually.
+name: Live platform matrix
+
+on:
+  push:
+    branches: ["feature/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-matrix]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: [deployed, full]
+        platform: [youtube, tiktok, instagram, facebook, x, pinterest, reddit, vimeo, snapchat, dailymotion, twitch, soundcloud, bluesky, streamable]
+        exclude:
+          - { phase: deployed, platform: snapchat }
+          - { phase: deployed, platform: dailymotion }
+          - { phase: deployed, platform: twitch }
+          - { phase: deployed, platform: soundcloud }
+          - { phase: deployed, platform: bluesky }
+          - { phase: deployed, platform: streamable }
+    name: ${{ matrix.phase }} / ${{ matrix.platform }}
+    defaults: { run: { working-directory: services/downloader } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Dependencies as deployed (v1.0)
+        if: matrix.phase == 'deployed'
+        run: pip install -q fastapi==0.162.0 starlette==1.10.0 uvicorn==0.54.0 httpx==0.28.1 pydantic==2.13.4 yt-dlp==2026.10.26 gallery-dl==1.32.19
+      - name: Upgraded dependencies
+        if: matrix.phase == 'full'
+        run: pip install -q -r requirements.txt
+      - name: Deno (JavaScript runtime for YouTube)
+        if: matrix.phase == 'full'
+        run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - run: python -c "import yt_dlp, sys; print('yt-dlp', yt_dlp.version.__version__)"; deno --version 2>/dev/null | head -1 || echo "no deno"; python -c "import curl_cffi; print('curl_cffi', curl_cffi.__version__)" 2>/dev/null || echo "no curl_cffi"
+      - run: python diagnostics/live_matrix.py --platform ${{ matrix.platform }} --phase ${{ matrix.phase }} --out results-${{ matrix.phase }}-${{ matrix.platform }}.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ matrix.phase }}-${{ matrix.platform }}
+          path: services/downloader/results-*.json
