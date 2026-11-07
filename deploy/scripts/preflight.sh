@@ -13,7 +13,15 @@ okay() { say "OK" "$1"; }
 command -v docker >/dev/null && okay "docker $(docker version --format '{{.Server.Version}}' 2>/dev/null)" || fail "docker is not installed"
 docker compose version >/dev/null 2>&1 && okay "docker compose plugin" || fail "docker compose plugin missing"
 
-if ss -ltn "( sport = :$WEB_PORT )" 2>/dev/null | grep -q LISTEN; then fail "port $WEB_PORT is already in use (set WEB_PORT to a free port)"; else okay "port 127.0.0.1:$WEB_PORT is free"; fi
+if ss -ltn "( sport = :$WEB_PORT )" 2>/dev/null | grep -q LISTEN; then
+  if docker ps --filter "name=^yonixtools-web-1$" --format '{{.Ports}}' 2>/dev/null | grep -q ":$WEB_PORT->"; then
+    okay "port $WEB_PORT is used by the running YoniXTools stack (this is an update)"
+  else
+    fail "port $WEB_PORT is already in use by something else (set WEB_PORT to a free port)"
+  fi
+else
+  okay "port 127.0.0.1:$WEB_PORT is free"
+fi
 if docker ps --format '{{.Names}}' 2>/dev/null | grep -q '^yonixtools-'; then warn "yonixtools containers already running (this will be an update)"; fi
 
 mem_mb=$(awk '/MemAvailable/ {print int($2/1024)}' /proc/meminfo)
