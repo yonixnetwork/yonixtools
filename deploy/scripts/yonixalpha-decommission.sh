@@ -87,9 +87,15 @@ backup() {
   free_mb="$(df -Pm "$(dirname "$BACKUP_ROOT")" | awk 'NR==2 {print $4}')"
   db_mb="$(sql "select pg_database_size(current_database())/1048576")"
   is_int "$db_mb" || die "could not read the database size (got: $db_mb)"
-  echo "  database size ${db_mb} MB, free disk ${free_mb} MB"
-  # A gzip dump is normally well under half the database size; keep 2 GB spare on top.
-  [ "$free_mb" -gt $(( db_mb / 2 + 2048 )) ] || die "not enough free disk for a safe dump (need about $(( db_mb / 2 + 2048 )) MB). Free space or back up elsewhere first."
+  # Needed space: an earlier dump's size + 30% if one exists, else half the database
+  # size (conservative); override with BACKUP_FREE_MB_REQUIRED. Plus 2 GB spare.
+  local prev_mb need_mb
+  prev_mb="$(find "$BACKUP_ROOT" -name postgres.sql.gz -printf '%s\n' 2>/dev/null | sort -n | tail -1)"
+  if is_int "${BACKUP_FREE_MB_REQUIRED:-}"; then need_mb="$BACKUP_FREE_MB_REQUIRED"
+  elif is_int "$prev_mb"; then need_mb=$(( prev_mb / 1048576 * 13 / 10 + 2048 ))
+  else need_mb=$(( db_mb / 2 + 2048 )); fi
+  echo "  database size ${db_mb} MB, free disk ${free_mb} MB, needed about ${need_mb} MB"
+  [ "$free_mb" -gt "$need_mb" ] || die "not enough free disk for a safe dump. Free space, or if you know the compressed dump is smaller, set BACKUP_FREE_MB_REQUIRED=<MB>."
   ts="$(date -u +%Y%m%dT%H%M%SZ)"; dir="$BACKUP_ROOT/$ts"
   mkdir -p "$dir" && chmod 700 "$BACKUP_ROOT" "$dir"
   info "Backing up to $dir (the stack keeps running)"
