@@ -20,6 +20,8 @@ import subprocess
 import sys
 import tempfile
 import time
+import re
+import urllib.parse
 import urllib.request
 from pathlib import Path
 
@@ -104,11 +106,11 @@ print("RESULT:" + json.dumps(res))
     return _subprocess([sys.executable, "-c", code, json.dumps(opts)])
 
 
-def run_worker(url: str, platform: str) -> dict:
+def run_worker(url: str, platform: str, memory_mb: int = 0) -> dict:
     """Run the service's real worker (extract + smallest-format download) exactly as the API would."""
     sys.path.insert(0, str(ROOT))
     req = {"op": "extract", "url": url, "platform": platform,
-           "config": {"max_filesize": 200 * 2**20, "max_duration": 4 * 3600, "max_items": 20, "timeout": 90, "memory_mb": 4096}}
+           "config": {"max_filesize": 200 * 2**20, "max_duration": 4 * 3600, "max_items": 20, "timeout": 90, "memory_mb": memory_mb}}
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
     t0 = time.time()
     try:
@@ -187,9 +189,32 @@ def run_fxtwitter(url: str) -> dict:
     return res
 
 
+def run_reddit_json(url: str, impersonate: bool) -> dict:
+    """Does Reddit's public JSON answer this server at all (no account)?"""
+    m = re.search(r"/comments/(\w+)", url)
+    if not m:
+        return {"ok": False, "error": "no post id"}
+    target = f"https://www.reddit.com/comments/{m.group(1)}.json?raw_json=1"
+    try:
+        if impersonate:
+            from curl_cffi import requests as cr
+            r = cr.get(target, impersonate="chrome", timeout=30)
+            status, body = r.status_code, r.text
+        else:
+            req = urllib.request.Request(target, headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36"})
+            with urllib.request.urlopen(req, timeout=30) as r:
+                status, body = r.status, r.read().decode("utf-8", "replace")
+    except Exception as e:
+        return {"ok": False, "error": f"{type(e).__name__}: {e}"[:300]}
+    if status != 200:
+        return {"ok": False, "error": f"HTTP {status}: {body[:160]}"}
+    vid = re.search(r'"fallback_url":\s*"([^"]+)"', body)
+    return {"ok": bool(vid), "error": None if vid else "no reddit_video in JSON", "fallback_url_host": urllib.parse.urlsplit(vid.group(1)).hostname if vid else None}
+
+
 def methods_for(platform: str, phase: str):
     if phase == "deployed":
-        return [("worker (deployed code)", lambda u: run_worker(u, platform))]
+        return [("worker (deployed code)", lambda u: run_worker(u, platform, 1536))]  # v1.0 production limit
     m = [("worker (upgraded deps)", lambda u: run_worker(u, platform)),
          ("yt-dlp", lambda u: run_ytdlp(u, platform)),
          ("yt-dlp, no JS runtime", lambda u: run_ytdlp(u, platform, {"js_runtimes": {}}, download=False))]
@@ -203,6 +228,9 @@ def methods_for(platform: str, phase: str):
         m.append(("yt-dlp via plugins embed", lambda u: run_ytdlp("https://www.facebook.com/plugins/video.php?href=" + urllib.parse.quote(u, safe=""), platform)))
     if platform == "vimeo":
         m.append(("yt-dlp via player URL", lambda u: run_ytdlp(u.replace("https://vimeo.com/", "https://player.vimeo.com/video/"), platform)))
+    if platform == "reddit":
+        m.append(("reddit JSON (plain)", lambda u: run_reddit_json(u, False)))
+        m.append(("reddit JSON (curl_cffi)", lambda u: run_reddit_json(u, True)))
     if platform in ("instagram", "x", "pinterest", "reddit", "tiktok", "bluesky", "twitch", "soundcloud"):
         m.append(("gallery-dl", run_gallerydl))
     return m
@@ -214,10 +242,14 @@ def main() -> int:
     ap.add_argument("--platform", required=True)
     ap.add_argument("--phase", choices=["deployed", "full"], default="full")
     ap.add_argument("--out", default="results.json")
+    ap.add_argument("--url", action="append", help="test these links instead of the built-in samples")
+    ap.add_argument("--worker-only", action="store_true", help="only run the service's own worker (what users get)")
     a = ap.parse_args()
     rows = []
-    for ctype, url in SAMPLES[a.platform]:
-        for name, fn in methods_for(a.platform, a.phase):
+    samples = [("link", u) for u in a.url] if a.url else SAMPLES[a.platform]
+    for ctype, url in samples:
+        methods = methods_for(a.platform, a.phase)
+        for name, fn in (methods[:1] if a.worker_only else methods):
             t0 = time.time()
             try:
                 r = fn(url)

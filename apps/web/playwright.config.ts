@@ -16,7 +16,7 @@ export default defineConfig({
     { command: "node scripts/serve-static.mjs out", port: 4173, reuseExistingServer: !process.env.CI },
     ...(integrated
       ? [
-          { command: "PORT=4174 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },
+          { command: "PORT=4174 API_PROXY=http://127.0.0.1:8788 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },
           { command: "bash scripts/e2e-backend.sh", url: "http://127.0.0.1:8788/readyz", reuseExistingServer: !process.env.CI, timeout: 60_000 },
         ]
       : []),
@@ -24,6 +24,13 @@ export default defineConfig({
   projects: [
     { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /(mobile|integrated)\.spec\.ts/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts/ },
-    ...(integrated ? [{ name: "integrated", use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ }] : []),
+    ...(integrated
+      ? [
+          { name: "integrated", use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ },
+          { name: "integrated-mobile", use: { ...devices["Pixel 7"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ },
+          // iOS Safari engine; CI installs WebKit (not available in every dev container).
+          { name: "integrated-iphone", use: { ...devices["iPhone 15"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ },
+        ]
+      : []),
   ],
 });

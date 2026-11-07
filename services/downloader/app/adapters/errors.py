@@ -9,7 +9,7 @@ _RULES: list[tuple[str, str]] = [
     (r"sign in to confirm you.?re not a bot|confirm you are not a robot|captcha", "platform_blocked"),
     (r"login required|log in|requires? (authentication|login|cookies)|cookies|rate-limit reached|use --cookies", "login_required"),
     (r"drm", "drm_protected"),
-    (r"not available in your country|geo.?restrict|blocked it in your country", "geo_blocked"),
+    (r"not available in your country|geo.?restrict|blocked it in your country|ip address is blocked from accessing this post", "geo_blocked"),
     (r"is a live (event|stream)|live stream|is live|premieres in", "live_stream"),
     (r"failed to resolve|name or service not known|temporary failure in name resolution|network is unreachable|connection refused|connection reset|nodename nor servname", "network_error"),
     (r"http error 429|too many requests|rate.?limit", "platform_blocked"),

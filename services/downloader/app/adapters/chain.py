@@ -11,7 +11,7 @@ from ..media import MediaInfo
 from ..platforms import Platform
 from .errors import FALLBACK_CODES, classify_error
 from .gallerydl_backend import GalleryDlBackend
-from .ytdlp_backend import BackendError, YtDlpBackend
+from .ytdlp_backend import BackendError, VimeoPlayerBackend, YtDlpBackend
 
 
 class ExtractionFailed(Exception):
@@ -28,6 +28,11 @@ def _code(e: BackendError) -> str:
 
 def backends_for(platform: Platform, cfg: dict) -> list:
     chain: list = [YtDlpBackend(platform.ytdlp_extractors, cfg["max_filesize"], cfg["max_duration"], cfg["max_items"])]
+    if platform.id == "vimeo":
+        # yt-dlp's default Vimeo API client now requires an account; the public
+        # embed player still serves public videos (verified by the live matrix).
+        chain[0].fallback_codes = FALLBACK_CODES | {"login_required"}
+        chain.append(VimeoPlayerBackend(platform.ytdlp_extractors, cfg["max_filesize"], cfg["max_duration"], cfg["max_items"]))
     if platform.gallerydl_fallback or platform.id == "tiktok":
         chain.append(GalleryDlBackend(cfg["max_filesize"], cfg["max_items"], cfg["timeout"]))
     return chain
@@ -42,7 +47,7 @@ def extract(platform: Platform, url: str, cfg: dict, chain: list | None = None) 
         except BackendError as e:
             failure = ExtractionFailed(_code(e), backend.name, e.detail[:800])
             first = first or failure
-            if failure.code not in FALLBACK_CODES:
+            if failure.code not in (getattr(backend, "fallback_codes", None) or FALLBACK_CODES):
                 raise failure from None
     # Report the first backend's error: it is usually the most specific.
     assert first is not None

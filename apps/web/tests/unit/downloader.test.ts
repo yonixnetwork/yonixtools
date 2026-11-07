@@ -108,3 +108,26 @@ describe("download URL resolution", () => {
     expect(resolveDownloadUrl("/api", "https://cdn.example/x.mp4")).toBe("https://cdn.example/x.mp4");
   });
 });
+
+describe("platforms added after live verification", () => {
+  it.each([
+    ["https://www.dailymotion.com/video/x5kesuj", "dailymotion", "Video"],
+    ["https://dai.ly/x5kesuj", "dailymotion", "Video"],
+    ["https://clips.twitch.tv/FaintLightGullWholeWheat", "twitch", "Clip"],
+    ["https://www.twitch.tv/chan/clip/FaintLightGullWholeWheat-AbC12", "twitch", "Clip"],
+    ["https://soundcloud.com/ethmusic/lostin-powers-she-so-heavy", "soundcloud", "Track"],
+    ["https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g", "bluesky", "Post"],
+    ["https://streamable.com/moo", "streamable", "Video"],
+  ])("%s", (u, id, type) => expect(ok(u)).toEqual([id, type]));
+
+  it.each(["https://www.twitch.tv/somechannel", "https://soundcloud.com/a/sets/b", "https://soundcloud.com/a", "https://bsky.app/profile/x.bsky.social"])("rejects %s", (u) => {
+    const d = detectUrl(u);
+    expect(d.ok).toBe(false);
+  });
+
+  it("does not claim Snapchat (failed live verification)", () => {
+    const d = detectUrl("https://www.snapchat.com/spotlight/abc");
+    expect(d.ok).toBe(false);
+    if (!d.ok) expect(d.reason).toBe("unsupported-platform");
+  });
+});

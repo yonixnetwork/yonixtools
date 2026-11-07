@@ -124,6 +124,44 @@ def _vimeo(host: str, path: str, q: dict) -> Classification:
     raise _unsupported("Paste the link of a specific Vimeo video.")
 
 
+def _dailymotion(host: str, path: str, q: dict) -> Classification:
+    if host == "dai.ly" and re.match(r"^/[a-z0-9]{5,}$", path, re.I):
+        return Classification("video")
+    if re.match(r"^/video/[a-z0-9]{5,}", path, re.I):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific Dailymotion video.")
+
+
+def _twitch(host: str, path: str, q: dict) -> Classification:
+    if host == "clips.twitch.tv" and re.match(r"^/[\w-]{6,}$", path):
+        return Classification("clip")
+    if re.match(r"^/[\w]+/clip/[\w-]{6,}$", path):
+        return Classification("clip")
+    raise _unsupported("Only Twitch clips are supported (not live streams or full broadcasts). Paste a clip link.")
+
+
+def _soundcloud(host: str, path: str, q: dict) -> Classification:
+    if host == "on.soundcloud.com":
+        return Classification("short_link", needs_resolution=True)
+    if re.match(r"^/[\w-]+/sets/", path):
+        raise _unsupported("Playlists aren't supported. Paste the link of a single track.")
+    if re.match(r"^/[\w-]+/[\w-]+$", path) and not re.match(r"^/[\w-]+/(tracks|albums|reposts|likes|followers|following|popular-tracks|comments|spotlight)$", path):
+        return Classification("track")
+    raise _unsupported("Paste the link of a specific SoundCloud track.")
+
+
+def _bluesky(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/profile/[\w.:-]+/post/[\w]+$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Bluesky post with a video.")
+
+
+def _streamable(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(e/|o/|s/)?[a-z0-9]{3,}$", path, re.I):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific Streamable video.")
+
+
 _PINTEREST_HOST = re.compile(r"(^|\.)pinterest\.(com|co\.uk|ca|com\.au|de|fr|es|it|jp|com\.mx|ph|nz|ie|at|ch|pt|se|dk|cl)$")
 
 PLATFORMS: dict[str, Platform] = {p.id: p for p in [
@@ -141,6 +179,12 @@ PLATFORMS: dict[str, Platform] = {p.id: p for p in [
              gallerydl_fallback=True, short_link_hosts=("redd.it", "v.redd.it", "www.reddit.com", "reddit.com"),
              redirect_hosts=lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it")),
     Platform("vimeo", "Vimeo", lambda h: _is(h, "vimeo.com"), _vimeo, ("vimeo",)),
+    Platform("dailymotion", "Dailymotion", lambda h: _is(h, "dailymotion.com") or h == "dai.ly", _dailymotion, ("dailymotion",)),
+    Platform("twitch", "Twitch", lambda h: _is(h, "twitch.tv"), _twitch, ("twitch:clips",)),
+    Platform("soundcloud", "SoundCloud", lambda h: _is(h, "soundcloud.com"), _soundcloud, ("soundcloud",),
+             short_link_hosts=("on.soundcloud.com",), redirect_hosts=lambda h: _is(h, "soundcloud.com")),
+    Platform("bluesky", "Bluesky", lambda h: h in ("bsky.app", "www.bsky.app"), _bluesky, ("bluesky",)),
+    Platform("streamable", "Streamable", lambda h: _is(h, "streamable.com"), _streamable, ("streamable",)),
 ]}
 
 
@@ -186,7 +230,7 @@ def parse_media_url(raw: object) -> ParsedUrl:
         raise ApiError("unsafe_url")
     platform = next((p for p in PLATFORMS.values() if p.matches_host(host)), None)
     if platform is None:
-        raise ApiError("unsupported_url", f"{host} isn't a supported platform. Supported: Instagram, TikTok, YouTube, Facebook, X, Pinterest, Reddit and Vimeo.")
+        raise ApiError("unsupported_url", f"{host} isn't a supported platform. Supported: {', '.join(p.name for p in PLATFORMS.values())}.")
     path = re.sub(r"/+$", "", parts.path) or "/"
     query: dict[str, list[str]] = {}
     for kv in parts.query.split("&"):

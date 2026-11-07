@@ -62,6 +62,27 @@ DEFAULT_MESSAGES: dict[str, str] = {
 }
 
 
+# More precise wording where a platform's failure has a known cause.
+PLATFORM_MESSAGES: dict[tuple[str, str], str] = {
+    ("youtube", "platform_blocked"): "YouTube is asking our server to sign in to prove it isn't a bot, so YouTube downloads are blocked from our server right now. "
+                                     "We don't use accounts or cookies. Other platforms are not affected.",
+    ("youtube", "login_required"): "YouTube requires signing in for this video, so it can't be downloaded.",
+    ("reddit", "login_required"): "Reddit is refusing anonymous requests from our server right now, so Reddit downloads aren't working. We don't use accounts.",
+    ("reddit", "platform_blocked"): "Reddit is refusing requests from our server right now. Please try again later.",
+    ("vimeo", "login_required"): "Vimeo only serves this video to signed-in users or blocks its embed player, so it can't be downloaded. Public, embeddable Vimeo videos work.",
+    ("facebook", "extractor_failed"): "Facebook didn't give us this video. It may be private, removed, only visible to logged-in users, or limited to some regions.",
+    ("facebook", "login_required"): "Facebook only shows this video to logged-in users, so it can't be downloaded.",
+    ("instagram", "login_required"): "Instagram only shows this post to logged-in users (or it is from a private account), so it can't be downloaded.",
+    ("instagram", "platform_blocked"): "Instagram is rate-limiting our server right now. Please try again in a few minutes.",
+    ("tiktok", "geo_blocked"): "TikTok doesn't make this post available in our server's region.",
+    ("x", "login_required"): "X only shows this post to logged-in users (it may be marked sensitive or protected), so it can't be downloaded.",
+}
+
+
+def message_for(code: str, platform: str | None) -> str:
+    return PLATFORM_MESSAGES.get((platform or "", code)) or DEFAULT_MESSAGES.get(code) or DEFAULT_MESSAGES["server_error"]
+
+
 class ApiError(Exception):
     def __init__(self, code: str, message: str | None = None, platform: str | None = None, status: int | None = None):
         if code not in ERROR_STATUS:

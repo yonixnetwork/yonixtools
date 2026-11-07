@@ -151,3 +151,66 @@ def test_no_duplicate_quality_options():
     same = {"title": "x", "duration": 10, "formats": [fmt("hd", 1080, a="aac", size=5_000_000), fmt("sd", 720, a="aac", size=5_000_000)]}
     ids = [f.id for f in backend().to_media(same, "x").items[0].formats]
     assert ids == ["v:best"]  # 720p would be the very same file size: not offered as a separate choice
+
+
+# ── Evidence-driven fixes (see docs/PLATFORM_DIAGNOSTICS.md) ─────────────────
+from app.adapters.chain import backends_for  # noqa: E402
+from app.adapters.ytdlp_backend import VimeoPlayerBackend  # noqa: E402
+from app.errors import message_for  # noqa: E402
+
+CFG = {"max_filesize": 10**8, "max_duration": 3600, "max_items": 10, "timeout": 60}
+VIMEO_LOGIN = "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies"
+
+
+def test_vimeo_chain_falls_back_to_the_embed_player_on_login_wall():
+    chain = backends_for(PLATFORMS["vimeo"], CFG)
+    assert [b.name for b in chain] == ["yt-dlp", "yt-dlp-player"]
+    ok = object()
+    a, b = Stub("yt-dlp", error=VIMEO_LOGIN), Stub("yt-dlp-player", result=ok)
+    a.fallback_codes = chain[0].fallback_codes
+    assert extract(PLATFORMS["vimeo"], "https://vimeo.com/76979871", CFG, [a, b]) is ok
+
+
+def test_login_wall_does_not_fall_back_on_other_platforms():
+    a, b = Stub("yt-dlp", error="Instagram: login required"), Stub("gallery-dl", result=object())
+    with pytest.raises(ExtractionFailed) as e:
+        extract(PLATFORMS["instagram"], "u", {}, [a, b])
+    assert e.value.code == "login_required" and b.calls == 0
+
+
+@pytest.mark.parametrize("url,expected", [
+    ("https://vimeo.com/76979871", "https://player.vimeo.com/video/76979871"),
+    ("https://vimeo.com/76979871/0a1b2c3d4e", "https://player.vimeo.com/video/76979871?h=0a1b2c3d4e"),
+    ("https://vimeo.com/channels/staffpicks/33951933", "https://player.vimeo.com/video/33951933"),
+    ("https://player.vimeo.com/video/123456?h=abcdef12", "https://player.vimeo.com/video/123456?h=abcdef12"),
+])
+def test_vimeo_player_url_is_rebuilt_from_the_id_only(url, expected):
+    assert VimeoPlayerBackend(("vimeo",), 1, 1, 1).target(url) == expected
+
+
+def test_vimeo_player_rejects_urls_without_an_id():
+    with pytest.raises(BackendError):
+        VimeoPlayerBackend(("vimeo",), 1, 1, 1).target("https://vimeo.com/someone@evil.example/")
+
+
+def test_platform_specific_messages():
+    assert "isn't a bot" in message_for("platform_blocked", "youtube")
+    assert "Reddit" in message_for("login_required", "reddit")
+    assert message_for("platform_blocked", "tiktok") == message_for("platform_blocked", None)
+    assert classify_error("ERROR: [TikTok] 725: Your IP address is blocked from accessing this post") == "geo_blocked"
+    assert classify_error("ERROR: [youtube] x: Sign in to confirm you’re not a bot. This helps protect our community.") == "platform_blocked"
+
+
+def test_audio_only_sources_get_an_audio_option():
+    info = {"title": "Track", "duration": 200, "formats": [
+        {"format_id": "hls_mp3", "url": "https://x/a.m3u8", "ext": "mp3", "vcodec": "none", "acodec": "mp3", "abr": 128},
+        {"format_id": "hls_opus", "url": "https://x/b.m3u8", "ext": "opus", "vcodec": "none", "acodec": "opus", "abr": 64}]}
+    m = YtDlpBackend(("soundcloud",), 10**8, 3600, 10).to_media(info, "soundcloud")
+    assert m.items[0].kind == "audio" and [f.id for f in m.items[0].formats] == ["a:best"]
+    assert m.items[0].formats[0].ext == "mp3"
+
+
+def test_single_url_sources_without_format_list_still_offer_the_original():
+    info = {"title": "Clip", "url": "https://clips-media.example/clip.mp4", "ext": "mp4", "height": 720, "vcodec": "avc1", "acodec": "mp4a"}
+    m = YtDlpBackend(("twitch:clips",), 10**8, 3600, 10).to_media(info, "twitch")
+    assert m.items[0].formats[0].id == "v:best"

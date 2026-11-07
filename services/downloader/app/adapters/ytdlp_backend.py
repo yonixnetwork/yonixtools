@@ -52,6 +52,7 @@ class _QuietLogger:
 
 class YtDlpBackend:
     name = "yt-dlp"
+    fallback_codes: set[str] | None = None  # None: the chain's default
 
     def __init__(self, extractors: tuple[str, ...], max_filesize: int, max_duration: int, max_items: int, socket_timeout: int = 20):
         self.extractors = [re.escape(e.lower()) for e in extractors]
@@ -97,12 +98,16 @@ class YtDlpBackend:
         logger = _QuietLogger()
         try:
             with yt_dlp.YoutubeDL(self._opts(logger=logger, skip_download=True)) as ydl:
-                info = ydl.extract_info(url, download=False)
+                info = ydl.extract_info(self.target(url), download=False)
         except Exception as e:  # yt-dlp raises DownloadError/ExtractorError subclasses
             raise BackendError("raw", " | ".join(logger.errors) or str(e)) from None
         if not info:
             raise BackendError("no_media", "empty info")
         return self.to_media(info, platform)
+
+    def target(self, url: str) -> str:
+        """The URL handed to yt-dlp (subclasses may rewrite it)."""
+        return url
 
     def to_media(self, info: dict, platform: str) -> MediaInfo:
         entries = [e for e in (info.get("entries") or []) if e] if info.get("_type") in ("playlist", "multi_video") else [info]
@@ -229,13 +234,30 @@ class YtDlpBackend:
         )
         try:
             with yt_dlp.YoutubeDL({k: v for k, v in opts.items() if v is not None}) as ydl:
-                code = ydl.download([url])
+                code = ydl.download([self.target(url)])
         except Exception as e:
             raise BackendError("raw", " | ".join(logger.errors) or str(e)) from None
         files = [p for p in out_dir.iterdir() if p.is_file() and p.name.startswith("media.") and not p.name.endswith((".part", ".ytdl")) and ".f" not in p.suffixes[:-1]]
         if code or not files:
             raise BackendError("raw", " | ".join(logger.errors) or "download produced no file")
         return max(files, key=lambda p: p.stat().st_size)
+
+
+class VimeoPlayerBackend(YtDlpBackend):
+    """Vimeo through the public embed player (player.vimeo.com) instead of the API.
+
+    The URL is rebuilt from the validated numeric id (and unlisted hash), so
+    nothing user-controlled besides those reaches yt-dlp.
+    """
+
+    name = "yt-dlp-player"
+
+    def target(self, url: str) -> str:
+        m = re.search(r"vimeo\.com/(?:.*?/)?(?:video/)?(\d{3,12})(?:/([0-9a-f]{6,20}))?(?:[/?#]|$)", url)
+        if not m:
+            raise BackendError("unsupported_content", "no vimeo id")
+        h = m.group(2) or (re.search(r"[?&]h=([0-9a-f]{6,20})", url) or [None, None])[1]
+        return f"https://player.vimeo.com/video/{m.group(1)}" + (f"?h={h}" if h else "")
 
 
 def _is_storyboard(f: dict) -> bool:

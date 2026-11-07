@@ -136,6 +136,8 @@ export interface Job {
   status: "queued" | "running" | "done" | "failed" | "expired";
   platform?: string;
   progress?: number;
+  /** queued → downloading → processing → ready (older backends omit it). */
+  phase?: "queued" | "downloading" | "processing" | "ready";
   error?: { code: ErrorCode; message: string };
   /** Path relative to the API base (e.g. "/v1/jobs/{id}/file") or an absolute URL. */
   downloadUrl?: string;

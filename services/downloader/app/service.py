@@ -15,7 +15,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from .config import Settings
-from .errors import DEFAULT_MESSAGES, ApiError
+from .errors import DEFAULT_MESSAGES, ApiError, message_for
 from .media import FORMAT_ID_RE, MediaInfo
 from .platforms import ParsedUrl, parse_media_url
 from .resolver import resolve_short_link
@@ -69,7 +69,7 @@ class Job:
             out["expiresAt"] = int(self.expires_at or 0)
         if self.status in ("failed", "expired"):
             code = self.error_code or ("expired" if self.status == "expired" else "server_error")
-            out["error"] = {"code": code, "message": DEFAULT_MESSAGES.get(code, DEFAULT_MESSAGES["server_error"])}
+            out["error"] = {"code": code, "message": message_for(code, self.platform)}
         return out
 
 
@@ -168,7 +168,8 @@ class DownloaderService:
         if not outcome.ok:
             self.stats[f"extract.{pid}.{outcome.backend}.fail.{outcome.code}"] += 1
             event("extract_failed", platform=pid, backend=outcome.backend, code=outcome.code, ms=ms, url=url_ref(parsed.url), detail=outcome.detail[:300])
-            raise ApiError(outcome.code if outcome.code in DEFAULT_MESSAGES else "extractor_failed", platform=pid)
+            code = outcome.code if outcome.code in DEFAULT_MESSAGES else "extractor_failed"
+            raise ApiError(code, message_for(code, pid), platform=pid)
         try:
             info = MediaInfo.from_dict(outcome.result["info"])  # type: ignore[index]
         except (KeyError, TypeError, ValueError):

@@ -4,7 +4,7 @@ import {
   Search, Tags, TrendingUp, Type, Wifi, FileText, Merge, Scissors, FileArchive, FileImage, FilePlus, RotateCw, Crop, ScanLine, FileCode,
   Network, Share2, Lightbulb, Heading, type LucideIcon,
 } from "lucide-react";
-import { siFacebook, siInstagram, siPinterest, siReddit, siTiktok, siVimeo, siX, siYoutube } from "simple-icons";
+import { siBluesky, siDailymotion, siFacebook, siInstagram, siPinterest, siReddit, siSoundcloud, siTiktok, siTwitch, siVimeo, siX, siYoutube } from "simple-icons";
 import type { ToolCardData } from "@/lib/registry/cards";
 
 const ICONS: Record<string, LucideIcon> = {
@@ -19,9 +19,9 @@ export function Icon({ name, ...props }: { name: string; className?: string; "ar
   return <C aria-hidden {...props} />;
 }
 
-const BRANDS = { instagram: siInstagram, tiktok: siTiktok, youtube: siYoutube, facebook: siFacebook, x: siX, pinterest: siPinterest, reddit: siReddit, vimeo: siVimeo } as const;
+const BRANDS = { instagram: siInstagram, tiktok: siTiktok, youtube: siYoutube, facebook: siFacebook, x: siX, pinterest: siPinterest, reddit: siReddit, vimeo: siVimeo, dailymotion: siDailymotion, twitch: siTwitch, soundcloud: siSoundcloud, bluesky: siBluesky } as const;
 // Black marks would vanish in dark mode; they follow the text colour instead.
-const MONO = new Set(["tiktok", "x"]);
+const MONO = new Set(["tiktok", "x", "dailymotion"]);
 
 export function PlatformIcon({ platform, title }: { platform: string; title?: string }) {
   const icon = BRANDS[platform as keyof typeof BRANDS];

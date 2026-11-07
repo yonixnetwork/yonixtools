@@ -79,3 +79,38 @@ def test_unsupported_content_names_platform():
 def test_normalises_url():
     p = parse_media_url("HTTP://WWW.YOUTUBE.COM:443/watch?v=dQw4w9WgXcQ#t=5")
     assert p.url == "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+
+@pytest.mark.parametrize("url,platform,ctype", [
+    ("https://www.dailymotion.com/video/x5kesuj", "dailymotion", "video"),
+    ("https://dai.ly/x5kesuj", "dailymotion", "video"),
+    ("https://clips.twitch.tv/FaintLightGullWholeWheat", "twitch", "clip"),
+    ("https://www.twitch.tv/somechannel/clip/FaintLightGullWholeWheat-AbC12", "twitch", "clip"),
+    ("https://soundcloud.com/ethmusic/lostin-powers-she-so-heavy", "soundcloud", "track"),
+    ("https://on.soundcloud.com/AbCd12", "soundcloud", "short_link"),
+    ("https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g", "bluesky", "post"),
+    ("https://streamable.com/moo", "streamable", "video"),
+])
+def test_new_platforms(url, platform, ctype):
+    p = parse_media_url(url)
+    assert (p.platform.id, p.classification.content_type) == (platform, ctype)
+
+
+@pytest.mark.parametrize("url", [
+    "https://www.twitch.tv/somechannel",          # live channel
+    "https://www.twitch.tv/videos/123456",        # full broadcast
+    "https://soundcloud.com/ethmusic/sets/album",  # playlist
+    "https://soundcloud.com/ethmusic",             # profile
+    "https://bsky.app/profile/someone.bsky.social",
+    "https://www.dailymotion.com/someuser",
+])
+def test_new_platforms_reject_non_media_pages(url):
+    with pytest.raises(ApiError):
+        parse_media_url(url)
+
+
+def test_snapchat_is_not_claimed():
+    # yt-dlp's Snapchat extractor failed in the live matrix: not offered.
+    with pytest.raises(ApiError) as e:
+        parse_media_url("https://www.snapchat.com/spotlight/W7_EDlXWTBiXAEEniNoMPw")
+    assert e.value.code == "unsupported_url"

@@ -7,7 +7,7 @@
  * checks resolved IP addresses on every redirect (SSRF protection).
  */
 
-export type PlatformId = "instagram" | "tiktok" | "youtube" | "facebook" | "x" | "pinterest" | "reddit" | "vimeo";
+export type PlatformId = "instagram" | "tiktok" | "youtube" | "facebook" | "x" | "pinterest" | "reddit" | "vimeo" | "dailymotion" | "twitch" | "soundcloud" | "bluesky" | "streamable";
 
 export interface PlatformInfo {
   id: PlatformId;
@@ -24,6 +24,11 @@ export const PLATFORMS: Record<PlatformId, PlatformInfo> = {
   pinterest: { id: "pinterest", name: "Pinterest", toolSlug: "pinterest-downloader" },
   reddit: { id: "reddit", name: "Reddit", toolSlug: "reddit-downloader" },
   vimeo: { id: "vimeo", name: "Vimeo", toolSlug: "social-media-downloader" },
+  dailymotion: { id: "dailymotion", name: "Dailymotion", toolSlug: "social-media-downloader" },
+  twitch: { id: "twitch", name: "Twitch", toolSlug: "social-media-downloader" },
+  soundcloud: { id: "soundcloud", name: "SoundCloud", toolSlug: "social-media-downloader" },
+  bluesky: { id: "bluesky", name: "Bluesky", toolSlug: "social-media-downloader" },
+  streamable: { id: "streamable", name: "Streamable", toolSlug: "social-media-downloader" },
 };
 
 export type Detection =
@@ -39,6 +44,11 @@ const HOSTS: Array<[PlatformId, (h: string) => boolean]> = [
   ["pinterest", (h) => /(^|\.)pinterest\.(com|co\.uk|ca|com\.au|de|fr|es|it|jp|com\.mx|ph|nz|ie|at|ch|pt|se|dk|cl|ru)$/.test(h) || h === "pin.it"],
   ["reddit", (h) => is(h, "reddit.com") || h === "redd.it" || h === "v.redd.it" || h === "i.redd.it"],
   ["vimeo", (h) => is(h, "vimeo.com")],
+  ["dailymotion", (h) => is(h, "dailymotion.com") || h === "dai.ly"],
+  ["twitch", (h) => is(h, "twitch.tv")],
+  ["soundcloud", (h) => is(h, "soundcloud.com")],
+  ["bluesky", (h) => h === "bsky.app" || h === "www.bsky.app"],
+  ["streamable", (h) => is(h, "streamable.com")],
 ];
 
 function is(host: string, domain: string) {
@@ -82,7 +92,7 @@ export function detectUrl(input: string): Detection {
     return {
       ok: false,
       reason: "unsupported-platform",
-      message: `${host} isn't a supported platform yet. Supported: Instagram, TikTok, YouTube, Facebook, X, Pinterest, Reddit and Vimeo.`,
+      message: `${host} isn't a supported platform yet. Supported: ${Object.values(PLATFORMS).map((p) => p.name.replace(" (Twitter)", "")).join(", ")}.`,
     };
   }
   const platform = PLATFORMS[match[0]];
@@ -138,5 +148,22 @@ function contentType(id: PlatformId, host: string, path: string, url: URL): Cont
     case "vimeo":
       if (/^\/(\d+|channels\/[\w-]+\/\d+|video\/\d+)/.test(p)) return { type: "Video" };
       return { unsupported: "Paste the link of a specific Vimeo video." };
+    case "dailymotion":
+      if ((host === "dai.ly" && /^\/[a-z0-9]{5,}$/.test(p)) || /^\/video\/[a-z0-9]{5,}/.test(p)) return { type: "Video" };
+      return { unsupported: "Paste the link of a specific Dailymotion video." };
+    case "twitch":
+      if ((host === "clips.twitch.tv" && /^\/[\w-]{6,}$/.test(path)) || /^\/\w+\/clip\/[\w-]{6,}$/.test(path)) return { type: "Clip" };
+      return { unsupported: "Only Twitch clips are supported (not live streams or full broadcasts). Paste a clip link." };
+    case "soundcloud":
+      if (host === "on.soundcloud.com") return { type: "Short link" };
+      if (/^\/[\w-]+\/sets\//.test(p)) return { unsupported: "Playlists aren't supported. Paste the link of a single track." };
+      if (/^\/[\w-]+\/[\w-]+$/.test(p) && !/^\/[\w-]+\/(tracks|albums|reposts|likes|followers|following|popular-tracks|comments|spotlight)$/.test(p)) return { type: "Track" };
+      return { unsupported: "Paste the link of a specific SoundCloud track." };
+    case "bluesky":
+      if (/^\/profile\/[\w.:-]+\/post\/\w+$/.test(path)) return { type: "Post" };
+      return { unsupported: "Paste the link of a specific Bluesky post with a video." };
+    case "streamable":
+      if (/^\/(e\/|o\/|s\/)?[a-z0-9]{3,}$/.test(p)) return { type: "Video" };
+      return { unsupported: "Paste the link of a specific Streamable video." };
   }
 }

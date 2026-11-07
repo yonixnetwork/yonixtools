@@ -43,9 +43,10 @@ jobs:
           npm audit --omit=dev --audit-level=high
           npm run build:integrated
           npm run build
-          npx playwright install --with-deps chromium
+          npx playwright install --with-deps chromium webkit
           npm run test:e2e
           npm run test:e2e:integrated
+          E2E_INTEGRATED=1 npx playwright test --trace off --project=integrated-iphone
         env: { CI: "true" }
 
   docker:
