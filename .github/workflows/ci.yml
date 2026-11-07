@@ -56,6 +56,21 @@ jobs:
       - run: cp services/downloader/.env.example services/downloader/.env
       - run: docker compose -f deploy/docker-compose.yml config --quiet
       - run: docker compose -f deploy/docker-compose.yml build
+      - name: Start the stack exactly as deploy.sh does and smoke-test it
+        run: |
+          docker compose -f deploy/docker-compose.yml up -d
+          for i in $(seq 1 60); do
+            web=$(docker inspect -f '{{.State.Health.Status}}' yonixtools-web-1 2>/dev/null || echo starting)
+            dl=$(docker inspect -f '{{.State.Health.Status}}' yonixtools-downloader-1 2>/dev/null || echo starting)
+            [ "$web" = healthy ] && [ "$dl" = healthy ] && break
+            sleep 2
+          done
+          echo "web=$web downloader=$dl"
+          [ "$web" = healthy ] && [ "$dl" = healthy ]
+          SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh http://127.0.0.1:8090
+      - name: Container logs
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml logs --tail 80
 
   scripts:
     name: Shell scripts (shellcheck)
