@@ -79,54 +79,70 @@ check() {
   mark checked; info "No live exposure. Next: backup"
 }
 
+is_int() { [[ "${1:-}" =~ ^[0-9]+$ ]]; }
+
 backup() {
   need checked check
-  local ts dir
+  local ts dir free_mb db_mb
+  free_mb="$(df -Pm "$(dirname "$BACKUP_ROOT")" | awk 'NR==2 {print $4}')"
+  db_mb="$(sql "select pg_database_size(current_database())/1048576")"
+  is_int "$db_mb" || die "could not read the database size (got: $db_mb)"
+  echo "  database size ${db_mb} MB, free disk ${free_mb} MB"
+  # A gzip dump is normally well under half the database size; keep 2 GB spare on top.
+  [ "$free_mb" -gt $(( db_mb / 2 + 2048 )) ] || die "not enough free disk for a safe dump (need about $(( db_mb / 2 + 2048 )) MB). Free space or back up elsewhere first."
   ts="$(date -u +%Y%m%dT%H%M%SZ)"; dir="$BACKUP_ROOT/$ts"
   mkdir -p "$dir" && chmod 700 "$BACKUP_ROOT" "$dir"
   info "Backing up to $dir (the stack keeps running)"
+  set -o pipefail
   compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner' | gzip > "$dir/postgres.sql.gz" || die "pg_dump failed"
-  gzip -t "$dir/postgres.sql.gz" || die "database dump is corrupt"
-  cp -a "$YA_DIR/.env" "$dir/env.production" && chmod 600 "$dir/env.production"
-  [ -d "$YA_DIR/runtime" ] && tar -C "$YA_DIR" -czf "$dir/runtime.tar.gz" runtime
+  compose exec -T postgres sh -c 'pg_dump -U "$POSTGRES_USER" -d "$POSTGRES_DB" --no-owner --schema-only' | gzip > "$dir/postgres-schema.sql.gz" || die "schema dump failed"
+  cp -a "$YA_DIR/.env" "$dir/env.production" && chmod 600 "$dir/env.production" || die "could not copy .env"
+  if [ -d "$YA_DIR/runtime" ]; then tar -C "$YA_DIR" -czf "$dir/runtime.tar.gz" runtime || die "runtime archive failed"; fi
   for v in certbot_conf redis_data; do
-    docker volume inspect "${PROJECT}_$v" >/dev/null 2>&1 && docker run --rm -v "${PROJECT}_$v:/v:ro" -v "$dir:/out" alpine:3.20 tar -C /v -czf "/out/volume-$v.tar.gz" .
+    if docker volume inspect "${PROJECT}_$v" >/dev/null 2>&1; then
+      docker run --rm -v "${PROJECT}_$v:/v:ro" -v "$dir:/out" alpine:3.20 tar -C /v -czf "/out/volume-$v.tar.gz" . || die "archive of volume $v failed"
+    fi
   done
   for u in "${UNITS[@]}"; do [ -f "$UNIT_DIR/$u" ] && cp -a "$UNIT_DIR/$u" "$dir/"; done
   crontab -l > "$dir/crontab.txt" 2>/dev/null || true
   (cd "$YA_DIR" && git rev-parse HEAD > "$dir/git-commit.txt" && git status --short > "$dir/git-status.txt") 2>/dev/null
   compose config > "$dir/compose-resolved.yml" 2>/dev/null && chmod 600 "$dir/compose-resolved.yml"
 
-  info "Restore test: loading the dump into a throwaway Postgres container"
-  local cid tables=0 source_tables ready=0
-  source_tables="$(sql "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')")"
-  cid="$(docker run -d --rm -e POSTGRES_PASSWORD=restoretest postgres:16-alpine)" || die "could not start restore-test container"
-  # Check readiness over TCP: during first start the image runs a temporary,
-  # socket-only server and then restarts it; a socket check can pass too early.
+  info "Verifying the dump (low-disk checks; a full restore would need ~${db_mb} MB)"
+  local live_tables copies complete schema_tables cid ready=0
+  gzip -t "$dir/postgres.sql.gz" || die "database dump is corrupt"
+  live_tables="$(sql "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and n.nspname not in ('pg_catalog','information_schema') and n.nspname not like 'pg_toast%'")"
+  read -r copies complete < <(gunzip -c "$dir/postgres.sql.gz" | awk '/^COPY /{c++} /^-- PostgreSQL database dump complete/{d=1} END{print c+0, d+0}')
+  # Schema restore into a throwaway database held in RAM (tmpfs): uses no disk.
+  cid="$(docker run -d --rm --tmpfs /var/lib/postgresql/data:rw,size=512m -e POSTGRES_PASSWORD=restoretest postgres:16-alpine)" || die "could not start the test database"
   for _ in $(seq 1 90); do
     if docker exec "$cid" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then ready=1; break; fi
     sleep 1
   done
+  schema_tables="not-run"
   if [ "$ready" = 1 ]; then
-    gunzip -c "$dir/postgres.sql.gz" | docker exec -i "$cid" psql -h 127.0.0.1 -q -U postgres -v ON_ERROR_STOP=0 >/dev/null 2>"$dir/restore-test.log"
-    tables="$(docker exec "$cid" psql -h 127.0.0.1 -U postgres -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" 2>>"$dir/restore-test.log")"
+    gunzip -c "$dir/postgres-schema.sql.gz" | docker exec -i "$cid" psql -h 127.0.0.1 -q -U postgres -v ON_ERROR_STOP=0 >/dev/null 2>"$dir/restore-test.log"
+    schema_tables="$(docker exec "$cid" psql -h 127.0.0.1 -U postgres -Atc "select count(*) from pg_class c join pg_namespace n on n.oid=c.relnamespace where c.relkind='r' and n.nspname not in ('pg_catalog','information_schema') and n.nspname not like 'pg_toast%'" 2>>"$dir/restore-test.log")"
   else
-    echo "restore-test container never became ready" >> "$dir/restore-test.log"
-    docker logs "$cid" >> "$dir/restore-test.log" 2>&1
+    echo "test database never became ready" >> "$dir/restore-test.log"; docker logs "$cid" >> "$dir/restore-test.log" 2>&1
   fi
   docker stop "$cid" >/dev/null 2>&1
-  echo "  tables: live database ${source_tables}, restored copy ${tables:-0}"
-  if [ "${tables:-0}" -le 0 ] 2>/dev/null || { [ "$source_tables" != "ERR" ] && [ "${tables:-0}" -lt "$source_tables" ]; }; then
-    echo "--- last lines of $dir/restore-test.log:"; tail -n 25 "$dir/restore-test.log"
-    die "restore test failed; backup NOT marked as verified"
+  echo "  tables in live database:        $live_tables"
+  echo "  table data sections in dump:    $copies"
+  echo "  dump completed (end marker):    $([ "$complete" = 1 ] && echo yes || echo NO)"
+  echo "  tables restored from schema:    $schema_tables"
+  local ok=1
+  is_int "$live_tables" && is_int "$copies" && is_int "$schema_tables" || ok=0
+  [ "$ok" = 1 ] && [ "$complete" = 1 ] && [ "$live_tables" -gt 0 ] && [ "$copies" -ge "$live_tables" ] && [ "$schema_tables" -ge "$live_tables" ] || ok=0
+  if [ "$ok" != 1 ]; then
+    echo "--- last lines of $dir/restore-test.log:"; tail -n 25 "$dir/restore-test.log" 2>/dev/null
+    die "verification failed; backup NOT marked as verified"
   fi
-  local errs; errs="$(grep -c "ERROR" "$dir/restore-test.log" 2>/dev/null || true)"
-  [ "${errs:-0}" -gt 0 ] && echo "  note: $errs non-fatal restore message(s) (e.g. roles/extensions missing in the test container), see restore-test.log"
-  (cd "$dir" && sha256sum ./* > SHA256SUMS)
-  echo "  restore test OK"; ls -la "$dir"
+  (cd "$dir" && sha256sum ./* > SHA256SUMS && sha256sum -c --quiet SHA256SUMS) || die "could not write or check SHA256SUMS (disk full?)"
+  echo "  verification OK"; ls -la "$dir"
   mark backed-up "$dir"
-  echo; echo "IMPORTANT: copy $dir OFF the server now (it contains secrets), e.g.:"
-  echo "  scp -r root@<droplet>:$dir ./yonixalpha-backup-$ts"
+  echo; echo "IMPORTANT: keep a copy OFF this server (it contains secrets). Easiest: take a DigitalOcean"
+  echo "snapshot of the droplet. Or, from YOUR computer: scp -r root@<droplet-ip>:$dir ./"
   echo "Then run 'stop'."
 }
 
