@@ -3,6 +3,8 @@
 > **Nothing in this guide has been run against your server.** Every step needs your approval.
 > The current production site stays on Hostinger until you switch DNS.
 
+> **Replacing YonixAlpha on the droplet?** Follow [MIGRATION_FROM_YONIXALPHA.md](MIGRATION_FROM_YONIXALPHA.md): a step-by-step runbook with the decommission and edge-setup scripts. The sections below are the general reference.
+
 ## 0. Before anything: audit and back up (read-only)
 
 1. Run the Phase 0 audit on the droplet and review the output: `bash scripts/do-audit.sh > do-audit.txt 2>&1`
@@ -35,7 +37,7 @@ This publishes only `127.0.0.1:8090`. `deploy.sh` waits for both health checks a
 ## 3. Edge proxy and HTTPS (pick one, with approval)
 
 - **Option A: keep YonixAlpha running.** Add `deploy/nginx/edge-yonixalpha-docker.conf` to YonixAlpha's Docker Nginx, plus `extra_hosts: ["host.docker.internal:host-gateway"]`, and issue a `yonixtools.com` certificate with its certbot service. This changes the YonixAlpha stack's configuration.
-- **Option B: after YonixAlpha's proxy is retired.** Install host Nginx and certbot, then use `deploy/nginx/edge-host.conf`. It's compatible with Ubuntu 24.04's Nginx 1.24.
+- **Option B: after YonixAlpha's proxy is retired (recommended).** Run `deploy/scripts/setup-edge-host.sh`. It installs host Nginx and certbot and applies `deploy/nginx/edge-host.conf`, which is compatible with Ubuntu 24.04's Nginx 1.24.
 
 Both configs were validated with `nginx -t`, and the full chain (edge TLS → stack Nginx → API) was exercised locally with a self-signed certificate: 28 of 28 smoke checks passed.
 

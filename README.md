@@ -51,6 +51,7 @@ See [docs/TESTING.md](docs/TESTING.md). In short:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Downloader API](docs/DOWNLOADER_API.md)
 - [Deployment](docs/DEPLOYMENT.md)
+- [Migration from YonixAlpha](docs/MIGRATION_FROM_YONIXALPHA.md)
 - [Testing](docs/TESTING.md)
 - [Security](docs/SECURITY.md)
 - [Known limitations](docs/KNOWN_LIMITATIONS.md)
