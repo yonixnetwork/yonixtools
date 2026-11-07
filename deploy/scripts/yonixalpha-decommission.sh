@@ -98,16 +98,32 @@ backup() {
   compose config > "$dir/compose-resolved.yml" 2>/dev/null && chmod 600 "$dir/compose-resolved.yml"
 
   info "Restore test: loading the dump into a throwaway Postgres container"
-  local cid tables=0
+  local cid tables=0 source_tables ready=0
+  source_tables="$(sql "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')")"
   cid="$(docker run -d --rm -e POSTGRES_PASSWORD=restoretest postgres:16-alpine)" || die "could not start restore-test container"
-  for _ in $(seq 1 30); do docker exec "$cid" pg_isready -U postgres >/dev/null 2>&1 && break; sleep 1; done
-  if gunzip -c "$dir/postgres.sql.gz" | docker exec -i "$cid" psql -q -U postgres -v ON_ERROR_STOP=0 >/dev/null 2>"$dir/restore-test.log"; then
-    tables="$(docker exec "$cid" psql -U postgres -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')")"
+  # Check readiness over TCP: during first start the image runs a temporary,
+  # socket-only server and then restarts it; a socket check can pass too early.
+  for _ in $(seq 1 90); do
+    if docker exec "$cid" pg_isready -h 127.0.0.1 -U postgres >/dev/null 2>&1; then ready=1; break; fi
+    sleep 1
+  done
+  if [ "$ready" = 1 ]; then
+    gunzip -c "$dir/postgres.sql.gz" | docker exec -i "$cid" psql -h 127.0.0.1 -q -U postgres -v ON_ERROR_STOP=0 >/dev/null 2>"$dir/restore-test.log"
+    tables="$(docker exec "$cid" psql -h 127.0.0.1 -U postgres -Atc "select count(*) from information_schema.tables where table_schema not in ('pg_catalog','information_schema')" 2>>"$dir/restore-test.log")"
+  else
+    echo "restore-test container never became ready" >> "$dir/restore-test.log"
+    docker logs "$cid" >> "$dir/restore-test.log" 2>&1
   fi
   docker stop "$cid" >/dev/null 2>&1
-  [ "${tables:-0}" -gt 0 ] || die "restore test failed (see $dir/restore-test.log); backup NOT marked as verified"
+  echo "  tables: live database ${source_tables}, restored copy ${tables:-0}"
+  if [ "${tables:-0}" -le 0 ] 2>/dev/null || { [ "$source_tables" != "ERR" ] && [ "${tables:-0}" -lt "$source_tables" ]; }; then
+    echo "--- last lines of $dir/restore-test.log:"; tail -n 25 "$dir/restore-test.log"
+    die "restore test failed; backup NOT marked as verified"
+  fi
+  local errs; errs="$(grep -c "ERROR" "$dir/restore-test.log" 2>/dev/null || true)"
+  [ "${errs:-0}" -gt 0 ] && echo "  note: $errs non-fatal restore message(s) (e.g. roles/extensions missing in the test container), see restore-test.log"
   (cd "$dir" && sha256sum ./* > SHA256SUMS)
-  echo "  restored $tables tables OK"; ls -la "$dir"
+  echo "  restore test OK"; ls -la "$dir"
   mark backed-up "$dir"
   echo; echo "IMPORTANT: copy $dir OFF the server now (it contains secrets), e.g.:"
   echo "  scp -r root@<droplet>:$dir ./yonixalpha-backup-$ts"
