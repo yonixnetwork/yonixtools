@@ -31,10 +31,11 @@ confirm() { # confirm "<phrase>"
   [ "$reply" = "$phrase" ] || die "confirmation did not match; nothing was changed"
 }
 compose() { (cd "$YA_DIR" && COMPOSE_PROFILES="$ALL_PROFILES" docker compose --env-file .env -f infra/docker/docker-compose.yml -f infra/docker/docker-compose.prod.yml "$@"); }
-sql() { # prints the value, or "ERR" if the query failed (e.g. table missing / DB down)
+sql() { # prints the value, or "ERR" if the query failed (e.g. table missing / DB down); the error goes to $STATE_DIR/last-sql-error
   local out
-  if out="$(compose exec -T postgres sh -c "psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -Atc \"$1\"" 2>/dev/null)"; then echo "${out:-0}"; else echo "ERR"; fi
+  if out="$(compose exec -T postgres sh -c "psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -Atc \"$1\"" 2>"$STATE_DIR/last-sql-error")"; then echo "${out:-0}"; else echo "ERR"; fi
 }
+sql_error() { echo "database error: $(tail -n 3 "$STATE_DIR/last-sql-error" 2>/dev/null | tr '\n' ' ')"; }
 mark() { date -u +%Y-%m-%dT%H:%M:%SZ > "$STATE_DIR/$1"; [ -n "${2:-}" ] && echo "$2" >> "$STATE_DIR/$1"; }
 need() { [ -f "$STATE_DIR/$1" ] || die "run '$2' first"; }
 
@@ -68,7 +69,7 @@ check() {
   echo "  Crypto exchange-account trades: $exec_act"
   echo "  Exchange API connections:       ${conns:-none}"
   for v in "$live_pos" "$live_ord" "$exec_act"; do
-    if [ "$v" = "ERR" ]; then echo "  ! a check could not run (database down or table missing)"; blocked=1;
+    if [ "$v" = "ERR" ]; then echo "  ! a check could not run: $(sql_error)"; blocked=1;
     elif [ "$v" != "0" ]; then blocked=1; fi
   done
   if [ "$blocked" = 1 ]; then
@@ -86,7 +87,8 @@ backup() {
   local ts dir free_mb db_mb
   free_mb="$(df -Pm "$(dirname "$BACKUP_ROOT")" | awk 'NR==2 {print $4}')"
   db_mb="$(sql "select pg_database_size(current_database())/1048576")"
-  is_int "$db_mb" || die "could not read the database size (got: $db_mb)"
+  is_int "$db_mb" || die "could not read the database size (got: $db_mb). $(sql_error)
+Is YonixAlpha's Postgres running? Check: docker ps -a --filter label=com.docker.compose.project=yonixalpha"
   # Needed space: an earlier dump's size + 30% if one exists, else half the database
   # size (conservative); override with BACKUP_FREE_MB_REQUIRED. Plus 2 GB spare.
   local prev_mb need_mb
