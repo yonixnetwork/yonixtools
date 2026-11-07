@@ -12,7 +12,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
 from .config import Settings, load_settings
@@ -22,7 +22,8 @@ from .ratelimit import RateLimiter
 from .service import DownloaderService
 
 MEDIA_TYPES = {"mp4": "video/mp4", "webm": "video/webm", "mkv": "video/x-matroska", "mov": "video/quicktime", "m4a": "audio/mp4", "mp3": "audio/mpeg",
-               "opus": "audio/ogg", "ogg": "audio/ogg", "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif"}
+               "opus": "audio/ogg", "ogg": "audio/ogg", "jpg": "image/jpeg", "jpeg": "image/jpeg", "png": "image/png", "webp": "image/webp", "gif": "image/gif",
+               "avif": "image/avif", "heic": "image/heic", "zip": "application/zip", "wav": "audio/wav"}
 
 
 def _setup_logging() -> None:
@@ -85,7 +86,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers.setdefault("Cache-Control", "no-store")
         response.headers["Cross-Origin-Resource-Policy"] = "same-site"
         if request.url.path not in ("/healthz",):
-            logging.getLogger("access").info(json.dumps({"m": request.method, "p": request.url.path if not request.url.path.startswith("/v1/jobs/") else "/v1/jobs/:id" + ("/file" if request.url.path.endswith("/file") else ""),
+            logging.getLogger("access").info(json.dumps({"m": request.method, "p": ("/v1/preview/:t" if request.url.path.startswith("/v1/preview/") else request.url.path if not request.url.path.startswith("/v1/jobs/") else "/v1/jobs/:id" + ("/file" if request.url.path.endswith("/file") else "")),
                                                          "s": response.status_code, "ms": int((time.monotonic() - t0) * 1000)}))
         return response
 
@@ -148,19 +149,25 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limit(extract_rl, request)
         data = await json_body(request)
         _, info = await service.extract(data.get("url"))
-        return info.public()
+        return service.public_info(info)
 
     @app.post("/v1/jobs")
     async def create_job(request: Request):
         limit(jobs_rl, request)
         data = await json_body(request)
-        job = await service.create_job(data.get("url"), data.get("itemIndex", 0), data.get("formatId"), client_key(request, settings))
+        job = await service.create_job(data.get("url"), data.get("itemIndex", 0), data.get("formatId"), client_key(request, settings), data.get("items"))
         return JSONResponse(job.public(), status_code=202)
 
     @app.get("/v1/jobs/{job_id}")
     async def get_job(job_id: str, request: Request):
         limit(poll_rl, request)
         return service.get_job(job_id).public()
+
+    @app.get("/v1/preview/{token}")
+    async def preview(token: str, request: Request):
+        limit(poll_rl, request)
+        body, ctype = await service.fetch_preview(token)
+        return Response(body, media_type=ctype, headers={"Cache-Control": "private, max-age=900", "Content-Security-Policy": "sandbox; default-src 'none'"})
 
     @app.api_route("/v1/jobs/{job_id}/file", methods=["GET", "HEAD"])
     async def get_file(job_id: str, request: Request):

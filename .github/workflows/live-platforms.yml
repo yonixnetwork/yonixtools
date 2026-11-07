@@ -20,20 +20,14 @@ jobs:
       matrix:
         phase: [deployed, full]
         platform: [youtube, tiktok, instagram, facebook, x, pinterest, dailymotion, twitch, soundcloud, bluesky, streamable,
-                   tumblr, bandcamp, imgur, flickr, kick, rumble, mixcloud, 9gag, ted, loom, medal, audiomack, linkedin]
+                   imgur, kick, mixcloud, 9gag, medal, linkedin, ted]
         exclude:  # "deployed" = production regression baseline; candidates don't exist there
-          - { phase: deployed, platform: tumblr }
-          - { phase: deployed, platform: bandcamp }
           - { phase: deployed, platform: imgur }
-          - { phase: deployed, platform: flickr }
           - { phase: deployed, platform: kick }
-          - { phase: deployed, platform: rumble }
           - { phase: deployed, platform: mixcloud }
           - { phase: deployed, platform: 9gag }
           - { phase: deployed, platform: ted }
-          - { phase: deployed, platform: loom }
           - { phase: deployed, platform: medal }
-          - { phase: deployed, platform: audiomack }
           - { phase: deployed, platform: linkedin }
     name: ${{ matrix.phase }} / ${{ matrix.platform }}
     defaults: { run: { working-directory: services/downloader } }

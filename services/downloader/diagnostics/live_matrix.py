@@ -84,7 +84,7 @@ def _subprocess(cmd: list[str]) -> dict:
 
 def run_ytdlp(url: str, platform: str, extra: dict | None = None, download: bool = True) -> dict:
     """Run yt-dlp in a subprocess (isolates crashes/hangs); returns a result dict."""
-    opts = {"extractors": EXTRACTORS[platform], "extra": extra or {}, "url": url, "download": download}
+    opts = {"extractors": EXTRACTORS[platform], "extra": extra or {}, "url": url, "download": download, "image_posts": platform in ("instagram", "tumblr")}
     code = r'''
 import json, sys, tempfile, os, re
 import yt_dlp
@@ -96,7 +96,7 @@ class L:
     def info(self, m): pass
     def warning(self, m): msgs.append("WARNING: " + str(m)[:300])
     def error(self, m): msgs.append(str(m)[:600])
-o = {"quiet": True, "no_warnings": False, "logger": L(), "ignore_no_formats_error": True, "verbose": bool(cfg["extra"].pop("_verbose", False)), "allowed_extractors": [re.escape(e) for e in cfg["extractors"]],
+o = {"quiet": True, "no_warnings": False, "logger": L(), "ignore_no_formats_error": cfg["image_posts"], "verbose": bool(cfg["extra"].pop("_verbose", False)), "allowed_extractors": [re.escape(e) for e in cfg["extractors"]],
      "noplaylist": True, "cachedir": False, "socket_timeout": 20, "retries": 1, "extractor_retries": 1, "skip_download": True}
 o.update(cfg["extra"])
 res = {"ok": False}
@@ -167,6 +167,34 @@ def run_worker(url: str, platform: str, memory_mb: int = 0) -> dict:
     else:
         res["download_error"] = f'{dfinal.get("code")}: {str(dfinal.get("detail", ""))[:300]}'
     shutil.rmtree(out, ignore_errors=True)
+    kinds = [i["kind"] for i in info["items"]]
+    res["kinds"] = kinds
+    sources = (info.get("extra") or {}).get("sources") or {}
+
+    def sub(op_req: dict) -> dict:
+        o = tempfile.mkdtemp()
+        try:
+            d = subprocess.run([sys.executable, "-m", "app.worker"], input=json.dumps({**op_req, "out_dir": o}), capture_output=True, text=True,
+                               timeout=TIMEOUT * 2, env=env, cwd=o)
+            msgs_ = [json.loads(x) for x in d.stdout.splitlines() if x.startswith("{")]
+            fin = next((m for m in reversed(msgs_) if m.get("type") in ("result", "error")), {})
+        except subprocess.TimeoutExpired:
+            fin = {"type": "error", "code": "timeout"}
+        finally:
+            shutil.rmtree(o, ignore_errors=True)
+        return fin
+
+    img = next((i for i in info["items"] if i["kind"] == "image"), None)
+    if img and img is not item:
+        f0 = img["formats"][0]["id"]
+        r = sub({**req, "op": "download", "backend": info["backend"], "item_index": img["index"], "format_id": f0 + "~png",
+                 "multi": True, "source": sources.get(f'{img["index"]}:{f0}')})
+        res["image_png"] = r.get("size") if r.get("type") == "result" else f'{r.get("code")}: {str(r.get("detail", ""))[:160]}'
+    if len(info["items"]) >= 2:
+        parts = [{"item_index": i["index"], "format_id": i["formats"][0]["id"], "source": sources.get(f'{i["index"]}:{i["formats"][0]["id"]}')}
+                 for i in info["items"][:3]]
+        r = sub({**req, "op": "download_zip", "backend": info["backend"], "parts": parts, "multi": True})
+        res["zip"] = r.get("size") if r.get("type") == "result" else f'{r.get("code")}: {str(r.get("detail", ""))[:160]}'
     return res
 
 

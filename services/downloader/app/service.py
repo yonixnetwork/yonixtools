@@ -16,7 +16,7 @@ from pathlib import Path
 
 from .config import Settings
 from .errors import DEFAULT_MESSAGES, ApiError, message_for
-from .media import FORMAT_ID_RE, MediaInfo
+from .media import FORMAT_ID_RE, split_format, MediaInfo
 from .platforms import ParsedUrl, parse_media_url
 from .resolver import resolve_short_link
 from .runner import run_worker
@@ -58,6 +58,8 @@ class Job:
     file_size: int | None = None
     expires_at: float | None = None
     task: asyncio.Task | None = None
+    parts: list | None = None  # ZIP jobs: [{"item_index", "format_id", "source"}]
+    source: dict | None = None  # direct media URL found during extraction (images)
 
     def public(self) -> dict:
         out: dict = {"id": self.id, "status": self.status, "phase": self.phase, "platform": self.platform}
@@ -78,6 +80,9 @@ class DownloaderService:
         self.s = settings
         self.jobs: dict[str, Job] = {}
         self.cache: OrderedDict[str, tuple[float, MediaInfo]] = OrderedDict()
+        # Opaque preview tokens -> thumbnail URL reported by the extractor (never a user-supplied URL).
+        self.previews: OrderedDict[str, tuple[float, str]] = OrderedDict()
+        self._preview_key = secrets.token_bytes(16)
         self.stats: Counter[str] = Counter()
         self._job_sem = asyncio.Semaphore(max(1, settings.max_concurrent_jobs))
         self._extract_sem = asyncio.Semaphore(max(1, settings.max_concurrent_extractions))
@@ -182,6 +187,61 @@ class DownloaderService:
         self._cache_put(parsed.url, info)
         return parsed, info
 
+    # ── previews ───────────────────────────────────────────────────────────
+    def public_info(self, info: MediaInfo) -> dict:
+        """info.public() with thumbnails replaced by same-origin preview URLs.
+
+        Many CDNs (Instagram, TikTok) refuse to be embedded on other sites, so
+        the page loads previews through /v1/preview/<token> instead.
+        """
+        pub = info.public()
+
+        def proxied(u: object) -> str | None:
+            if not isinstance(u, str) or not u.startswith("https://") or len(u) > 4096:
+                return None
+            token = hashlib.sha256(self._preview_key + u.encode()).hexdigest()[:32]
+            self.previews[token] = (time.time() + max(self.s.extract_cache_seconds, 600) * 2, u)
+            self.previews.move_to_end(token)
+            while len(self.previews) > 4096:
+                self.previews.popitem(last=False)
+            return f"/v1/preview/{token}"
+
+        pub["thumbnail"] = proxied(pub.get("thumbnail"))
+        for it in pub["items"]:
+            it["thumbnail"] = proxied(it.get("thumbnail"))
+        return pub
+
+    async def fetch_preview(self, token: str) -> tuple[bytes, str]:
+        hit = self.previews.get(token) if re.fullmatch(r"[0-9a-f]{32}", token or "") else None
+        if not hit or hit[0] < time.time():
+            raise ApiError("not_found")
+        import httpx
+
+        url = hit[1]
+        limit = 6 * 1024 * 1024
+        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130 Safari/537.36",
+                   "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"}
+        # The API process has the socket guard installed: every connection
+        # (including redirect hops, followed manually here) must be to a public IP.
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0), follow_redirects=False) as client:
+            for _ in range(4):
+                if not url.startswith("https://"):
+                    raise ApiError("not_found")
+                async with client.stream("GET", url, headers=headers) as r:
+                    if r.status_code in (301, 302, 303, 307, 308) and r.headers.get("location"):
+                        url = str(r.url.join(r.headers["location"]))
+                        continue
+                    ctype = r.headers.get("content-type", "").split(";")[0].strip().lower()
+                    if r.status_code != 200 or not ctype.startswith("image/") or ctype == "image/svg+xml":
+                        raise ApiError("not_found")
+                    body = b""
+                    async for chunk in r.aiter_bytes():
+                        body += chunk
+                        if len(body) > limit:
+                            raise ApiError("not_found")
+                    return body, ctype
+        raise ApiError("not_found")
+
     # ── jobs ───────────────────────────────────────────────────────────────
     def _active(self, client: str | None = None) -> int:
         return sum(1 for j in self.jobs.values() if j.status in ("queued", "running") and (client is None or j.client == client))
@@ -202,19 +262,44 @@ class DownloaderService:
             self.stats["jobs.rejected.storage"] += 1
             raise ApiError("busy", platform=platform)
 
-    async def create_job(self, raw_url: object, item_index: object, format_id: object, client: str) -> Job:
-        if not isinstance(format_id, str) or not FORMAT_ID_RE.match(format_id):
+    async def create_job(self, raw_url: object, item_index: object, format_id: object, client: str, items: object = None) -> Job:
+        zip_job = format_id == "zip"
+        if not zip_job and (not isinstance(format_id, str) or not FORMAT_ID_RE.match(format_id)):
             raise ApiError("invalid_format")
-        if not isinstance(item_index, int) or isinstance(item_index, bool) or not 0 <= item_index < self.s.max_items_per_post:
+        if zip_job:
+            if (not isinstance(items, list) or not 2 <= len(items) <= self.s.max_items_per_post or len(set(items)) != len(items)
+                    or not all(isinstance(i, int) and not isinstance(i, bool) and 0 <= i < self.s.max_items_per_post for i in items)):
+                raise ApiError("invalid_request", "Choose at least two items of this post.")
+            item_index = min(items)
+        elif not isinstance(item_index, int) or isinstance(item_index, bool) or not 0 <= item_index < self.s.max_items_per_post:
             raise ApiError("invalid_request", "Invalid item.")
         parsed, info = await self.extract(raw_url)
         pid = parsed.platform.id
-        item = next((i for i in info.items if i.index == item_index), None)
-        if item is None or not any(f.id == format_id for f in item.formats):
-            raise ApiError("invalid_format", platform=pid)
-        fmt = next(f for f in item.formats if f.id == format_id)
-        if fmt.filesize and fmt.filesize > self.s.max_filesize_bytes:
-            raise ApiError("too_large", platform=pid)
+        sources = info.extra.get("sources") if isinstance(info.extra.get("sources"), dict) else {}
+        parts: list | None = None
+        source: dict | None = None
+        if zip_job:
+            parts = []
+            known = 0
+            for idx in sorted(items):  # type: ignore[arg-type]
+                it = next((i for i in info.items if i.index == idx), None)
+                if it is None or not it.formats:
+                    raise ApiError("invalid_format", platform=pid)
+                f0 = it.formats[0]  # best quality / original
+                known += f0.filesize or 0
+                parts.append({"item_index": idx, "format_id": f0.id, "source": sources.get(f"{idx}:{f0.id}")})
+            if known > self.s.max_filesize_bytes:
+                raise ApiError("too_large", platform=pid)
+            format_id = "zip:" + ",".join(str(i) for i in sorted(items))  # type: ignore[arg-type]
+        else:
+            base, conv = split_format(format_id)  # type: ignore[arg-type]
+            item = next((i for i in info.items if i.index == item_index), None)
+            if item is None or not any(f.id == base for f in item.formats) or (conv and item.kind != "image"):
+                raise ApiError("invalid_format", platform=pid)
+            fmt = next(f for f in item.formats if f.id == base)
+            if fmt.filesize and fmt.filesize > self.s.max_filesize_bytes:
+                raise ApiError("too_large", platform=pid)
+            source = sources.get(f"{item_index}:{base}")
         # Same client, same media, same format: reuse the running or finished job
         # instead of downloading it twice (double clicks, retries, multiple tabs).
         for existing in self.jobs.values():
@@ -233,8 +318,8 @@ class DownloaderService:
         job_id = secrets.token_urlsafe(18)
         job_dir = self.s.temp_root / job_id
         job_dir.mkdir(mode=0o700)
-        job = Job(id=job_id, client=client, platform=pid, url=parsed.url, backend=info.backend, item_index=item_index, format_id=format_id,
-                  multi=bool(info.extra.get("multi")), dir=job_dir)
+        job = Job(id=job_id, client=client, platform=pid, url=parsed.url, backend=info.backend, item_index=item_index, format_id=format_id,  # type: ignore[arg-type]
+                  multi=bool(info.extra.get("multi")), dir=job_dir, parts=parts, source=source)
         self.jobs[job_id] = job
         job.task = asyncio.create_task(self._run(job))
         self.stats[f"jobs.{pid}.created"] += 1
@@ -261,8 +346,9 @@ class DownloaderService:
 
                 outcome = await run_worker(
                     self.s.worker_command,
-                    {"op": "download", "url": job.url, "platform": job.platform, "backend": job.backend, "item_index": job.item_index,
-                     "format_id": job.format_id, "multi": job.multi, "out_dir": str(job.dir), "config": self._worker_config()},
+                    {"op": "download_zip" if job.parts else "download", "url": job.url, "platform": job.platform, "backend": job.backend,
+                     "item_index": job.item_index, "format_id": job.format_id, "multi": job.multi, "out_dir": str(job.dir),
+                     "parts": job.parts, "source": job.source, "config": self._worker_config()},
                     timeout=self.s.job_timeout_seconds, cwd=str(job.dir), on_progress=on_progress)
             ms = int((time.monotonic() - t0) * 1000)
             if outcome.ok and outcome.result:

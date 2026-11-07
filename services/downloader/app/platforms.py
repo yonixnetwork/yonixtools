@@ -162,6 +162,47 @@ def _streamable(host: str, path: str, q: dict) -> Classification:
     raise _unsupported("Paste the link of a specific Streamable video.")
 
 
+def _ninegag(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/gag/[a-zA-Z0-9]{5,}$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific 9GAG post.")
+
+
+def _kick(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/[\w-]+/clips/clip_[A-Za-z0-9]{10,}$", path) or (re.match(r"^/[\w-]+$", path) and re.match(r"^clip_[A-Za-z0-9]{10,}$", (q.get("clip") or [""])[0])):
+        return Classification("clip")
+    raise _unsupported("Only Kick clips are supported (not live streams or VODs). Paste a clip link.")
+
+
+def _linkedin(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/posts/[\w%.-]+$", path) or re.match(r"^/feed/update/urn:li:(activity|ugcPost):\d+$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a public LinkedIn post that contains a video.")
+
+
+def _medal(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(games/[\w-]+/clips|clips?)/[\w-]{6,}", path):
+        return Classification("clip")
+    raise _unsupported("Paste the link of a specific Medal clip.")
+
+
+def _mixcloud(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/[\w.-]+/[\w.%-]+$", path) and not re.match(r"^/[\w.-]+/(uploads|favorites|listens|playlists|followers|following|stream|reposts)$", path) \
+            and not path.startswith(("/discover/", "/live/", "/select/")):
+        return Classification("mix")
+    raise _unsupported("Paste the link of a specific Mixcloud show.")
+
+
+def _imgur(host: str, path: str, q: dict) -> Classification:
+    if host == "i.imgur.com" and re.match(r"^/[a-zA-Z0-9]{5,8}\.(gifv|mp4|jpe?g|png|gif|webp)$", path):
+        return Classification("media")
+    if re.match(r"^/(a|gallery)/[\w-]{5,}$", path):
+        return Classification("album")
+    if re.match(r"^/(?:[\w-]+-)?[a-zA-Z0-9]{5,8}$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Imgur post or album.")
+
+
 _PINTEREST_HOST = re.compile(r"(^|\.)pinterest\.(com|co\.uk|ca|com\.au|de|fr|es|it|jp|com\.mx|ph|nz|ie|at|ch|pt|se|dk|cl)$")
 
 PLATFORMS: dict[str, Platform] = {p.id: p for p in [
@@ -185,6 +226,13 @@ PLATFORMS: dict[str, Platform] = {p.id: p for p in [
              short_link_hosts=("on.soundcloud.com",), redirect_hosts=lambda h: _is(h, "soundcloud.com")),
     Platform("bluesky", "Bluesky", lambda h: h in ("bsky.app", "www.bsky.app"), _bluesky, ("bluesky",)),
     Platform("streamable", "Streamable", lambda h: _is(h, "streamable.com"), _streamable, ("streamable",)),
+    Platform("9gag", "9GAG", lambda h: _is(h, "9gag.com"), _ninegag, ("9gag",)),
+    Platform("kick", "Kick", lambda h: _is(h, "kick.com"), _kick, ("kick:clips", "kick:clip")),
+    Platform("linkedin", "LinkedIn", lambda h: _is(h, "linkedin.com"), _linkedin, ("linkedin",)),
+    Platform("medal", "Medal", lambda h: _is(h, "medal.tv"), _medal, ("medaltv",)),
+    Platform("mixcloud", "Mixcloud", lambda h: _is(h, "mixcloud.com"), _mixcloud, ("mixcloud",)),
+    Platform("imgur", "Imgur", lambda h: _is(h, "imgur.com") or _is(h, "imgur.io"), _imgur, ("imgur", "imgur:album", "imgur:gallery"),
+             gallerydl_fallback=True),
 ]}
 
 

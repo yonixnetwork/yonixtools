@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Callable
 
-from ..media import MediaInfo
+from ..media import MediaInfo, split_format
 from ..platforms import Platform
 from .errors import FALLBACK_CODES, classify_error
 from .gallerydl_backend import GalleryDlBackend
@@ -52,15 +52,70 @@ def extract(platform: Platform, url: str, cfg: dict, chain: list | None = None) 
     raise first
 
 
-def download(platform: Platform, url: str, backend_name: str, item_index: int, format_id: str, out_dir: Path, multi: bool,
-             cfg: dict, progress: Callable[[float | None, int | None, int | None], None], chain: list | None = None) -> Path:
+def _backend(platform: Platform, backend_name: str, cfg: dict, chain: list | None):
     chain = chain if chain is not None else backends_for(platform, cfg)
     backend = next((b for b in chain if b.name == backend_name), None)
     if backend is None:
         raise ExtractionFailed("invalid_format", backend_name, "backend not available for platform")
+    return backend
+
+
+def download(platform: Platform, url: str, backend_name: str, item_index: int, format_id: str, out_dir: Path, multi: bool,
+             cfg: dict, progress: Callable[[float | None, int | None, int | None], None], chain: list | None = None,
+             source: dict | None = None) -> Path:
+    backend = _backend(platform, backend_name, cfg, chain)
+    base, conv = split_format(format_id)
     try:
         if isinstance(backend, GalleryDlBackend):
-            return backend.download(url, int(format_id.split(":")[1]), out_dir, cfg["timeout"])
-        return backend.download(url, item_index, format_id, out_dir, multi, progress)
+            return backend.download(url, int(base.split(":")[1]), out_dir, cfg["timeout"], conv)
+        return backend.download(url, item_index, format_id, out_dir, multi, progress, source)
     except BackendError as e:
         raise ExtractionFailed(_code(e), backend.name, e.detail[:800]) from None
+
+
+def download_zip(platform: Platform, url: str, backend_name: str, parts: list[dict], out_dir: Path, multi: bool, cfg: dict,
+                 progress: Callable[[float | None, int | None, int | None], None], chain: list | None = None) -> Path:
+    """Several items of one post in one ZIP (stored, not recompressed: media is already compressed).
+
+    parts: [{"item_index": int, "format_id": str, "source": dict | None}, ...]
+    Images with a known source are fetched directly; gallery-dl items come from
+    one gallery-dl run; other items use the normal per-item download.
+    """
+    import zipfile
+
+    backend = _backend(platform, backend_name, cfg, chain)
+    work = out_dir / "parts"
+    work.mkdir(mode=0o700, exist_ok=True)
+    files: list[tuple[int, Path]] = []
+    n = len(parts)
+    limit = int(cfg["max_filesize"])
+    try:
+        if isinstance(backend, GalleryDlBackend):
+            got = backend.download_many(url, [p["item_index"] for p in parts], work, cfg["timeout"])
+            files = sorted(got.items())
+            progress(90.0, None, None)
+        else:
+            for k, p in enumerate(parts):
+                d = work / f"{k:03d}"
+                d.mkdir(mode=0o700)
+                sub = (lambda pct, done, total, k=k: progress(-1, None, None) if pct == -1 else
+                       progress(None if pct is None else (k + pct / 100) / n * 95, None, None))
+                path = backend.download(url, p["item_index"], p["format_id"], d, multi, sub, p.get("source"))
+                files.append((p["item_index"], path))
+                if sum(f.stat().st_size for _, f in files) > limit:
+                    raise BackendError("too_large", "zip larger than limit")
+    except BackendError as e:
+        raise ExtractionFailed(_code(e), backend.name, e.detail[:800]) from None
+    if not files:
+        raise ExtractionFailed("no_media", backend.name, "nothing to zip")
+    if sum(f.stat().st_size for _, f in files) > limit:
+        raise ExtractionFailed("too_large", backend.name, "zip larger than limit")
+    progress(-1, None, None)
+    zpath = out_dir / "media.zip"
+    with zipfile.ZipFile(zpath, "w", compression=zipfile.ZIP_STORED) as z:
+        for idx, f in files:
+            z.write(f, arcname=f"{platform.id}-{idx + 1:02d}{f.suffix.lower()}")
+    import shutil
+
+    shutil.rmtree(work, ignore_errors=True)
+    return zpath

@@ -1,4 +1,5 @@
 import time
+import json
 
 import pytest
 
@@ -268,3 +269,62 @@ def test_job_reports_phases(client):
     job = client.post("/v1/jobs", json={"url": YT, "itemIndex": 0, "formatId": "v:best"}).json()
     assert job["phase"] in ("queued", "downloading")
     assert wait_job(client, job["id"])["phase"] == "ready"
+
+
+# ── Universal media: mixed posts, images, conversions, ZIP, previews ─────────
+MIXED = "https://www.instagram.com/p/mixedpost1/"
+
+
+def test_mixed_post_is_described_item_by_item(client):
+    d = client.post("/v1/extract", json={"url": MIXED}).json()
+    assert d["mediaType"] == "mixed"
+    assert [i["kind"] for i in d["items"]] == ["video", "image", "image"]
+    img = d["items"][1]
+    assert (img["width"], img["height"]) == (1080, 1350)
+    assert [f["id"] for f in img["formats"]] == ["i:best", "i:640"]
+    assert img["conversions"] == ["jpg", "png", "webp"]
+    assert "a:mp3" in [f["id"] for f in d["items"][0]["formats"]]
+    # Thumbnails are served same-origin through opaque preview tokens; CDN URLs and sources never reach the browser.
+    assert img["thumbnail"].startswith("/v1/preview/") and "cdn.example" not in json.dumps(d)
+
+
+def test_image_download_uses_the_source_found_during_extraction(client):
+    job = client.post("/v1/jobs", json={"url": MIXED, "itemIndex": 2, "formatId": "i:640"}).json()
+    done = wait_job(client, job["id"])
+    r = client.get(done["downloadUrl"])
+    assert r.headers["content-type"] == "image/jpeg"
+    assert json.loads(r.content.decode().strip())["url"] == "https://cdn.example/2-640.jpg"
+
+
+def test_image_conversion_is_only_for_images(client):
+    job = client.post("/v1/jobs", json={"url": MIXED, "itemIndex": 1, "formatId": "i:best~png"}).json()
+    done = wait_job(client, job["id"])
+    assert client.get(done["downloadUrl"]).headers["content-type"] == "image/png"
+    r = client.post("/v1/jobs", json={"url": MIXED, "itemIndex": 0, "formatId": "v:best~png"})
+    assert r.status_code == 422 and r.json()["error"]["code"] == "invalid_format"
+
+
+def test_zip_of_selected_items(client):
+    job = client.post("/v1/jobs", json={"url": MIXED, "formatId": "zip", "items": [2, 1]}).json()
+    done = wait_job(client, job["id"])
+    r = client.get(done["downloadUrl"])
+    assert r.headers["content-type"] == "application/zip"
+    assert r.headers["content-disposition"].endswith('.zip"')
+    import io
+    import zipfile
+    z = zipfile.ZipFile(io.BytesIO(r.content))
+    parts = [json.loads(z.read(n)) for n in sorted(z.namelist())]
+    assert [(p["item_index"], p["format_id"]) for p in parts] == [(1, "i:best"), (2, "i:best")]
+    assert parts[0]["source"]["url"] == "https://cdn.example/1-1080.jpg"
+
+
+@pytest.mark.parametrize("items", [None, [1], [1, 1], [0, 99], ["1", "2"], [True, 2], list(range(40))])
+def test_zip_validation(client, items):
+    r = client.post("/v1/jobs", json={"url": MIXED, "formatId": "zip", "items": items})
+    assert r.status_code in (400, 422)
+
+
+def test_preview_tokens_are_opaque_and_unknown_ones_404(client):
+    assert client.get("/v1/preview/" + "0" * 32).status_code == 404
+    assert client.get("/v1/preview/../../etc/passwd").status_code == 404
+    assert client.get("/v1/preview/http%3A%2F%2F169.254.169.254%2F").status_code == 404

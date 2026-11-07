@@ -7,12 +7,13 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import subprocess
 import sys
 from pathlib import Path
 
 from ..media import MediaFormat, MediaInfo, MediaItem
-from .ytdlp_backend import BackendError, _clean, _https
+from .ytdlp_backend import BackendError, _clean, _https, convert_image
 
 IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif", "avif", "heic"}
 VIDEO_EXTS = {"mp4", "webm", "mov", "m4v"}
@@ -64,9 +65,12 @@ class GalleryDlBackend:
             kind = "video" if ext in VIDEO_EXTS else "image" if ext in IMAGE_EXTS else None
             if not kind:
                 continue
-            label = f"{'Video' if kind == 'video' else 'Image'} {i + 1}{_dims(f)} · {ext.upper()}"
+            dims = _dims(f)
+            label = (f"Original{dims} · {ext.upper()}" if kind == "image" else f"Video{dims} · {ext.upper()}")
             thumb = _https(f.get("display_url") or (f.get("url") if kind == "image" else None))
-            items.append(MediaItem(i, kind, [MediaFormat(f"g:{i}", label, ext, kind, f.get("filesize") or None)], thumb))
+            w, h = f.get("width"), f.get("height")
+            items.append(MediaItem(i, kind, [MediaFormat(f"g:{i}", label, ext, kind, f.get("filesize") or None)], thumb,
+                                   None, w if isinstance(w, int) else None, h if isinstance(h, int) else None))
         if not items:
             raise BackendError("no_media", "no image/video files")
         title = meta.get("description") or meta.get("content") or meta.get("title") or files[0].get("description") or "Untitled"
@@ -75,12 +79,25 @@ class GalleryDlBackend:
         return MediaInfo(platform=platform, backend=self.name, title=_clean(str(title), 200), author=_clean(str(author or ""), 100) or None,
                          thumbnail=items[0].thumbnail, items=items, extra={"multi": len(items) > 1})
 
-    def download(self, url: str, item_index: int, out_dir: Path, timeout: int) -> Path:
+    def download(self, url: str, item_index: int, out_dir: Path, timeout: int, conv: str | None = None) -> Path:
         proc = self._run(["--range", str(item_index + 1), "-D", str(out_dir), "-f", "media.{extension}", "--", url], timeout)
         files = [p for p in out_dir.iterdir() if p.is_file() and p.name.startswith("media.") and not p.name.endswith(".part")]
         if proc.returncode != 0 or not files:
             raise BackendError("raw", proc.stderr.decode("utf-8", "replace")[-800:] or "gallery-dl produced no file")
-        return files[0]
+        return convert_image(files[0], conv) if conv else files[0]
+
+    def download_many(self, url: str, indexes: list[int], out_dir: Path, timeout: int) -> dict[int, Path]:
+        """Several items of one post in a single gallery-dl run (one platform request)."""
+        rng = ",".join(str(i + 1) for i in sorted(set(indexes)))
+        proc = self._run(["--range", rng, "-D", str(out_dir), "-f", "item-{num:>03}.{extension}", "--", url], timeout)
+        got: dict[int, Path] = {}
+        for p in out_dir.iterdir():
+            m = re.match(r"^item-(\d{3})\.[A-Za-z0-9]{1,8}$", p.name)
+            if p.is_file() and m and (int(m.group(1)) - 1) in indexes:
+                got[int(m.group(1)) - 1] = p
+        if not got:
+            raise BackendError("raw", proc.stderr.decode("utf-8", "replace")[-800:] or "gallery-dl produced no file")
+        return got
 
 
 def _dims(f: dict) -> str:

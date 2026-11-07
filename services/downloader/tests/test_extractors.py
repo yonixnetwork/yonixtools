@@ -37,10 +37,10 @@ def test_maps_video_formats_to_quality_ladder():
         fmt("140", None, v="none", a="mp4a", ext="m4a", size=500_000, abr=128)]}
     m = backend().to_media(info, "youtube")
     ids = [f.id for f in m.items[0].formats]
-    assert ids == ["v:best", "v:720", "v:480", "v:360", "a:best"]
+    assert ids == ["v:best", "v:720", "v:480", "v:360", "a:best", "a:mp3"]
     assert all(FORMAT_ID_RE.match(i) for i in ids)
     assert m.items[0].formats[0].filesize == 9_500_000
-    assert m.items[0].formats[-1].ext == "m4a"
+    assert m.items[0].formats[-2].ext == "m4a" and m.items[0].formats[-1].ext == "mp3"
     assert m.title == "Clip" and m.author == "Someone"
 
 
@@ -134,7 +134,7 @@ def test_storyboards_are_not_offered_as_video():
         backend().to_media(info, "youtube")
     assert e.value.code == "no_media"
     info["formats"].append(fmt("18", 360, a="mp4a"))
-    assert [f.id for f in backend().to_media(info, "youtube").items[0].formats] == ["v:best"]
+    assert [f.id for f in backend().to_media(info, "youtube").items[0].formats] == ["v:best", "a:mp3"]
 
 
 def test_watermark_labels_are_honest():
@@ -150,7 +150,7 @@ def test_watermark_labels_are_honest():
 def test_no_duplicate_quality_options():
     same = {"title": "x", "duration": 10, "formats": [fmt("hd", 1080, a="aac", size=5_000_000), fmt("sd", 720, a="aac", size=5_000_000)]}
     ids = [f.id for f in backend().to_media(same, "x").items[0].formats]
-    assert ids == ["v:best"]  # 720p would be the very same file size: not offered as a separate choice
+    assert ids == ["v:best", "a:mp3"]  # 720p would be the very same file size: not offered as a separate choice
 
 
 # ── Evidence-driven fixes (see docs/PLATFORM_DIAGNOSTICS.md) ─────────────────
@@ -202,3 +202,92 @@ def test_drm_formats_are_removed_before_selection():
     assert [f["format_id"] for f in out["formats"]] == ["hls-720"]
     assert [f["format_id"] for f in out["entries"][0]["formats"]] == ["y"]
     assert _strip_unusable(None) is None
+
+
+# ── Universal media: image items, audio, conversion, fetch safety ────────────
+from app.adapters.ytdlp_backend import convert_image, fetch_source  # noqa: E402
+from app.media import media_type, split_format  # noqa: E402
+
+IG_CAROUSEL = {"_type": "playlist", "title": "Post by nasa", "entries": [
+    {"id": "1", "formats": [], "http_headers": {"Referer": "https://www.instagram.com/", "Cookie": "x=1"}, "thumbnails": [
+        {"url": "https://scontent.cdninstagram.com/a_640.jpg?x=1", "width": 640, "height": 800},
+        {"url": "https://scontent.cdninstagram.com/a_1080.jpg?x=1", "width": 1080, "height": 1350},
+        {"url": "https://scontent.cdninstagram.com/a_1080b.jpg", "width": 1080, "height": 1350},  # duplicate size: not a separate choice
+        {"url": "http://insecure.example/a.jpg", "width": 2000, "height": 2500}]},  # not https: ignored
+    {"id": "2", "duration": 9, "formats": [fmt("v1", 720, a="aac")], "thumbnails": [{"url": "https://scontent.cdninstagram.com/v.jpg", "width": 640, "height": 800}]},
+    {"id": "3", "formats": [], "thumbnails": [{"url": "https://scontent.cdninstagram.com/c.webp", "width": 1080, "height": 1080}]},
+]}
+
+
+def test_instagram_carousel_images_come_with_their_real_sizes_only():
+    m = backend().to_media(IG_CAROUSEL, "instagram")
+    assert [i.kind for i in m.items] == ["image", "video", "image"]
+    assert media_type(m.items) == "mixed"
+    img = m.items[0]
+    assert (img.width, img.height) == (1080, 1350)
+    assert [(f.id, f.label) for f in img.formats] == [("i:best", "Original · 1080×1350 · JPG"),
+                                                      ("i:640", "640×800 · JPG (smaller copy from the platform)")]
+    src = m.extra["sources"]["0:i:best"]
+    assert src["url"].endswith("a_1080.jpg?x=1")
+    assert src["headers"] == {"Referer": "https://www.instagram.com/"}  # cookies never forwarded
+    # A single-size image says it's the original, with no invented alternatives.
+    assert [f.label for f in m.items[2].formats] == ["Original · 1080×1080 · WEBP"]
+
+
+def test_format_less_entries_are_not_images_elsewhere():
+    # On other platforms a format-less entry means "nothing downloadable", not "image".
+    info = {"title": "x", "formats": [], "thumbnails": [{"url": "https://t/x.jpg", "width": 640, "height": 360}]}
+    with pytest.raises(BackendError):
+        backend().to_media(info, "youtube")
+
+
+def test_media_types():
+    from app.media import MediaItem
+    v, i, a = (MediaItem(0, "video", []), MediaItem(1, "image", []), MediaItem(2, "audio", []))
+    assert [media_type(x) for x in ([v], [v, v], [i], [i, i], [a], [v, i])] == ["video", "videos", "image", "images", "audio", "mixed"]
+    assert split_format("i:best~png") == ("i:best", "png") and split_format("v:720") == ("v:720", None)
+
+
+def test_audio_only_sources_offer_original_and_mp3():
+    info = {"title": "Track", "formats": [{"format_id": "opus", "url": "https://x/a", "ext": "opus", "vcodec": "none", "acodec": "opus", "abr": 160}]}
+    fs = backend().to_media(info, "soundcloud").items[0].formats
+    assert [(f.id, f.ext) for f in fs] == [("a:best", "opus"), ("a:mp3", "mp3")]
+    mp3 = {"title": "Track", "formats": [{"format_id": "mp3", "url": "https://x/a", "ext": "mp3", "vcodec": "none", "acodec": "mp3", "abr": 128}]}
+    assert [f.id for f in backend().to_media(mp3, "soundcloud").items[0].formats] == ["a:best"]  # already MP3: no pointless conversion
+
+
+def test_silent_or_unknown_audio_video_gets_no_mp3_option():
+    info = {"title": "x", "formats": [fmt("v", 720)]}  # acodec "none"
+    assert "a:mp3" not in [f.id for f in backend().to_media(info, "instagram").items[0].formats]
+
+
+@pytest.mark.parametrize("src", [{"url": "http://example.com/a.jpg"}, {"url": "file:///etc/passwd"}, {"url": None}, {}])
+def test_fetch_source_refuses_non_https(tmp_path, src):
+    with pytest.raises(BackendError) as e:
+        fetch_source(src, tmp_path / "media", 10**6)
+    assert e.value.code == "unsafe_url"
+
+
+def test_convert_image_with_ffmpeg(tmp_path):
+    import subprocess
+    src = tmp_path / "media.png"
+    subprocess.run(["ffmpeg", "-loglevel", "error", "-f", "lavfi", "-i", "testsrc=size=64x48", "-frames:v", "1", str(src)], check=True)
+    out = convert_image(src, "jpg")
+    assert out.name == "media.jpg" and out.read_bytes()[:3] == b"\xff\xd8\xff" and not src.exists()
+    out2 = convert_image(out, "webp")
+    assert out2.name == "media.webp" and out2.read_bytes()[8:12] == b"WEBP"
+    assert convert_image(out2, "webp") == out2  # same format: no re-encode
+    with pytest.raises(BackendError):
+        convert_image(out2, "exe")
+
+
+def test_anonymous_instagram_images_without_dimensions_still_work():
+    # Logged-out Instagram returns one display URL per carousel item, without sizes (live matrix run 5).
+    info = {"_type": "playlist", "entries": [
+        {"id": str(i), "formats": [], "width": 1080, "height": 1080 if i else None,
+         "thumbnails": [{"url": f"https://scontent.cdninstagram.com/s{i}.jpg"}, {"url": f"https://scontent.cdninstagram.com/{i}.jpg?stp=1"}]} for i in range(5)]}
+    m = backend().to_media(info, "instagram")
+    assert [i.kind for i in m.items] == ["image"] * 5 and media_type(m.items) == "images"
+    assert m.items[1].formats[0].label == "Original · 1080×1080 · JPG"
+    assert m.items[0].formats[0].label == "Original · JPG"  # unknown size: not guessed
+    assert m.extra["sources"]["3:i:best"]["url"] == "https://scontent.cdninstagram.com/3.jpg?stp=1"

@@ -98,7 +98,7 @@ def main() -> int:
         guard_curl_cffi()
 
     # Defence in depth: re-validate everything the parent sent.
-    from .adapters.chain import ExtractionFailed, download, extract
+    from .adapters.chain import ExtractionFailed, download, download_zip, extract
     from .errors import ApiError
 
     try:
@@ -129,10 +129,16 @@ def main() -> int:
             info = extract(platform, url, cfg, chain)
             _emit({"type": "result", "info": info.to_dict()})
             return 0
-        if op == "download":
+        if op in ("download", "download_zip"):
             fmt = str(req.get("format_id", ""))
-            if not FORMAT_ID_RE.match(fmt):
+            parts = req.get("parts") if op == "download_zip" else None
+            if op == "download" and not FORMAT_ID_RE.match(fmt):
                 _emit({"type": "error", "code": "invalid_format", "backend": "worker", "detail": "format id"})
+                return 2
+            if op == "download_zip" and (not isinstance(parts, list) or not 1 <= len(parts) <= int(cfg.get("max_items", 20))
+                                         or not all(isinstance(p, dict) and isinstance(p.get("item_index"), int)
+                                                    and FORMAT_ID_RE.match(str(p.get("format_id", ""))) for p in parts)):
+                _emit({"type": "error", "code": "invalid_request", "backend": "worker", "detail": "zip parts"})
                 return 2
             out_dir = Path(req["out_dir"]).resolve()
             last = [0.0]
@@ -146,7 +152,11 @@ def main() -> int:
                     last[0] = now
                     _emit({"type": "progress", "phase": "downloading", "percent": None if pct is None else round(min(pct, 100.0), 1), "downloaded": done, "total": total})
 
-            path = download(platform, url, req["backend"], int(req.get("item_index", 0)), fmt, out_dir, bool(req.get("multi")), cfg, progress, chain)
+            source = req.get("source") if isinstance(req.get("source"), dict) else None
+            if op == "download_zip":
+                path = download_zip(platform, url, req["backend"], parts, out_dir, bool(req.get("multi")), cfg, progress, chain)
+            else:
+                path = download(platform, url, req["backend"], int(req.get("item_index", 0)), fmt, out_dir, bool(req.get("multi")), cfg, progress, chain, source)
             if path.resolve().parent != out_dir:
                 _emit({"type": "error", "code": "server_error", "backend": "worker", "detail": "output escaped job dir"})
                 return 2

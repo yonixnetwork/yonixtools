@@ -15,11 +15,17 @@ for r in rows:
     elif r.get("ok"):
         res, det = "META-ONLY", r.get("download_error") or ""
     else:
-        res, det = "FAIL", r.get("error") or ""
+        errs = [m for m in (r.get("messages") or []) if not m.startswith("DEBUG")]
+        res, det = "FAIL", r.get("error") or (errs[-1] if errs else "")
     if r.get("entries"):
         det += f' items={r.get("entries")} kinds={",".join(r.get("entry_kinds") or [])}'
         if r.get("image_sizes"):
             det += f' img_sizes={r["image_sizes"][:2]}'
+    if r.get("kinds"):
+        det += f' kinds={",".join(r["kinds"])}'
+    for k in ("image_png", "zip"):
+        if k in r:
+            det += f" {k}={r[k]}"
     po = [m for m in (r.get("messages") or []) if m.startswith("DEBUG")]
     if po:
         det += " | " + po[-1][:120]
