@@ -64,3 +64,24 @@ def test_guard_also_applies_to_httpx():
             httpx.get("http://127.0.0.1:9/", timeout=2)
     finally:
         uninstall_socket_guard()
+
+
+def test_curl_cffi_impersonation_requests_are_prechecked():
+    """libcurl bypasses the getaddrinfo guard, so its requests get a host pre-check."""
+    import yt_dlp
+    from yt_dlp.networking import Request
+    from yt_dlp.networking.impersonate import ImpersonateTarget
+
+    from app.netguard import guard_curl_cffi
+    import yt_dlp.networking._curlcffi as curl_mod
+
+    called = []
+    orig = curl_mod.CurlCFFIRH._send
+    guard_curl_cffi()
+    # The original send must never run for a private target.
+    assert curl_mod.CurlCFFIRH._send is not orig or getattr(curl_mod.CurlCFFIRH, "_ytx_guarded", False)
+    with yt_dlp.YoutubeDL({"quiet": True}) as y:
+        for target in ("https://127.0.0.1/", "https://localhost/", "https://169.254.169.254/latest/meta-data/"):
+            with pytest.raises(Exception):
+                y.urlopen(Request(target, extensions={"impersonate": ImpersonateTarget("chrome")}))
+    assert called == []

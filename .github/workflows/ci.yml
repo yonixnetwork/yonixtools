@@ -68,6 +68,16 @@ jobs:
           echo "web=$web downloader=$dl"
           [ "$web" = healthy ] && [ "$dl" = healthy ]
           SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh http://127.0.0.1:8090
+      - name: Egress firewall blocks internal targets, allows the internet
+        run: |
+          sudo bash deploy/scripts/egress-firewall.sh
+          probe() { docker compose -f deploy/docker-compose.yml exec -T downloader python -c "import socket,sys; s=socket.socket(); s.settimeout(4); sys.exit(0 if s.connect_ex(('$1', $2)) == 0 else 1)"; }
+          gw=$(docker network inspect yonixtools_stack -f '{{(index .IPAM.Config 0).Gateway}}')
+          for t in "169.254.169.254 80" "$gw 22" "10.1.2.3 80" "192.168.1.1 80"; do
+            if probe $t; then echo "FAIL: reached $t"; exit 1; else echo "blocked: $t"; fi
+          done
+          probe 1.1.1.1 443 && echo "public internet OK (1.1.1.1:443)"
+          curl -fsS http://127.0.0.1:8090/api/healthz && echo " (stack still serves through the edge port)"
       - name: Container logs
         if: always()
         run: docker compose -f deploy/docker-compose.yml logs --tail 80

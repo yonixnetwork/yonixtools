@@ -49,6 +49,7 @@ class Job:
     dir: Path
     created: float = field(default_factory=time.time)
     status: str = "queued"  # queued | running | done | failed | expired
+    phase: str = "queued"  # queued | downloading | processing | ready
     progress: float | None = None
     downloaded: int | None = None
     total: int | None = None
@@ -59,7 +60,7 @@ class Job:
     task: asyncio.Task | None = None
 
     def public(self) -> dict:
-        out: dict = {"id": self.id, "status": self.status, "platform": self.platform}
+        out: dict = {"id": self.id, "status": self.status, "phase": self.phase, "platform": self.platform}
         if self.progress is not None:
             out["progress"] = self.progress
         if self.status == "done" and self.file_name:
@@ -213,6 +214,15 @@ class DownloaderService:
         fmt = next(f for f in item.formats if f.id == format_id)
         if fmt.filesize and fmt.filesize > self.s.max_filesize_bytes:
             raise ApiError("too_large", platform=pid)
+        # Same client, same media, same format: reuse the running or finished job
+        # instead of downloading it twice (double clicks, retries, multiple tabs).
+        for existing in self.jobs.values():
+            if (existing.client == client and existing.url == parsed.url and existing.item_index == item_index and existing.format_id == format_id
+                    and existing.status in ("queued", "running", "done")):
+                self._expire_if_due(existing)
+                if existing.status != "expired":
+                    self.stats["jobs.deduplicated"] += 1
+                    return existing
         if self._active(client) >= self.s.max_active_jobs_per_client:
             raise ApiError("rate_limited", "You already have downloads in progress. Wait for them to finish.", pid)
         if self._active() >= self.s.max_queued_jobs:
@@ -238,7 +248,12 @@ class DownloaderService:
                     return
                 job.status = "running"
 
+                job.phase = "downloading"
+
                 def on_progress(msg: dict) -> None:
+                    if msg.get("phase") == "processing":
+                        job.phase = "processing"
+                        return
                     job.progress = msg.get("percent")
                     job.downloaded = msg.get("downloaded")
                     job.total = msg.get("total")
@@ -260,7 +275,7 @@ class DownloaderService:
                 if size > self.s.max_filesize_bytes:
                     raise ApiError("too_large")
                 job.file_name, job.file_size = name, size
-                job.status, job.progress = "done", 100.0
+                job.status, job.progress, job.phase = "done", 100.0, "ready"
                 job.expires_at = time.time() + self.s.file_ttl_seconds
                 self.stats[f"jobs.{job.platform}.{job.backend}.ok"] += 1
                 event("job_done", job=job.id, platform=job.platform, backend=job.backend, bytes=size, ms=ms)

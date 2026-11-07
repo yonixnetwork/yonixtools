@@ -27,9 +27,13 @@ def _limits(cfg: dict) -> None:
         import resource
     except ImportError:  # pragma: no cover - non-POSIX
         return
-    mem = int(cfg.get("memory_mb", 1536)) * 1024 * 1024
     fsize = int(cfg["max_filesize"] * 1.05) + 32 * 1024 * 1024
-    for res, val in ((resource.RLIMIT_AS, mem), (resource.RLIMIT_FSIZE, fsize), (resource.RLIMIT_CORE, 0), (resource.RLIMIT_NOFILE, 512)):
+    limits = [(resource.RLIMIT_FSIZE, fsize), (resource.RLIMIT_CORE, 0), (resource.RLIMIT_NOFILE, 512)]
+    # Address-space limit is opt-in: Deno/V8 (YouTube challenge solving) reserves
+    # far more virtual memory than it uses. The container memory limit is the real cap.
+    if int(cfg.get("memory_mb", 0)) > 0:
+        limits.append((resource.RLIMIT_AS, int(cfg["memory_mb"]) * 1024 * 1024))
+    for res, val in limits:
         try:
             resource.setrlimit(res, (val, val))
         except (ValueError, OSError):
@@ -89,6 +93,9 @@ def main() -> int:
     _limits(cfg)
     if not cfg.get("disable_socket_guard_for_tests"):
         install_socket_guard()
+        from .netguard import guard_curl_cffi
+
+        guard_curl_cffi()
 
     # Defence in depth: re-validate everything the parent sent.
     from .adapters.chain import ExtractionFailed, download, extract
@@ -131,10 +138,13 @@ def main() -> int:
             last = [0.0]
 
             def progress(pct, done, total):
+                if pct == -1:  # post-processing (FFmpeg merge/convert) started
+                    _emit({"type": "progress", "phase": "processing"})
+                    return
                 now = time.monotonic()
                 if now - last[0] >= 0.4:
                     last[0] = now
-                    _emit({"type": "progress", "percent": None if pct is None else round(min(pct, 100.0), 1), "downloaded": done, "total": total})
+                    _emit({"type": "progress", "phase": "downloading", "percent": None if pct is None else round(min(pct, 100.0), 1), "downloaded": done, "total": total})
 
             path = download(platform, url, req["backend"], int(req.get("item_index", 0)), fmt, out_dir, bool(req.get("multi")), cfg, progress, chain)
             if path.resolve().parent != out_dir:

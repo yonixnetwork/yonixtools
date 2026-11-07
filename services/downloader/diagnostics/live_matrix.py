@@ -23,9 +23,9 @@ import time
 import urllib.request
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(os.environ.get("DIAG_APP_ROOT") or Path(__file__).resolve().parents[1])
 SAMPLES: dict[str, list[tuple[str, str]]] = {
-    "youtube": [("video", "https://www.youtube.com/watch?v=jNQXAC9IVRw"), ("video", "https://www.youtube.com/watch?v=BaW_jenozKc"), ("short", "https://www.youtube.com/shorts/BaW_jenozKc")],
+    "youtube": [("video", "https://www.youtube.com/watch?v=jNQXAC9IVRw"), ("video", "https://www.youtube.com/watch?v=IB3lcPjvWLA")],
     "tiktok": [("video", "https://www.tiktok.com/@barudakhb_/video/6984138651336838402"), ("video", "https://www.tiktok.com/@hara_yoimiya/video/7253412088251534594")],
     "instagram": [("reel", "https://www.instagram.com/reel/Chunk8-jurw/"), ("post", "https://www.instagram.com/p/BQ0eAlwhDrw/")],
     "facebook": [("video", "https://www.facebook.com/cnn/videos/10155529876156509/"), ("video", "https://www.facebook.com/radiokicksfm/videos/3676516585958356/")],
@@ -46,6 +46,17 @@ EXTRACTORS = {
     "dailymotion": ["dailymotion"], "twitch": ["twitch:clips"], "soundcloud": ["soundcloud"], "bluesky": ["bluesky"], "streamable": ["streamable"],
 }
 TIMEOUT = 120
+
+
+def _subprocess(cmd: list[str]) -> dict:
+    try:
+        p = subprocess.run(cmd, capture_output=True, text=True, timeout=TIMEOUT)
+    except subprocess.TimeoutExpired:
+        return {"ok": False, "error": "timeout"}
+    line = next((x for x in reversed(p.stdout.splitlines()) if x.startswith("RESULT:")), None)
+    if not line:
+        return {"ok": False, "error": f"no result (exit {p.returncode}): {p.stderr[-400:]}"}
+    return json.loads(line[len("RESULT:"):])
 
 
 def run_ytdlp(url: str, platform: str, extra: dict | None = None, download: bool = True) -> dict:

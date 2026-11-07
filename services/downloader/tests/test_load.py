@@ -42,6 +42,5 @@ def test_concurrent_jobs_respect_limits(make_client, settings):
 
 def test_queue_overflow_is_rejected_not_buffered(make_client, settings):
     c = make_client(settings, max_concurrent_jobs=1, max_queued_jobs=3, max_active_jobs_per_client=10, job_timeout_seconds=5)
-    slow = {"url": "https://www.youtube.com/watch?v=slowjob", "itemIndex": 0, "formatId": "v:best"}
-    codes = [c.post("/v1/jobs", json=slow).status_code for _ in range(6)]
+    codes = [c.post("/v1/jobs", json={"url": f"https://www.youtube.com/watch?v=slowjob{i}", "itemIndex": 0, "formatId": "v:best"}).status_code for i in range(6)]
     assert codes == [202, 202, 202, 503, 503, 503]

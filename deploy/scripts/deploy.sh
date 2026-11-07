@@ -15,6 +15,25 @@ echo "==> Building images for $rev (one at a time, to spare a small server)"
 "${COMPOSE[@]}" build web
 echo "==> Starting"
 "${COMPOSE[@]}" up -d --remove-orphans
+echo "==> Egress firewall (blocks the stack from reaching private/internal addresses)"
+bash deploy/scripts/egress-firewall.sh
+if [ -d /etc/systemd/system ] && [ ! -f /etc/systemd/system/yonixtools-egress.service ]; then
+  cat > /etc/systemd/system/yonixtools-egress.service <<UNIT
+[Unit]
+Description=YoniXTools egress firewall (SSRF defence)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/env bash $(pwd)/deploy/scripts/egress-firewall.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
+UNIT
+  systemctl daemon-reload && systemctl enable yonixtools-egress.service >/dev/null && echo "    re-applied at boot by yonixtools-egress.service"
+fi
 echo "==> Waiting for health checks"
 for _ in $(seq 1 60); do
   web="$(docker inspect -f '{{.State.Health.Status}}' yonixtools-web-1 2>/dev/null || echo starting)"

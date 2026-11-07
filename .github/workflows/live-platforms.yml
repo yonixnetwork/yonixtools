@@ -31,6 +31,10 @@ jobs:
     defaults: { run: { working-directory: services/downloader } }
     steps:
       - uses: actions/checkout@v4
+      - name: Code exactly as deployed on the droplet (v1.0, c1b070c)
+        if: matrix.phase == 'deployed'
+        uses: actions/checkout@v4
+        with: { ref: c1b070c90ec1a45b181fe9626b2bfc7746e01137, path: deployed }
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
@@ -45,8 +49,20 @@ jobs:
         run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
       - run: python -c "import yt_dlp, sys; print('yt-dlp', yt_dlp.version.__version__)"; deno --version 2>/dev/null | head -1 || echo "no deno"; python -c "import curl_cffi; print('curl_cffi', curl_cffi.__version__)" 2>/dev/null || echo "no curl_cffi"
       - run: python diagnostics/live_matrix.py --platform ${{ matrix.platform }} --phase ${{ matrix.phase }} --out results-${{ matrix.phase }}-${{ matrix.platform }}.json
+        env:
+          DIAG_APP_ROOT: ${{ matrix.phase == 'deployed' && format('{0}/deployed/services/downloader', github.workspace) || '' }}
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: results-${{ matrix.phase }}-${{ matrix.platform }}
           path: services/downloader/results-*.json
+
+  report:
+    needs: live
+    if: always() && needs.live.result != 'skipped'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - run: python3 services/downloader/diagnostics/report.py artifacts

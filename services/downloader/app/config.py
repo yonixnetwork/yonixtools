@@ -53,7 +53,7 @@ class Settings:
     job_ttl_seconds: int = 30 * 60
     min_free_disk_mb: int = 1024
     max_temp_usage_mb: int = 4096
-    worker_memory_mb: int = 1536
+    worker_memory_mb: int = 0  # 0 = no address-space limit (see worker._limits)
     max_body_bytes: int = 8 * 1024
     max_items_per_post: int = 20
     # Rate limits: requests per window per client
@@ -93,7 +93,7 @@ def load_settings() -> Settings:
         job_ttl_seconds=_int("JOB_TTL_SECONDS", 1800),
         min_free_disk_mb=_int("MIN_FREE_DISK_MB", 1024),
         max_temp_usage_mb=_int("MAX_TEMP_USAGE_MB", 4096),
-        worker_memory_mb=_int("WORKER_MEMORY_MB", 1536),
+        worker_memory_mb=_int("WORKER_MEMORY_MB", 0),
         max_body_bytes=_int("MAX_BODY_BYTES", 8192),
         max_items_per_post=_int("MAX_ITEMS_PER_POST", 20),
         rate_window_seconds=_int("RATE_WINDOW_SECONDS", 60),

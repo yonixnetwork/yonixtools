@@ -137,7 +137,7 @@ class YtDlpBackend:
         )
 
     def _item(self, idx: int, e: dict) -> MediaItem | None:
-        formats = [f for f in (e.get("formats") or []) if not f.get("has_drm") and f.get("url")]
+        formats = [f for f in (e.get("formats") or []) if not f.get("has_drm") and f.get("url") and not _is_storyboard(f)]
         if not formats and e.get("url"):
             formats = [{"url": e["url"], "ext": e.get("ext"), "vcodec": e.get("vcodec"), "acodec": e.get("acodec"),
                         "height": e.get("height"), "filesize": e.get("filesize")}]
@@ -159,11 +159,20 @@ class YtDlpBackend:
                 s = _size(best)
                 return (s + (best_audio if best.get("acodec") in (None, "none") else 0)) if s else None
             top = heights[0] if heights else None
-            out.append(MediaFormat("v:best", f"Best quality{f' ({top}p)' if top else ''} · MP4", "mp4", "video", size_for(None)))
+            marked = [f for f in videos if _watermarked(f)]
+            clean = [f for f in videos if not _watermarked(f)]
+            # Only claim "no watermark" when the platform really offers a clean source.
+            wm = " · no watermark" if (marked and clean) else (" · watermarked" if marked and not clean else "")
+            out.append(MediaFormat("v:best", f"Best quality{f' ({top}p)' if top else ''} · MP4{wm}", "mp4", "video", size_for(None)))
             # Offer standard rungs below the top resolution that actually exist (±10%).
             rungs = [h for h in HEIGHTS if top and h < top and any(abs(x - h) <= max(16, h * 0.1) for x in heights)][:4]
+            seen_sizes = {out[0].filesize}
             for h in rungs:
-                out.append(MediaFormat(f"v:{h}", f"{h}p · MP4", "mp4", "video", size_for(h)))
+                s = size_for(h)
+                if s and s in seen_sizes:  # same underlying file as a higher rung: not a real choice
+                    continue
+                seen_sizes.add(s)
+                out.append(MediaFormat(f"v:{h}", f"{h}p · MP4", "mp4", "video", s))
             if audios:
                 a = max(audios, key=lambda f: f.get("abr") or 0)
                 ext = "m4a" if any((f.get("ext") == "m4a") for f in audios) else (a.get("ext") or "webm")
@@ -183,7 +192,9 @@ class YtDlpBackend:
     @staticmethod
     def selector(format_id: str) -> str:
         if format_id == "v:best":
-            return "bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b"
+            # Prefer sources without a watermark when the platform offers one (e.g. TikTok).
+            return ("bv*[ext=mp4][format_note!*=watermark]+ba[ext=m4a]/bv*[format_note!*=watermark]+ba/b[format_note!*=watermark]"
+                    "/bv*[ext=mp4]+ba[ext=m4a]/bv*+ba/b")
         if format_id.startswith("v:"):
             h = int(format_id[2:])
             return f"bv*[height<={h}][ext=mp4]+ba[ext=m4a]/bv*[height<={h}]+ba/b[height<={h}]/b"
@@ -209,6 +220,7 @@ class YtDlpBackend:
             paths={"home": str(out_dir), "temp": str(out_dir)},
             merge_output_format="mp4" if format_id.startswith("v:") else None,
             progress_hooks=[hook],
+            postprocessor_hooks=[lambda d: d.get("status") == "started" and progress(-1, None, None)],
             noplaylist=not multi,
             playlist_items=str(item_index + 1) if multi else None,
             overwrites=True,
@@ -224,6 +236,15 @@ class YtDlpBackend:
         if code or not files:
             raise BackendError("raw", " | ".join(logger.errors) or "download produced no file")
         return max(files, key=lambda p: p.stat().st_size)
+
+
+def _is_storyboard(f: dict) -> bool:
+    """YouTube storyboards (thumbnail sprites) look like low-res video formats."""
+    return f.get("protocol") == "mhtml" or "storyboard" in str(f.get("format_note") or "").lower() or str(f.get("format_id") or "").startswith("sb")
+
+
+def _watermarked(f: dict) -> bool:
+    return "watermark" in str(f.get("format_note") or "").lower()
 
 
 def _size(f: dict) -> int:

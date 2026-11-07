@@ -126,3 +126,28 @@ def test_chain_reports_first_error_when_all_fail():
     with pytest.raises(ExtractionFailed) as e:
         extract(PLATFORMS["instagram"], "u", {}, [a, b])
     assert e.value.code == "no_media" and e.value.backend == "yt-dlp"
+
+
+def test_storyboards_are_not_offered_as_video():
+    info = {"title": "x", "formats": [fmt("sb0", 90, v="none", ext="mhtml") | {"protocol": "mhtml", "format_note": "storyboard"}]}
+    with pytest.raises(BackendError) as e:
+        backend().to_media(info, "youtube")
+    assert e.value.code == "no_media"
+    info["formats"].append(fmt("18", 360, a="mp4a"))
+    assert [f.id for f in backend().to_media(info, "youtube").items[0].formats] == ["v:best"]
+
+
+def test_watermark_labels_are_honest():
+    clean_and_marked = {"title": "x", "formats": [fmt("dl", 720, a="aac") | {"format_note": "watermarked"}, fmt("play", 720, a="aac") | {"format_note": "Direct video"}]}
+    assert "no watermark" in backend().to_media(clean_and_marked, "tiktok").items[0].formats[0].label
+    only_marked = {"title": "x", "formats": [fmt("dl", 720, a="aac") | {"format_note": "watermarked"}]}
+    assert backend().to_media(only_marked, "tiktok").items[0].formats[0].label.endswith("watermarked")
+    plain = {"title": "x", "formats": [fmt("a", 720, a="aac")]}
+    assert "watermark" not in backend().to_media(plain, "youtube").items[0].formats[0].label
+    assert "format_note!*=watermark" in YtDlpBackend.selector("v:best")
+
+
+def test_no_duplicate_quality_options():
+    same = {"title": "x", "duration": 10, "formats": [fmt("hd", 1080, a="aac", size=5_000_000), fmt("sd", 720, a="aac", size=5_000_000)]}
+    ids = [f.id for f in backend().to_media(same, "x").items[0].formats]
+    assert ids == ["v:best"]  # 720p would be the very same file size: not offered as a separate choice

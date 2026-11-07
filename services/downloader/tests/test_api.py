@@ -175,13 +175,13 @@ def test_rate_limits(make_client, settings):
 
 def test_per_client_and_global_job_caps(make_client, settings):
     c = make_client(settings, max_active_jobs_per_client=1, job_timeout_seconds=5)
-    slow = {"url": "https://www.youtube.com/watch?v=slowjob", "itemIndex": 0, "formatId": "v:best"}
-    assert c.post("/v1/jobs", json=slow).status_code == 202
-    r = c.post("/v1/jobs", json=slow)
+    slow = lambda i: {"url": f"https://www.youtube.com/watch?v=slowjob{i}", "itemIndex": 0, "formatId": "v:best"}
+    assert c.post("/v1/jobs", json=slow(1)).status_code == 202
+    r = c.post("/v1/jobs", json=slow(2))
     assert r.status_code == 429 and "already have downloads" in r.json()["error"]["message"]
     c2 = make_client(settings, max_queued_jobs=1, max_active_jobs_per_client=5, job_timeout_seconds=5)
-    assert c2.post("/v1/jobs", json=slow).status_code == 202
-    r = c2.post("/v1/jobs", json=slow)
+    assert c2.post("/v1/jobs", json=slow(1)).status_code == 202
+    r = c2.post("/v1/jobs", json=slow(2))
     assert r.status_code == 503 and r.json()["error"]["code"] == "busy"
 
 
@@ -235,3 +235,36 @@ def test_extraction_is_cached_for_job_creation(client):
     client.post("/v1/jobs", json={"url": YT, "itemIndex": 0, "formatId": "v:best"})
     c = client.app.state.service.snapshot()["counters"]
     assert c["extract.youtube.yt-dlp.ok"] == 1 and c["extract.youtube.cache_hit"] == 1
+
+
+def test_duplicate_requests_reuse_the_same_job(client):
+    body = {"url": YT, "itemIndex": 0, "formatId": "v:720"}
+    first = client.post("/v1/jobs", json=body).json()
+    second = client.post("/v1/jobs", json=body).json()
+    assert first["id"] == second["id"]
+    other = client.post("/v1/jobs", json={**body, "formatId": "a:best"}).json()
+    assert other["id"] != first["id"]
+    done = wait_job(client, first["id"])
+    assert done["phase"] == "ready"
+    assert client.post("/v1/jobs", json=body).json()["id"] == first["id"]  # finished file is reused too
+    assert client.app.state.service.stats["jobs.deduplicated"] == 2
+
+
+def test_head_and_download_started_cookie(client):
+    job = client.post("/v1/jobs", json={"url": YT, "itemIndex": 0, "formatId": "v:best"}).json()
+    done = wait_job(client, job["id"])
+    head = client.head(done["downloadUrl"])
+    assert head.status_code == 200 and head.headers["content-type"] == "video/mp4" and head.content == b""
+    assert "set-cookie" not in head.headers
+    r = client.get(done["downloadUrl"] + "?dl=abc123def456")
+    assert r.status_code == 200
+    assert "ytx_dl_abc123def456=1" in r.headers["set-cookie"] and "Path=/" in r.headers["set-cookie"]
+    bad = client.get(done["downloadUrl"] + "?dl=<script>")
+    assert "set-cookie" not in bad.headers  # token is validated
+    assert client.head("/v1/jobs/" + "A" * 24 + "/file").status_code == 404
+
+
+def test_job_reports_phases(client):
+    job = client.post("/v1/jobs", json={"url": YT, "itemIndex": 0, "formatId": "v:best"}).json()
+    assert job["phase"] in ("queued", "downloading")
+    assert wait_job(client, job["id"])["phase"] == "ready"

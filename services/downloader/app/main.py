@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import logging
+import re
 import shutil
 import sys
 import time
@@ -161,14 +162,20 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         limit(poll_rl, request)
         return service.get_job(job_id).public()
 
-    @app.get("/v1/jobs/{job_id}/file")
+    @app.api_route("/v1/jobs/{job_id}/file", methods=["GET", "HEAD"])
     async def get_file(job_id: str, request: Request):
         limit(poll_rl, request)
         job, path = service.file_for(job_id)
         ext = path.suffix.lstrip(".").lower()
         name = f"yonixtools-{job.platform}-{job.id[:8]}.{ext}"
-        return FileResponse(path, media_type=MEDIA_TYPES.get(ext, "application/octet-stream"), filename=name,
+        resp = FileResponse(path, media_type=MEDIA_TYPES.get(ext, "application/octet-stream"), filename=name,
                             headers={"Cache-Control": "no-store", "Content-Security-Policy": "sandbox; default-src 'none'"})
+        # Lets the page confirm the browser really started receiving the file
+        # (the page sees the cookie only once this response's headers arrive).
+        token = request.query_params.get("dl", "")
+        if request.method == "GET" and re.fullmatch(r"[a-z0-9]{8,32}", token):
+            resp.set_cookie(f"ytx_dl_{token}", "1", max_age=120, path="/", samesite="lax", secure=request.url.scheme == "https" or settings.is_production)
+        return resp
 
     @app.get("/internal/stats")
     async def stats(request: Request):

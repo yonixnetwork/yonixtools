@@ -98,3 +98,30 @@ def check_public_host(host: str, port: int = 443) -> list[str]:
     if not addrs or not all(is_public_ip(a) for a in addrs):
         raise BlockedAddressError(f"{host!r} resolves to a non-public address")
     return addrs
+
+
+def guard_curl_cffi() -> None:
+    """Pre-check hosts of yt-dlp's libcurl (impersonation) requests.
+
+    libcurl resolves names in C, outside the getaddrinfo guard, and follows
+    redirects itself. This refuses requests whose host resolves to a non-public
+    address; redirects are additionally covered by the host egress firewall
+    (deploy/scripts/egress-firewall.sh).
+    """
+    try:
+        from yt_dlp.networking import _curlcffi
+    except Exception:  # curl_cffi not installed
+        return
+    handler = getattr(_curlcffi, "CurlCFFIRH", None)
+    if handler is None or getattr(handler, "_ytx_guarded", False):
+        return
+    original = handler._send
+    from urllib.parse import urlsplit
+
+    def _send(self, request):  # type: ignore[no-untyped-def]
+        host = urlsplit(request.url).hostname or ""
+        check_public_host(host)
+        return original(self, request)
+
+    handler._send = _send
+    handler._ytx_guarded = True
