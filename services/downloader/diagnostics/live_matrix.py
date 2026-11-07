@@ -153,7 +153,9 @@ def run_worker(url: str, platform: str, memory_mb: int = 0) -> dict:
     item = info["items"][0]
     fmt = item["formats"][-1]["id"]
     out = tempfile.mkdtemp()
-    dreq = {**req, "op": "download", "backend": info["backend"], "item_index": item["index"], "format_id": fmt, "multi": bool(info.get("extra", {}).get("multi")), "out_dir": out}
+    src0 = ((info.get("extra") or {}).get("sources") or {}).get(f'{item["index"]}:{fmt}')  # what the API passes for image items
+    dreq = {**req, "op": "download", "backend": info["backend"], "item_index": item["index"], "format_id": fmt, "multi": bool(info.get("extra", {}).get("multi")),
+            "out_dir": out, "source": src0}
     try:
         d = subprocess.run([sys.executable, "-m", "app.worker"], input=json.dumps(dreq), capture_output=True, text=True, timeout=TIMEOUT * 2, env=env, cwd=out)
         dl = [json.loads(x) for x in d.stdout.splitlines() if x.startswith("{")]
@@ -185,7 +187,7 @@ def run_worker(url: str, platform: str, memory_mb: int = 0) -> dict:
         return fin
 
     img = next((i for i in info["items"] if i["kind"] == "image"), None)
-    if img and img is not item:
+    if img:
         f0 = img["formats"][0]["id"]
         r = sub({**req, "op": "download", "backend": info["backend"], "item_index": img["index"], "format_id": f0 + "~png",
                  "multi": True, "source": sources.get(f'{img["index"]}:{f0}')})
