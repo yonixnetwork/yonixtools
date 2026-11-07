@@ -3,7 +3,8 @@ import { defineConfig, devices } from "@playwright/test";
 // Runs against the real static export (`npm run build` first), served the way
 // production serves it. With E2E_INTEGRATED=1 a second build (`npm run
 // build:integrated`) is tested against the real downloader API.
-const integrated = process.env.E2E_INTEGRATED === "1";
+const integrated = process.env.E2E_INTEGRATED === "1" || process.env.E2E_LIVE === "1";
+const live = process.env.E2E_LIVE === "1"; // real platforms + real worker (CI live job only)
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -17,15 +18,21 @@ export default defineConfig({
     ...(integrated
       ? [
           { command: "PORT=4174 API_PROXY=http://127.0.0.1:8788 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },
-          { command: "bash scripts/e2e-backend.sh", url: "http://127.0.0.1:8788/readyz", reuseExistingServer: !process.env.CI, timeout: 60_000 },
+          { command: live ? "LIVE=1 bash scripts/e2e-backend.sh" : "bash scripts/e2e-backend.sh", url: "http://127.0.0.1:8788/readyz", reuseExistingServer: !process.env.CI, timeout: 60_000 },
         ]
       : []),
   ],
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /(mobile|integrated)\.spec\.ts/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /(mobile|integrated|live)\.spec\.ts/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts/ },
     ...(integrated
       ? [
+          ...(live
+            ? [
+                { name: "live-mobile", use: { ...devices["Pixel 7"], baseURL: "http://localhost:4174" }, testMatch: /live\.spec\.ts/ },
+                { name: "live-desktop", use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4174" }, testMatch: /live\.spec\.ts/ },
+              ]
+            : []),
           { name: "integrated", use: { ...devices["Desktop Chrome"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ },
           { name: "integrated-mobile", use: { ...devices["Pixel 7"], baseURL: "http://localhost:4174" }, testMatch: /integrated\.spec\.ts/ },
           // iOS Safari engine; CI installs WebKit (not available in every dev container).

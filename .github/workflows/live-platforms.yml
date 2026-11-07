@@ -65,6 +65,31 @@ jobs:
           name: results-${{ matrix.phase }}-${{ matrix.platform }}
           path: services/downloader/results-*.json
 
+  browser:
+    # The real website + real worker + real platforms, in Chromium emulating an Android phone (Pixel 7).
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-matrix]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    name: live browser / Android emulation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Deno (as in the production image)
+        run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - working-directory: services/downloader
+        run: python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+      - working-directory: apps/web
+        run: |
+          npm ci
+          npm run build:integrated
+          npx playwright install --with-deps chromium
+          E2E_LIVE=1 npx playwright test --trace off --project=live-mobile --workers=1
+        env: { CI: "true" }
+
   report:
     needs: live
     if: always() && needs.live.result != 'skipped'
