@@ -19,11 +19,19 @@ export default function Privacy() {
         </section>
         <section>
           <h2>Stored on your device</h2>
-          <p>Your browser&apos;s local storage holds your light or dark theme choice and a short list of tools you used recently. Both stay on your device, and clearing your site data removes them. YoniXTools does not set advertising or analytics cookies.</p>
+          <p>Your browser&apos;s local storage holds your light or dark theme choice, a short list of tools you used recently, your recent downloads list and the last quality you chose. Both stay on your device, and clearing your site data removes them. YoniXTools does not set advertising or analytics cookies.</p>
         </section>
         <section>
           <h2>Social media downloader</h2>
-          <p>When the download service launches, links you submit will be sent to the YoniXTools server so it can fetch the public media. Downloaded files will be stored only temporarily, deleted automatically shortly after download, and never kept permanently. This page will be updated with the exact retention periods before the service goes live.</p>
+          <p>
+            Links you submit are sent to the YoniXTools server so it can fetch the public media. The prepared file is deleted automatically at most 15 minutes after it is
+            ready, and never kept permanently. Server logs record the platform, timings and a short anonymous fingerprint of the link (never the full link or your files).
+            Your IP address is used briefly in memory for rate limiting.
+          </p>
+          <p>
+            Your recent downloads list is stored only in your browser and contains the title, platform and chosen quality, never the link. You can clear it from the
+            downloader at any time.
+          </p>
         </section>
       </article>
     </div>

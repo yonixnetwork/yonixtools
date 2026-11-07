@@ -155,20 +155,13 @@ def test_no_duplicate_quality_options():
 
 # ── Evidence-driven fixes (see docs/PLATFORM_DIAGNOSTICS.md) ─────────────────
 from app.adapters.chain import backends_for  # noqa: E402
-from app.adapters.ytdlp_backend import VimeoPlayerBackend  # noqa: E402
 from app.errors import message_for  # noqa: E402
 
 CFG = {"max_filesize": 10**8, "max_duration": 3600, "max_items": 10, "timeout": 60}
-VIMEO_LOGIN = "ERROR: [vimeo] 76979871: The web client only works when logged-in. Use --cookies"
 
 
-def test_vimeo_chain_falls_back_to_the_embed_player_on_login_wall():
-    chain = backends_for(PLATFORMS["vimeo"], CFG)
-    assert [b.name for b in chain] == ["yt-dlp", "yt-dlp-player"]
-    ok = object()
-    a, b = Stub("yt-dlp", error=VIMEO_LOGIN), Stub("yt-dlp-player", result=ok)
-    a.fallback_codes = chain[0].fallback_codes
-    assert extract(PLATFORMS["vimeo"], "https://vimeo.com/76979871", CFG, [a, b]) is ok
+def test_vimeo_has_no_fallback_that_would_list_undownloadable_formats():
+    assert [b.name for b in backends_for(PLATFORMS["vimeo"], CFG)] == ["yt-dlp"]
 
 
 def test_login_wall_does_not_fall_back_on_other_platforms():
@@ -176,21 +169,6 @@ def test_login_wall_does_not_fall_back_on_other_platforms():
     with pytest.raises(ExtractionFailed) as e:
         extract(PLATFORMS["instagram"], "u", {}, [a, b])
     assert e.value.code == "login_required" and b.calls == 0
-
-
-@pytest.mark.parametrize("url,expected", [
-    ("https://vimeo.com/76979871", "https://player.vimeo.com/video/76979871"),
-    ("https://vimeo.com/76979871/0a1b2c3d4e", "https://player.vimeo.com/video/76979871?h=0a1b2c3d4e"),
-    ("https://vimeo.com/channels/staffpicks/33951933", "https://player.vimeo.com/video/33951933"),
-    ("https://player.vimeo.com/video/123456?h=abcdef12", "https://player.vimeo.com/video/123456?h=abcdef12"),
-])
-def test_vimeo_player_url_is_rebuilt_from_the_id_only(url, expected):
-    assert VimeoPlayerBackend(("vimeo",), 1, 1, 1).target(url) == expected
-
-
-def test_vimeo_player_rejects_urls_without_an_id():
-    with pytest.raises(BackendError):
-        VimeoPlayerBackend(("vimeo",), 1, 1, 1).target("https://vimeo.com/someone@evil.example/")
 
 
 def test_platform_specific_messages():

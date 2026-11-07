@@ -45,4 +45,13 @@ export const toolComponentSlugs = [
   "open-graph-preview",
   "keyword-idea-generator",
   "seo-title-generator",
+  "video-frame-extractor",
+  "video-audio-extractor",
+  "video-info",
+  "color-converter",
+  "timestamp-converter",
+  "number-base-converter",
+  "time-zone-converter",
+  "random-number-generator",
+  "stopwatch-timer",
 ] as const;

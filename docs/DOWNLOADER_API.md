@@ -52,16 +52,19 @@ Response: `{"id": "<token>", "status": "queued", "platform": "youtube"}`
 ## `GET /v1/jobs/{id}`
 
 ```json
-{ "id": "…", "status": "queued|running|done|failed|expired", "platform": "youtube", "progress": 42.5,
+{ "id": "…", "status": "queued|running|done|failed|expired", "phase": "queued|downloading|processing|ready", "platform": "youtube", "progress": 42.5,
   "downloadUrl": "/v1/jobs/{id}/file", "filesize": 1234567, "expiresAt": 1762450000,
   "error": { "code": "…", "message": "…" } }
 ```
 
-`downloadUrl` is present only when `status` is `done`. It is relative to the API base.
+`downloadUrl` is present only when `status` is `done`. It is relative to the API base. Creating a job identical to one that is still queued, running or done (same client, link, item and format) returns that existing job instead of starting a new download.
 
 ## `GET /v1/jobs/{id}/file`
 
 Streams the file as `Content-Disposition: attachment; filename="yonixtools-<platform>-<id8>.<ext>"`, with `Cache-Control: no-store`. Returns `410 expired` after `FILE_TTL_SECONDS`.
+
+- `HEAD` is supported, so the page can check that the file exists before triggering a download.
+- `?dl=<token>` (8–32 lowercase letters or digits): the response also sets the cookie `ytx_dl_<token>=1` (Max-Age 120, Path=/, SameSite=Lax). The page sees it only once the browser has received this response, which is how it confirms the download really started.
 
 ## Health
 

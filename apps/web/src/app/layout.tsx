@@ -2,9 +2,10 @@ import "@fontsource-variable/inter";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/Footer";
-import { Header } from "@/components/Header";
+import { Header, type NavCategory } from "@/components/Header";
+import { categories, toolsInCategory } from "@/lib/registry";
 import { ThemeScript } from "@/components/ThemeScript";
-import { site } from "@/lib/site";
+import { categoryPath, site, toolPath } from "@/lib/site";
 
 export const metadata: Metadata = {
   metadataBase: new URL(site.url),
@@ -26,6 +27,13 @@ export const viewport: Viewport = {
   ],
 };
 
+const nav: NavCategory[] = categories.map((c) => ({
+  name: c.name,
+  href: categoryPath(c.slug),
+  icon: c.icon,
+  tools: toolsInCategory(c.id).map((t) => ({ name: t.name, href: toolPath(t.slug) })),
+}));
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
@@ -36,7 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <a href="#main" className="skip-link">
           Skip to content
         </a>
-        <Header />
+        <Header nav={nav} />
         <main id="main">{children}</main>
         <Footer />
       </body>

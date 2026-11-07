@@ -1,27 +1,23 @@
 # Known limitations
 
-## Not verified against real platforms (blocker: network access)
+## Platforms (verified live, 7 November 2026)
 
-The build environment cannot reach any social platform: DNS for youtube.com, instagram.com, tiktok.com, etc. is blocked by its network policy, and a request to allow those hosts was rejected by the environment service. Therefore:
+Real-platform results come from the live platform matrix: real extraction and download from a cloud IP. Details are in [PLATFORM_DIAGNOSTICS.md](PLATFORM_DIAGNOSTICS.md).
 
-- **No platform adapter has been verified end-to-end against a real post.** `services/downloader/live-results.json` records the attempt: YouTube and Vimeo failed at DNS resolution, and the others had no sample URL.
-- What *is* verified:
-  - URL classification for every platform.
-  - Exact extractor selection.
-  - The full pipeline (real worker → yt-dlp → native HLS → FFmpeg → file delivery), against a local HTTP server.
-  - The complete API, queue and file-delivery flow, plus the frontend integration (with the platform step simulated).
-- Run the live suite from the server before launch. It is opt-in and writes `live-results.json`:
-  ```bash
-  RUN_LIVE_TESTS=1 LIVE_URL_INSTAGRAM_REEL=… LIVE_URL_TIKTOK_VIDEO=… pytest tests/test_live.py
-  ```
-- The same applies to the legacy Instagram downloader on Hostinger. Its source isn't in any repository, so its failure could not be inspected. The new implementation replaces it.
+- **Working:** TikTok, Instagram, Facebook, X, Pinterest, Dailymotion, Twitch clips, SoundCloud, Bluesky, Streamable.
+- **YouTube: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, with every player client tried. Deno and yt-dlp-ejs are installed, so YouTube works if the server's IP is not challenged. Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`.
+- **Reddit: blocked by platform.** Reddit returns 403 to anonymous datacenter requests, including its JSON endpoints.
+- **Vimeo: blocked by platform.** The API needs an account, and the embed player's streams are DRM-protected.
+- **Snapchat: not offered.** yt-dlp's extractor fails.
+- **Individual posts can still fail:** login-only Facebook videos, region-locked TikTok posts, and private or deleted content.
+- The matrix runs from GitHub's IPs, not the droplet's. The droplet's own results may differ in either direction, so run `diagnose-platforms.sh` after each deploy.
+- **No cookies, accounts, or paid or residential proxies are used**, by design. Platforms change often, so keeping yt-dlp updated is the main maintenance task.
 
-## Expected platform behaviour (from yt-dlp/gallery-dl upstream, not tested here)
+## Direct download
 
-- **Instagram** often rate-limits or requires login for datacenter IPs. Public Reels/posts may intermittently return `login_required`/`platform_blocked`. Image posts depend on the gallery-dl fallback, which may also need login on some posts. **No cookie or login support will be added** (by design).
-- **YouTube** increasingly challenges datacenter IPs ("confirm you're not a bot"). This surfaces as `platform_blocked`.
-- **TikTok photo posts** rely on gallery-dl support, which is less mature than video support.
-- Platforms change frequently, so keeping `yt-dlp` updated is the main maintenance task.
+- The page confirms "Download started" only when the file response's one-time cookie arrives, which proves the browser received the response headers. This works only when the API is same-origin, as in production (`/api`). Otherwise, and in browsers that hide download responses, the page says "Download requested" and offers a manual "Save it here" link. It never claims success without evidence.
+- iOS Safari saves to Files → Downloads. Automated tests cover Chromium desktop, Pixel 7 emulation and WebKit (iPhone emulation) in CI, not a physical iPhone.
+- The video tools decode in the browser, so they handle only formats the browser can play (e.g. no H.264 in some Linux Chromium builds, HEVC mostly only in Safari).
 
 ## Product scope
 

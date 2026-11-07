@@ -210,7 +210,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
             autoCapitalize="off"
             spellCheck={false}
             autoFocus={autoFocus}
-            placeholder={expected ? `Paste a ${expected.name} link…` : "Paste a link from Instagram, TikTok, YouTube…"}
+            placeholder={expected ? `Paste a ${expected.name} link…` : "Paste a link from TikTok, Instagram, Facebook…"}
             value={value}
             onChange={(e) => {
               setValue(e.target.value);

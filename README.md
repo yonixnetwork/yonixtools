@@ -2,15 +2,18 @@
 
 A universal social media downloader and 44 free browser-based tools. Source for **yonixtools.com**.
 
-> **Status:** release candidate on `feature/phase-1-redesign`, **not deployed**. The current site on Hostinger is untouched.
-> Production deployment needs your approval. See [docs/RELEASE_REPORT.md](docs/RELEASE_REPORT.md).
+> **Status:**
+> - v1.0 (`feature/phase-1-redesign`, `c1b070c`) runs on the droplet.
+> - The downloader reliability and UI upgrade is on `feature/downloader-reliability` and is **not deployed**. Deploying it needs your approval.
+>
+> See [docs/RELEASE_REPORT.md](docs/RELEASE_REPORT.md) and [docs/PLATFORM_DIAGNOSTICS.md](docs/PLATFORM_DIAGNOSTICS.md).
 
 ## What's inside
 
 | | |
 |---|---|
-| **Universal downloader** | One link box. The backend detects Instagram, TikTok, YouTube, Facebook, X, Pinterest, Reddit or Vimeo and lists the formats; download jobs show live progress. Self-hosted yt-dlp, gallery-dl and FFmpeg. Public content only. |
-| **44 browser tools** | PDF (merge, split, compress, to image, from images, rotate), image (compress, resize, convert, crop), QR (generate, Wi-Fi, vCard, scan), developer (JSON, Base64, URL, UUID, JWT, hashes, regex, HTML/CSS/JS minifiers), SEO (meta tags, SERP preview, robots.txt, slugs, sitemap, schema, Open Graph preview, keyword ideas, title ideas), text (word counter, case, passwords, lorem ipsum, diff), calculators (percentage, age, BMI, loan, compound interest, units). Files never leave the device. |
+| **Universal downloader** | One link box. It detects the platform, lists the real qualities, and one click starts the download, with live progress and an honest "download started" check. Working today: TikTok, Instagram, Facebook, X, Pinterest, Dailymotion, Twitch clips, SoundCloud, Bluesky and Streamable. YouTube, Reddit and Vimeo block cloud servers (see [docs/PLATFORM_DIAGNOSTICS.md](docs/PLATFORM_DIAGNOSTICS.md)). Self-hosted yt-dlp (with Deno), gallery-dl and FFmpeg. Public content only. |
+| **53 browser tools** | Video (frame extractor, audio to WAV, video info), converters (units, colours, timestamps, number bases, time zones), utilities (random numbers, stopwatch and timer), PDF (merge, split, compress, to image, from images, rotate), image (compress, resize, convert, crop), QR (generate, Wi-Fi, vCard, scan), developer (JSON, Base64, URL, UUID, JWT, hashes, regex, HTML/CSS/JS minifiers), SEO (meta tags, SERP preview, robots.txt, slugs, sitemap, schema, Open Graph preview, keyword ideas, title ideas), text (word counter, case, passwords, lorem ipsum, diff), calculators (percentage, age, BMI, loan, compound interest). Files never leave the device. |
 | **Discovery** | Search that understands synonyms and typos, categories, related tools, recently used tools. |
 | **SEO** | A static page per tool with unique metadata, FAQs, breadcrumbs and JSON-LD; sitemap; robots.txt. |
 
@@ -50,6 +53,7 @@ See [docs/TESTING.md](docs/TESTING.md). In short:
 
 - [Architecture](docs/ARCHITECTURE.md)
 - [Downloader API](docs/DOWNLOADER_API.md)
+- [Platform diagnostics](docs/PLATFORM_DIAGNOSTICS.md)
 - [Deployment](docs/DEPLOYMENT.md)
 - [Migration from YonixAlpha](docs/MIGRATION_FROM_YONIXALPHA.md)
 - [Testing](docs/TESTING.md)

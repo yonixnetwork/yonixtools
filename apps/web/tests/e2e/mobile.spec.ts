@@ -8,14 +8,36 @@ for (const path of ["/", "/instagram-downloader/", "/image-compressor/", "/loan-
   });
 }
 
-test("mobile menu opens with search and links", async ({ page }) => {
+test("hamburger opens the tools drawer with search and categories", async ({ page }) => {
   await page.goto("/");
   await expect(page.locator(".nav-links")).toBeHidden();
   await page.getByRole("button", { name: "Open menu" }).click();
-  await expect(page.locator("#mobile-menu")).toBeVisible();
-  await page.locator("#mobile-menu input").fill("qr");
-  await expect(page.locator('#mobile-menu .suggest [role="option"]').first()).toContainText("QR");
-  await expect(page.locator("#mobile-menu nav a", { hasText: "All tools" })).toBeVisible();
+  const drawer = page.locator("#tools-drawer");
+  await expect(drawer).toBeVisible();
+  await drawer.locator("input").fill("qr");
+  await expect(drawer.locator('.suggest [role="option"]').first()).toContainText("QR");
+  await expect(drawer.locator(".drawer-cat")).toHaveCount(11);
+  await drawer.locator("summary", { hasText: "Converters" }).click();
+  await drawer.getByRole("link", { name: "Color Converter" }).click();
+  await expect(page).toHaveURL(/\/color-converter\/$/);
+});
+
+test("bottom bar: one compact nav, search opens the drawer focused", async ({ page }) => {
+  await page.goto("/image-compressor/");
+  const bar = page.getByRole("navigation", { name: "Quick" });
+  await expect(bar).toBeVisible();
+  await expect(bar.getByRole("link")).toHaveCount(2);
+  await bar.getByRole("button", { name: "Search" }).click();
+  await expect(page.locator("#tools-drawer input")).toBeFocused();
+  await page.getByRole("button", { name: "Close menu" }).click();
+  await expect(page.locator("#tools-drawer")).toHaveCount(0);
+});
+
+test("downloader is above the fold on a phone", async ({ page }) => {
+  await page.goto("/");
+  const vh = page.viewportSize()!.height;
+  const submit = await page.getByRole("button", { name: "Download", exact: true }).boundingBox();
+  expect(submit!.y + submit!.height).toBeLessThan(vh - 58); // fully visible above the bottom bar
 });
 
 test("downloader is usable at phone width", async ({ page }) => {

@@ -15,6 +15,9 @@ const crop = () => import("./CropTool");
 const scan = () => import("./ScannerTool");
 const mini = () => import("./MinifyTools");
 const seo2 = () => import("./SeoExtraTools");
+const video = () => import("./VideoTools");
+const conv = () => import("./ConvertTools");
+const util = () => import("./UtilityTools");
 
 const loading = () => <div className="muted" style={{ padding: "48px 0", textAlign: "center" }}>Loading tool…</div>;
 // Marks <html data-tool-ready> once the tool has hydrated and is interactive
@@ -75,6 +78,15 @@ export const toolComponents: Record<(typeof toolComponentSlugs)[number], Compone
   "open-graph-preview": d(seo2, (m) => m.OgPreview),
   "keyword-idea-generator": d(seo2, (m) => m.KeywordIdeaGenerator),
   "seo-title-generator": d(seo2, (m) => m.SeoTitleGenerator),
+  "video-frame-extractor": d(video, (m) => m.VideoFrameExtractor),
+  "video-audio-extractor": d(video, (m) => m.VideoAudioExtractor),
+  "video-info": d(video, (m) => m.VideoInfo),
+  "color-converter": d(conv, (m) => m.ColorConverter),
+  "timestamp-converter": d(conv, (m) => m.TimestampConverter),
+  "number-base-converter": d(conv, (m) => m.NumberBaseConverter),
+  "time-zone-converter": d(conv, (m) => m.TimeZoneConverter),
+  "random-number-generator": d(util, (m) => m.RandomNumberGenerator),
+  "stopwatch-timer": d(util, (m) => m.StopwatchTimer),
 };
 
 export function ToolRenderer({ slug }: { slug: string }) {

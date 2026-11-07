@@ -248,23 +248,6 @@ class YtDlpBackend:
         return max(files, key=lambda p: p.stat().st_size)
 
 
-class VimeoPlayerBackend(YtDlpBackend):
-    """Vimeo through the public embed player (player.vimeo.com) instead of the API.
-
-    The URL is rebuilt from the validated numeric id (and unlisted hash), so
-    nothing user-controlled besides those reaches yt-dlp.
-    """
-
-    name = "yt-dlp-player"
-
-    def target(self, url: str) -> str:
-        m = re.search(r"vimeo\.com/(?:.*?/)?(?:video/)?(\d{3,12})(?:/([0-9a-f]{6,20}))?(?:[/?#]|$)", url)
-        if not m:
-            raise BackendError("unsupported_content", "no vimeo id")
-        h = m.group(2) or (re.search(r"[?&]h=([0-9a-f]{6,20})", url) or [None, None])[1]
-        return f"https://player.vimeo.com/video/{m.group(1)}" + (f"?h={h}" if h else "")
-
-
 def _strip_unusable(info: Any) -> Any:
     """Drop DRM-protected formats (and storyboards) from an extractor result, in place."""
     if not isinstance(info, dict):

@@ -11,7 +11,7 @@ from ..media import MediaInfo
 from ..platforms import Platform
 from .errors import FALLBACK_CODES, classify_error
 from .gallerydl_backend import GalleryDlBackend
-from .ytdlp_backend import BackendError, VimeoPlayerBackend, YtDlpBackend
+from .ytdlp_backend import BackendError, YtDlpBackend
 
 
 class ExtractionFailed(Exception):
@@ -28,11 +28,9 @@ def _code(e: BackendError) -> str:
 
 def backends_for(platform: Platform, cfg: dict) -> list:
     chain: list = [YtDlpBackend(platform.ytdlp_extractors, cfg["max_filesize"], cfg["max_duration"], cfg["max_items"])]
-    if platform.id == "vimeo":
-        # yt-dlp's default Vimeo API client now requires an account; the public
-        # embed player still serves public videos (verified by the live matrix).
-        chain[0].fallback_codes = FALLBACK_CODES | {"login_required"}
-        chain.append(VimeoPlayerBackend(platform.ytdlp_extractors, cfg["max_filesize"], cfg["max_duration"], cfg["max_items"]))
+    # Vimeo: an embed-player fallback was tried and rejected (live matrix runs
+    # 3-4): it lists qualities but the streams are DRM-protected, so users
+    # would see options that can never download. See docs/PLATFORM_DIAGNOSTICS.md.
     if platform.gallerydl_fallback or platform.id == "tiktok":
         chain.append(GalleryDlBackend(cfg["max_filesize"], cfg["max_items"], cfg["timeout"]))
     return chain

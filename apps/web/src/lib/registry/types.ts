@@ -6,7 +6,10 @@ export type CategoryId =
   | "seo"
   | "developer"
   | "text"
-  | "calculators";
+  | "calculators"
+  | "video"
+  | "converters"
+  | "utilities";
 
 /**
  * live             – fully working in the browser today.

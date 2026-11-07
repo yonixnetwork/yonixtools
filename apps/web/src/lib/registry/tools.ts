@@ -1,5 +1,6 @@
 import type { PlannedTool, Tool } from "./types";
 import { extraTools } from "./tools-extra";
+import { moreTools } from "./tools-more";
 
 const PHASE1 = "2026-11-06";
 
@@ -46,7 +47,7 @@ const baseTools: Tool[] = [
         "Temporary files are deleted automatically after download",
       ],
       faqs: [
-        { q: "Which platforms are supported?", a: "Instagram, TikTok, YouTube, Facebook, X (Twitter), Pinterest and Reddit, plus other public sources supported by the open-source yt-dlp project such as Vimeo." },
+        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, Dailymotion, Twitch clips, SoundCloud, Bluesky and Streamable work today. YouTube, Reddit and Vimeo currently block requests from cloud servers, so they may not work. The home page shows the current status of each platform." },
         ...downloaderFaqsCommon,
       ],
     },
@@ -961,7 +962,7 @@ const baseTools: Tool[] = [
     slug: "unit-converter",
     name: "Unit Converter",
     tagline: "Length, weight, temperature, volume, area, speed and data.",
-    category: "calculators",
+    category: "converters",
     status: "live",
     runsIn: "browser",
     icon: "Ruler",
@@ -984,7 +985,7 @@ const baseTools: Tool[] = [
   },
 ];
 
-export const tools: Tool[] = [...baseTools, ...extraTools];
+export const tools: Tool[] = [...baseTools, ...extraTools, ...moreTools];
 
 /**
  * Tools that are planned but not built yet. They have NO pages. Search uses

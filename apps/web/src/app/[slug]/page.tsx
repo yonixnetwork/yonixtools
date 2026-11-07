@@ -3,6 +3,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Downloader } from "@/components/Downloader";
+import { PLATFORMS } from "@/lib/downloader/detect";
+import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
 import { FaqList } from "@/components/Faq";
 import { ToolIcon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
@@ -32,6 +34,7 @@ export default async function ToolPage({ params }: Props) {
   const crumbs = toolBreadcrumbs(tool);
   const related = relatedTools(tool.slug, 5);
   const isDownloader = tool.category === "social";
+  const status = tool.platform ? PLATFORM_STATUS.find((p) => p.id === tool.platform) : undefined;
 
   return (
     <>
@@ -67,6 +70,16 @@ export default async function ToolPage({ params }: Props) {
         </header>
 
         <section className={isDownloader ? "" : "card tool-surface"} aria-label={`${tool.name} tool`}>
+          {isDownloader && status && status.state !== "working" && (
+            <div className={`notice ${status.state === "blocked" ? "notice-error" : "notice-warn"}`} role="status" data-testid="platform-status">
+              <div>
+                <strong>
+                  {PLATFORMS[status.id].name}: {STATE_LABEL[status.state].toLowerCase()} (checked {VERIFIED_ON})
+                </strong>
+                {status.note}
+              </div>
+            </div>
+          )}
           {isDownloader ? <Downloader expectedPlatform={tool.platform} /> : <ToolRenderer slug={tool.slug} />}
         </section>
 

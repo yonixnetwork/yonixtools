@@ -48,8 +48,10 @@ describe("tool search", () => {
 
   it("searches by category name", () => {
     const r = searchTools("calculators").results.map((x) => x.tool.category);
-    expect(r.length).toBeGreaterThanOrEqual(6);
-    expect(new Set(r.slice(0, 6))).toEqual(new Set(["calculators"]));
+    expect(r.length).toBeGreaterThanOrEqual(5);
+    expect(new Set(r.slice(0, 5))).toEqual(new Set(["calculators"]));
+    expect(searchTools("converters").results[0].tool.category).toBe("converters");
+    expect(searchTools("video tools").results[0].tool.category).toBe("video");
   });
 
   it("filters by category", () => {
