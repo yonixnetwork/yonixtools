@@ -18,12 +18,22 @@ export interface MediaFormat {
 export interface MediaItem {
   index: number;
   kind: "video" | "image" | "audio";
+  /** Preview URL relative to the API base (served same-origin by the backend). */
   thumbnail?: string;
   formats: MediaFormat[];
+  durationSeconds?: number;
+  width?: number;
+  height?: number;
+  /** Image items: formats the original can be converted to on request. */
+  conversions?: Array<"jpg" | "png" | "webp">;
 }
+
+export type MediaType = "video" | "videos" | "image" | "images" | "audio" | "mixed";
 
 export interface ExtractResult {
   platform: string;
+  /** What the link really contains (older backends omit it). */
+  mediaType?: MediaType;
   title: string;
   author?: string;
   thumbnail?: string;
@@ -157,6 +167,22 @@ function isJob(b: unknown): b is Job {
 
 export function createJob(opts: ClientOptions, url: string, itemIndex: number, formatId: string): Promise<Job> {
   return request(opts, "/v1/jobs", { method: "POST", body: JSON.stringify({ url, itemIndex, formatId }) }, isJob);
+}
+
+/** One ZIP with the best copy of each selected item of a post (2 or more items). */
+export function createZipJob(opts: ClientOptions, url: string, items: number[]): Promise<Job> {
+  return request(opts, "/v1/jobs", { method: "POST", body: JSON.stringify({ url, formatId: "zip", items }) }, isJob);
+}
+
+/** Describe a result's content in words ("Video", "3 images", "Mixed: 1 video, 2 images"). */
+export function describeMedia(r: Pick<ExtractResult, "items">): string {
+  const n = (k: string) => r.items.filter((i) => i.kind === k).length;
+  const v = n("video"), i = n("image"), a = n("audio");
+  const part = (c: number, w: string) => (c ? `${c} ${w}${c > 1 ? "s" : ""}` : "");
+  if ([v, i, a].filter(Boolean).length > 1) return `Mixed: ${[part(v, "video"), part(i, "image"), part(a, "audio track")].filter(Boolean).join(", ")}`;
+  if (a) return a > 1 ? part(a, "audio track") : "Audio";
+  if (i) return i > 1 ? part(i, "image") : "Image";
+  return v > 1 ? part(v, "video") : "Video";
 }
 
 export function getJob(opts: ClientOptions, id: string): Promise<Job> {

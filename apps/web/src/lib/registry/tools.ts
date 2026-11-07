@@ -20,7 +20,7 @@ const baseTools: Tool[] = [
   {
     slug: "social-media-downloader",
     name: "Universal Social Media Downloader",
-    tagline: "One link box for Instagram, TikTok, YouTube, Facebook, X, Pinterest and Reddit.",
+    tagline: "One link box for TikTok, Instagram, Facebook, X, Pinterest and more.",
     category: "social",
     status: "awaiting-backend",
     runsIn: "server",
@@ -31,7 +31,7 @@ const baseTools: Tool[] = [
     addedAt: PHASE1,
     seo: {
       title: "Social Media Video Downloader – One Link, Any Platform",
-      description: "Paste a public Instagram, TikTok, YouTube, Facebook, X, Pinterest or Reddit link. YoniXTools detects the platform and lists the available formats.",
+      description: "Paste a public TikTok, Instagram, Facebook, X, Pinterest or LinkedIn link. YoniXTools detects the platform and shows every video, photo and audio track.",
     },
     content: {
       intro: "Paste a link from any supported platform. You never need to pick the platform first: YoniXTools recognises it from the URL, fetches the public media details and shows the formats you can save.",
@@ -47,7 +47,7 @@ const baseTools: Tool[] = [
         "Temporary files are deleted automatically after download",
       ],
       faqs: [
-        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, Dailymotion, Twitch clips, SoundCloud, Bluesky and Streamable work today. YouTube, Reddit and Vimeo currently block requests from cloud servers, so they may not work. The home page shows the current status of each platform." },
+        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal, 9GAG and Imgur. YouTube asks cloud servers to sign in, so it may not work. The home page shows the current status of each platform." },
         ...downloaderFaqsCommon,
       ],
     },
@@ -227,6 +227,7 @@ const baseTools: Tool[] = [
   },
   {
     slug: "reddit-downloader",
+    hidden: true, // Reddit blocks anonymous server requests (HTTP 403): see docs/PLATFORM_DIAGNOSTICS.md
     name: "Reddit Video Downloader",
     tagline: "Download Reddit videos with sound, plus images and GIFs.",
     category: "social",

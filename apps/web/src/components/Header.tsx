@@ -1,5 +1,5 @@
 "use client";
-import { ChevronDown, Download, Grid2x2, House, LifeBuoy, Menu, Search, X } from "lucide-react";
+import { ChevronDown, Download, Grid2x2, House, LifeBuoy, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { Logo } from "./Logo";
@@ -107,26 +107,6 @@ export function Header({ nav }: { nav: NavCategory[] }) {
         </div>
       </header>
 
-      {/* Phones: one compact bar for the main destinations; everything else lives in the drawer. */}
-      <nav className="bottom-nav" aria-label="Quick">
-        <a href="/" aria-current={path === "/" ? "page" : undefined}>
-          <House aria-hidden />
-          Home
-        </a>
-        <a href={DOWNLOADER} aria-current={isCurrent(path, DOWNLOADER) ? "page" : undefined}>
-          <Download aria-hidden />
-          Download
-        </a>
-        <button type="button" onClick={() => show(false)} aria-controls="tools-drawer" aria-expanded={open}>
-          <Grid2x2 aria-hidden />
-          Tools
-        </button>
-        <button type="button" onClick={() => show(true)} aria-controls="tools-drawer">
-          <Search aria-hidden />
-          Search
-        </button>
-      </nav>
-
       {open && (
         <div className="drawer-backdrop" onClick={close}>
           <div ref={drawerRef} id="tools-drawer" className="drawer" role="dialog" aria-modal="true" aria-label="All tools" onClick={(e) => e.stopPropagation()}>
@@ -138,14 +118,15 @@ export function Header({ nav }: { nav: NavCategory[] }) {
             </div>
             <SearchBox size="lg" autoFocus={focusSearch} />
             <nav className="drawer-quick" aria-label="Menu">
-              <a href="/"><House aria-hidden /> Home</a>
-              <a href={DOWNLOADER}><Download aria-hidden /> Downloader</a>
-              <a href="/tools/"><Grid2x2 aria-hidden /> All tools</a>
-              <a href="/about/"><LifeBuoy aria-hidden /> Help</a>
+              <a href="/" aria-current={path === "/" ? "page" : undefined}><House aria-hidden /> Home</a>
+              <a href={DOWNLOADER} aria-current={isCurrent(path, DOWNLOADER) ? "page" : undefined}><Download aria-hidden /> Downloader</a>
+              <a href="/tools/" aria-current={path.startsWith("/tools/") ? "page" : undefined}><Grid2x2 aria-hidden /> All tools</a>
+              <a href="/about/" aria-current={path.startsWith("/about/") ? "page" : undefined}><LifeBuoy aria-hidden /> Help</a>
             </nav>
+            <h2 className="drawer-heading">Tool categories</h2>
             <div className="drawer-cats" role="list">
               {nav.map((c) => (
-                <details key={c.href} className="drawer-cat" role="listitem" open={c.href.includes("social")}>
+                <details key={c.href} className="drawer-cat" role="listitem" open={path.startsWith(c.href) || c.tools.some((t) => path === t.href)}>
                   <summary>
                     <span className="tool-icon sm"><Icon name={c.icon} /></span>
                     <span className="drawer-cat-name">{c.name}</span>
@@ -155,7 +136,7 @@ export function Header({ nav }: { nav: NavCategory[] }) {
                   <ul>
                     {c.tools.map((t) => (
                       <li key={t.href}>
-                        <a href={t.href}>{t.name}</a>
+                        <a href={t.href} aria-current={path === t.href ? "page" : undefined}>{t.name}</a>
                       </li>
                     ))}
                     <li>

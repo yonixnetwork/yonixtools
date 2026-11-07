@@ -223,7 +223,18 @@ class DownloaderService:
                    "Accept": "image/avif,image/webp,image/*,*/*;q=0.8"}
         # The API process has the socket guard installed: every connection
         # (including redirect hops, followed manually here) must be to a public IP.
-        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0), follow_redirects=False) as client:
+        # trust_env=False: never go through an environment proxy (the guard must see the real target).
+        try:
+            return await self._fetch_image(httpx, url, headers, limit)
+        except ApiError:
+            raise
+        except Exception:  # network errors, guard refusals, bad TLS: just no preview
+            self.stats["preview.fail"] += 1
+            raise ApiError("not_found") from None
+
+    @staticmethod
+    async def _fetch_image(httpx, url: str, headers: dict, limit: int) -> tuple[bytes, str]:
+        async with httpx.AsyncClient(timeout=httpx.Timeout(10.0), follow_redirects=False, trust_env=False) as client:
             for _ in range(4):
                 if not url.startswith("https://"):
                     raise ApiError("not_found")

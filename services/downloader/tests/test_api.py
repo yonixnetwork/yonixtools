@@ -328,3 +328,17 @@ def test_preview_tokens_are_opaque_and_unknown_ones_404(client):
     assert client.get("/v1/preview/" + "0" * 32).status_code == 404
     assert client.get("/v1/preview/../../etc/passwd").status_code == 404
     assert client.get("/v1/preview/http%3A%2F%2F169.254.169.254%2F").status_code == 404
+
+
+@pytest.mark.parametrize("target", ["https://127.0.0.1/x.jpg", "https://169.254.169.254/latest/meta-data/", "https://10.0.0.5/a.png",
+                                    "https://localhost/a.png", "http://example.com/a.jpg"])
+def test_preview_proxy_never_reaches_internal_addresses(client, target):
+    from app.media import MediaFormat, MediaInfo, MediaItem
+    svc = client.app.state.service
+    pub = svc.public_info(MediaInfo("instagram", "yt-dlp", "t", [MediaItem(0, "image", [MediaFormat("i:best", "Original", "jpg", "image")], target)]))
+    tok = pub["items"][0]["thumbnail"]
+    if target.startswith("http://"):
+        assert tok is None  # never proxied
+        return
+    r = client.get(tok)
+    assert r.status_code == 404

@@ -1,11 +1,11 @@
 "use client";
-import { Check, CircleAlert, CircleCheck, ClipboardPaste, Clock, Copy, Download, History, Info, Link as LinkIcon, LoaderCircle, RotateCcw, Trash2, X } from "lucide-react";
+import { Check, CircleAlert, CircleCheck, ClipboardPaste, Clock, Copy, Download, FileArchive, Image as ImageIcon, Info, Link as LinkIcon, LoaderCircle, Music, RotateCcw, Video, X } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlatformIcon } from "./Icon";
 import { detectUrl, PLATFORMS } from "@/lib/downloader/detect";
-import { createJob, DownloaderError, extractMedia, getJob, jobReady, resolveDownloadUrl, type ExtractResult, type MediaFormat } from "@/lib/downloader/client";
+import { createJob, createZipJob, describeMedia, DownloaderError, extractMedia, getJob, jobReady, resolveDownloadUrl, type ExtractResult, type MediaFormat, type MediaItem } from "@/lib/downloader/client";
 import { startBrowserDownload } from "@/lib/downloader/browser-download";
-import { addHistory, clearHistory, readHistory, readPreferredFormat, savePreferredFormat, type HistoryEntry } from "@/lib/downloader/history";
+import { readPreferredFormat, savePreferredFormat } from "@/lib/downloader/history";
 import { ACTIVE_PHASES, jobPhase, phaseText, type Phase } from "@/lib/downloader/phases";
 import { site } from "@/lib/site";
 
@@ -14,14 +14,14 @@ type State =
   | { kind: "loading" }
   | { kind: "not-configured"; platform: string; contentType: string }
   | { kind: "error"; title: string; message: string; retry: boolean }
-  | { kind: "result"; data: ExtractResult; url: string; resultId: number };
+  | ResultState;
 
 /**
  * One quality the user clicked. Transfers outlive the result card: "Download
  * another video" never cancels them, they finish and start in the background.
  */
 interface Transfer {
-  key: string; // `${resultId}:${itemIndex}:${formatId}`
+  key: string; // `${resultId}:${itemIndex}:${formatId}` or `${resultId}:zip:${items}`
   resultId: number;
   title: string;
   platform: string;
@@ -33,7 +33,10 @@ interface Transfer {
   progress?: number;
   href?: string;
   message?: string;
+  zipItems?: number[];
 }
+
+type ResultState = { kind: "result"; data: ExtractResult; url: string; resultId: number };
 
 const POLL_MS = 1200;
 const POLL_LIMIT_MS = 10 * 60_000;
@@ -59,7 +62,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   const [value, setValue] = useState("");
   const [state, setState] = useState<State>({ kind: "idle" });
   const [transfers, setTransfers] = useState<Transfer[]>([]);
-  const [history, setHistory] = useState<HistoryEntry[]>([]);
+  const [selected, setSelected] = useState<number[]>([]);
   const [preferred, setPreferred] = useState<string | null>(null);
   const [canPaste, setCanPaste] = useState(false);
   const [thumbFailed, setThumbFailed] = useState(false);
@@ -73,7 +76,6 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   useEffect(() => {
     unmounted.current = false;
     setCanPaste(typeof navigator !== "undefined" && !!navigator.clipboard?.readText);
-    setHistory(readHistory());
     setPreferred(readPreferredFormat());
     document.documentElement.dataset.downloaderReady = "1";
     return () => {
@@ -126,6 +128,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
     try {
       const data = await extractMedia(api, d.url);
       setThumbFailed(false);
+      setSelected([]);
       setState({ kind: "result", data, url: d.url, resultId: ++resultSeq.current });
     } catch (err) {
       const e2 = err instanceof DownloaderError ? err : new DownloaderError("server_error", "Something went wrong. Nothing was downloaded.");
@@ -142,7 +145,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
 
   const run = async (t: Transfer) => {
     try {
-      let j = await createJob(api, t.url, t.itemIndex, t.formatId);
+      let j = t.zipItems ? await createZipJob(api, t.url, t.zipItems) : await createJob(api, t.url, t.itemIndex, t.formatId);
       const started = Date.now();
       while (!unmounted.current && (j.status === "queued" || j.status === "running")) {
         patch(t.key, { phase: jobPhase(j), progress: j.progress });
@@ -159,22 +162,33 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
       patch(t.key, { phase: "starting", href, progress: 100 });
       const outcome = await startBrowserDownload(href);
       patch(t.key, { phase: outcome });
-      setHistory(addHistory({ platform: t.platform, title: t.title, format: t.label, at: Date.now() }));
     } catch (err) {
       patch(t.key, { phase: "failed", message: err instanceof Error && err.message ? err.message : "The download failed. Nothing was saved." });
     }
   };
 
-  const choose = (result: Extract<State, { kind: "result" }>, itemIndex: number, f: MediaFormat) => {
-    const key = `${result.resultId}:${itemIndex}:${f.id}`;
-    const t: Transfer = { key, resultId: result.resultId, title: result.data.title, platform: result.data.platform, label: f.label, url: result.url, itemIndex, formatId: f.id, phase: "queued" };
-    setTransfers((ts) => [t, ...ts.filter((x) => x.key !== key)].slice(0, 12));
-    savePreferredFormat(f.id);
-    setPreferred(readPreferredFormat());
+  const start = (t: Transfer) => {
+    setTransfers((ts) => [t, ...ts.filter((x) => x.key !== t.key)].slice(0, 16));
     void run(t);
   };
 
-  const copyInfo = async (r: Extract<State, { kind: "result" }>) => {
+  /** One click on a quality (or an image's Download button) starts the download. */
+  const choose = (result: ResultState, itemIndex: number, formatId: string, label: string) => {
+    start({ key: `${result.resultId}:${itemIndex}:${formatId}`, resultId: result.resultId, title: result.data.title, platform: result.data.platform, label, url: result.url, itemIndex, formatId, phase: "queued" });
+    if (!formatId.includes("~")) {
+      savePreferredFormat(formatId);
+      setPreferred(readPreferredFormat());
+    }
+  };
+
+  const chooseZip = (result: ResultState, items: number[]) => {
+    const sorted = [...items].sort((a, b) => a - b);
+    start({ key: `${result.resultId}:zip:${sorted.join(",")}`, resultId: result.resultId, title: result.data.title, platform: result.data.platform, label: `ZIP of ${sorted.length} items`, url: result.url, itemIndex: sorted[0], formatId: "zip", zipItems: sorted, phase: "queued" });
+  };
+
+  const transferFor = (result: ResultState, key: string) => transfers.find((x) => x.key === `${result.resultId}:${key}`);
+
+  const copyInfo = async (r: ResultState) => {
     const formats = r.data.items.flatMap((i) => i.formats.map((f) => f.label));
     const text = [r.data.title, r.data.author && `By ${r.data.author}`, `Platform: ${platformName(r.data.platform)}`, r.data.durationSeconds && `Duration: ${formatDuration(r.data.durationSeconds)}`, `Available: ${[...new Set(formats)].join(", ")}`, r.url]
       .filter(Boolean)
@@ -190,7 +204,10 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
 
   const expected = expectedPlatform ? PLATFORMS[expectedPlatform as keyof typeof PLATFORMS] : undefined;
   const current = state.kind === "result" ? state : null;
-  const background = transfers.filter((t) => t.resultId !== current?.resultId);
+  // Only downloads still being prepared (or needing a manual save) from earlier links; no history list.
+  const background = transfers.filter((t) => t.resultId !== current?.resultId && (ACTIVE.includes(t.phase) || t.phase === "requested"));
+  const api_base = site.downloaderApiUrl;
+  const preview = (u?: string) => (u ? resolveDownloadUrl(api_base, u) : undefined);
 
   return (
     <div className="downloader" id="downloader">
@@ -302,90 +319,75 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
       )}
 
       {current && (
-        <div className={`card card-pad media-result${!current.data.thumbnail || thumbFailed ? " no-thumb" : ""}`}>
-          {current.data.thumbnail && !thumbFailed && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img className="media-thumb" src={current.data.thumbnail} alt="" referrerPolicy="no-referrer" loading="lazy" onError={() => setThumbFailed(true)} />
+        <div className="card card-pad dl-result" data-media-type={current.data.mediaType ?? ""}>
+          <div className={`media-result${!current.data.thumbnail || thumbFailed || current.data.items.length > 1 || current.data.items[0]?.kind === "image" ? " no-thumb" : ""}`}>
+            {current.data.thumbnail && !thumbFailed && current.data.items.length === 1 && current.data.items[0].kind !== "image" && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img className="media-thumb" src={preview(current.data.thumbnail)} alt="" loading="lazy" onError={() => setThumbFailed(true)} />
+            )}
+            <div style={{ minWidth: 0 }}>
+              <h3 style={{ overflowWrap: "anywhere" }}>{current.data.title}</h3>
+              <p className="muted dl-meta">
+                <span style={{ width: 14, height: 14, display: "inline-block" }}>
+                  <PlatformIcon platform={current.data.platform} />
+                </span>
+                {[platformName(current.data.platform), current.data.author, formatDuration(current.data.durationSeconds)].filter(Boolean).join(" · ")}
+                <span className="badge badge-neutral" data-testid="media-kind">{describeMedia(current.data)}</span>
+              </p>
+              {current.data.items.length === 1 && current.data.items[0].kind !== "image" && (
+                <>
+                  <p className="dl-hint">Choose a quality. The download starts right away.</p>
+                  <FormatList item={current.data.items[0]} result={current} transferFor={transferFor} choose={choose} preferred={preferred} />
+                </>
+              )}
+            </div>
+          </div>
+
+          {current.data.items.length === 1 && current.data.items[0].kind === "image" && (
+            <div className="media-grid single">
+              <MediaCard item={current.data.items[0]} result={current} preview={preview} transferFor={transferFor} choose={choose} />
+            </div>
           )}
-          <div style={{ minWidth: 0 }}>
-            <h3 style={{ overflowWrap: "anywhere" }}>{current.data.title}</h3>
-            <p className="muted dl-meta">
-              <span style={{ width: 14, height: 14, display: "inline-block" }}>
-                <PlatformIcon platform={current.data.platform} />
-              </span>
-              {[platformName(current.data.platform), current.data.author, formatDuration(current.data.durationSeconds)].filter(Boolean).join(" · ")}
-            </p>
-            <p className="dl-hint">Choose a quality. The download starts right away.</p>
-            {current.data.items.map((item) => (
-              <div key={item.index} className="format-list">
-                {current.data.items.length > 1 && (
-                  <div className="field-label">
-                    Item {item.index + 1} · {item.kind}
-                  </div>
-                )}
-                {item.formats.map((f) => {
-                  const t = transfers.find((x) => x.key === `${current.resultId}:${item.index}:${f.id}`);
-                  const active = !!t && ACTIVE.includes(t.phase);
-                  const pct = t?.phase === "downloading" && t.progress ? Math.round(t.progress) : null;
-                  return (
-                    <div key={f.id} className={`format-item${t?.phase === "failed" ? " is-failed" : ""}`}>
-                      <span className="format-label">
-                        <strong>{f.label}</strong>{" "}
-                        <span className="muted">{[f.label.toUpperCase().includes(f.ext.toUpperCase()) ? "" : f.ext.toUpperCase(), formatSize(f.filesize)].filter(Boolean).join(" · ")}</span>
-                        {preferred === f.id && !t && <span className="badge badge-neutral">Last used</span>}
-                      </span>
-                      <span className="format-action">
-                        {t && !active && t.phase !== "failed" ? (
-                          <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status">
-                            <CircleCheck aria-hidden /> {phaseText(t)}
-                          </span>
-                        ) : (
-                          <button type="button" className="btn btn-sm" disabled={active} onClick={() => choose(current, item.index, f)} aria-label={active ? `${f.label}: ${phaseText(t!)}` : t?.phase === "failed" ? `Retry ${f.label}` : `Download ${f.label}`}>
-                            {active ? <LoaderCircle className="spin" aria-hidden /> : t?.phase === "failed" ? <RotateCcw aria-hidden /> : <Download aria-hidden />}
-                            {active ? phaseText(t!) : t?.phase === "failed" ? "Retry" : "Download"}
-                          </button>
-                        )}
-                      </span>
-                      {active && (
-                        <span className="dl-progress" aria-hidden>
-                          <span className={pct == null ? "indeterminate" : ""} style={pct == null ? undefined : { width: `${pct}%` }} />
-                        </span>
-                      )}
-                      {t?.phase === "requested" && t.href && (
-                        <span className="dl-note">
-                          Your browser was asked to save the file. Nothing in your downloads?{" "}
-                          <a href={t.href} download>
-                            Save it here
-                          </a>
-                          .
-                        </span>
-                      )}
-                      {t?.phase === "started" && <span className="dl-note">Check your browser&apos;s downloads. The file is deleted from our server shortly.</span>}
-                    </div>
-                  );
-                })}
+
+          {current.data.items.length > 1 && (
+            <>
+              <div className="bulk-bar">
+                <span className="muted">Choose what to save. Each item downloads on its own, or select several for one ZIP.</span>
+                <span className="bulk-actions">
+                  <button type="button" className="btn btn-sm btn-ghost" onClick={() => setSelected(selected.length === current.data.items.length ? [] : current.data.items.map((i) => i.index))}>
+                    {selected.length === current.data.items.length ? "Clear selection" : "Select all"}
+                  </button>
+                  <ZipButton result={current} selected={selected} transferFor={transferFor} chooseZip={chooseZip} />
+                </span>
+              </div>
+              <div className="media-grid">
+                {current.data.items.map((item) => (
+                  <MediaCard key={item.index} item={item} result={current} preview={preview} transferFor={transferFor} choose={choose}
+                    selected={selected.includes(item.index)} onSelect={(on) => setSelected((s) => (on ? [...s, item.index] : s.filter((x) => x !== item.index)))} />
+                ))}
+              </div>
+            </>
+          )}
+
+          {transfers
+            .filter((t) => t.resultId === current.resultId && t.phase === "failed")
+            .slice(0, 1)
+            .map((t) => (
+              <div key={t.key} className="notice notice-error" role="alert">
+                <CircleAlert aria-hidden />
+                <div>
+                  <strong>Download failed</strong>
+                  {t.message}
+                </div>
               </div>
             ))}
-            {transfers
-              .filter((t) => t.resultId === current.resultId && t.phase === "failed")
-              .slice(0, 1)
-              .map((t) => (
-                <div key={t.key} className="notice notice-error" role="alert">
-                  <CircleAlert aria-hidden />
-                  <div>
-                    <strong>Download failed</strong>
-                    {t.message}
-                  </div>
-                </div>
-              ))}
-            <div className="dl-actions">
-              <button type="button" className="btn btn-primary btn-sm" onClick={another}>
-                <RotateCcw aria-hidden /> Download another video
-              </button>
-              <button type="button" className="btn btn-ghost btn-sm" onClick={() => copyInfo(current)}>
-                {copied ? <Check aria-hidden /> : <Copy aria-hidden />} {copied ? "Copied" : "Copy media info"}
-              </button>
-            </div>
+          <div className="dl-actions">
+            <button type="button" className="btn btn-primary btn-sm" onClick={another}>
+              <RotateCcw aria-hidden /> Download another video
+            </button>
+            <button type="button" className="btn btn-ghost btn-sm" onClick={() => copyInfo(current)}>
+              {copied ? <Check aria-hidden /> : <Copy aria-hidden />} {copied ? "Copied" : "Copy media info"}
+            </button>
           </div>
         </div>
       )}
@@ -417,35 +419,176 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
         </div>
       )}
 
-      {history.length > 0 && (
-        <details className="dl-history">
-          <summary>
-            <History aria-hidden /> Recent downloads ({history.length})
-          </summary>
-          <p className="muted" style={{ fontSize: "0.82rem", margin: "6px 0 0" }}>Saved only in this browser: title, platform and quality. Links and files are never stored.</p>
-          <ul>
-            {history.map((h) => (
-              <li key={`${h.at}-${h.title}`}>
-                <span style={{ width: 14, height: 14, display: "inline-block", flexShrink: 0 }}>
-                  <PlatformIcon platform={h.platform} />
-                </span>
-                <span className="dl-bg-title">{h.title}</span>
-                <span className="muted">{h.format}</span>
-              </li>
-            ))}
-          </ul>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm"
-            onClick={() => {
-              clearHistory();
-              setHistory([]);
-            }}
-          >
-            <Trash2 aria-hidden /> Clear history
-          </button>
-        </details>
+    </div>
+  );
+}
+
+
+// ── Result building blocks ─────────────────────────────────────────────────
+type TransferFor = (result: ResultState, key: string) => Transfer | undefined;
+type Choose = (result: ResultState, itemIndex: number, formatId: string, label: string) => void;
+
+function TransferStatus({ t }: { t: Transfer }) {
+  const active = ACTIVE.includes(t.phase);
+  const pct = t.phase === "downloading" && t.progress ? Math.round(t.progress) : null;
+  return (
+    <>
+      {active && (
+        <span className="dl-progress" aria-hidden>
+          <span className={pct == null ? "indeterminate" : ""} style={pct == null ? undefined : { width: `${pct}%` }} />
+        </span>
+      )}
+      {t.phase === "requested" && t.href && (
+        <span className="dl-note">
+          Your browser was asked to save the file. Nothing in your downloads?{" "}
+          <a href={t.href} download>
+            Save it here
+          </a>
+          .
+        </span>
+      )}
+      {t.phase === "started" && <span className="dl-note">Check your browser&apos;s downloads. The file is deleted from our server shortly.</span>}
+    </>
+  );
+}
+
+/** Download / progress / done button for one choice. */
+function ActionButton({ t, label, onClick, compact }: { t?: Transfer; label: string; onClick: () => void; compact?: boolean }) {
+  const active = !!t && ACTIVE.includes(t.phase);
+  if (t && !active && t.phase !== "failed")
+    return (
+      <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status">
+        <CircleCheck aria-hidden /> {phaseText(t)}
+      </span>
+    );
+  return (
+    <button type="button" className={`btn btn-sm${compact ? " btn-primary" : ""}`} disabled={active} onClick={onClick}
+      aria-label={active ? `${label}: ${phaseText(t!)}` : t?.phase === "failed" ? `Retry ${label}` : `Download ${label}`}>
+      {active ? <LoaderCircle className="spin" aria-hidden /> : t?.phase === "failed" ? <RotateCcw aria-hidden /> : <Download aria-hidden />}
+      {active ? phaseText(t!) : t?.phase === "failed" ? "Retry" : "Download"}
+    </button>
+  );
+}
+
+/** Single video or audio: one row per real quality, grouped Video / Audio. */
+function FormatList({ item, result, transferFor, choose, preferred }: { item: MediaItem; result: ResultState; transferFor: TransferFor; choose: Choose; preferred: string | null }) {
+  const groups: Array<[string, MediaFormat[], React.ReactNode]> = [
+    ["Video", item.formats.filter((f) => f.kind !== "audio"), <Video key="v" aria-hidden />],
+    ["Audio", item.formats.filter((f) => f.kind === "audio"), <Music key="a" aria-hidden />],
+  ];
+  const showHeads = groups.every(([, fs]) => fs.length > 0);
+  return (
+    <div className="format-list">
+      {groups.map(([name, fs, icon]) =>
+        fs.length === 0 ? null : (
+          <div key={name} className="format-group">
+            {showHeads && (
+              <div className="field-label format-group-head">
+                {icon} {name}
+              </div>
+            )}
+            {fs.map((f) => {
+              const t = transferFor(result, `${item.index}:${f.id}`);
+              return (
+                <div key={f.id} className={`format-item${t?.phase === "failed" ? " is-failed" : ""}`}>
+                  <span className="format-label">
+                    <strong>{f.label}</strong>{" "}
+                    <span className="muted">{[f.label.toUpperCase().includes(f.ext.toUpperCase()) ? "" : f.ext.toUpperCase(), formatSize(f.filesize)].filter(Boolean).join(" · ")}</span>
+                    {preferred === f.id && !t && <span className="badge badge-neutral">Last used</span>}
+                  </span>
+                  <span className="format-action">
+                    <ActionButton t={t} label={f.label} onClick={() => choose(result, item.index, f.id, f.label)} />
+                  </span>
+                  {t && <TransferStatus t={t} />}
+                </div>
+              );
+            })}
+          </div>
+        ),
       )}
     </div>
+  );
+}
+
+const KIND_ICON = { video: Video, image: ImageIcon, audio: Music } as const;
+
+/** One item of a post (image, video or audio) with its own preview and controls. */
+function MediaCard({ item, result, preview, transferFor, choose, selected, onSelect }: {
+  item: MediaItem; result: ResultState; preview: (u?: string) => string | undefined; transferFor: TransferFor; choose: Choose;
+  selected?: boolean; onSelect?: (on: boolean) => void;
+}) {
+  const [fmt, setFmt] = useState(item.formats[0]?.id ?? "");
+  const [conv, setConv] = useState("");
+  const [broken, setBroken] = useState(false);
+  const f = item.formats.find((x) => x.id === fmt) ?? item.formats[0];
+  if (!f) return null;
+  const isImage = item.kind === "image";
+  const conversions = isImage ? (item.conversions ?? []).filter((c) => c !== f.ext.replace("jpeg", "jpg")) : [];
+  const formatId = conv ? `${f.id}~${conv}` : f.id;
+  const t = transferFor(result, `${item.index}:${formatId}`);
+  const Icon = KIND_ICON[item.kind] ?? Video;
+  const label = `${isImage ? "image" : item.kind} ${item.index + 1}`;
+  const src = preview(item.thumbnail);
+  return (
+    <div className={`media-card${selected ? " is-selected" : ""}`} data-kind={item.kind} data-index={item.index}>
+      <div className="media-card-preview">
+        {src && !broken ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt={`${item.kind} ${item.index + 1} preview`} loading="lazy" onError={() => setBroken(true)} />
+        ) : (
+          <span className="media-card-placeholder"><Icon aria-hidden /></span>
+        )}
+        <span className="media-card-kind"><Icon aria-hidden /> {item.kind === "image" ? "Image" : item.kind === "audio" ? "Audio" : "Video"} {item.index + 1}</span>
+        {onSelect && (
+          <label className="media-card-check">
+            <input type="checkbox" checked={!!selected} onChange={(e) => onSelect(e.target.checked)} aria-label={`Select ${label}`} />
+          </label>
+        )}
+      </div>
+      <div className="media-card-body">
+        {item.formats.length > 1 ? (
+          <select className="input input-sm" aria-label={`${isImage ? "Size" : "Quality"} for ${label}`} value={f.id} onChange={(e) => setFmt(e.target.value)}>
+            {item.formats.map((x) => (
+              <option key={x.id} value={x.id}>
+                {x.label}{x.filesize ? ` · ${formatSize(x.filesize)}` : ""}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <span className="media-card-label">{f.label}{isImage && !/·\s*\d+×\d+/.test(f.label) && item.width ? ` · ${item.width}×${item.height}` : ""}</span>
+        )}
+        {conversions.length > 0 && (
+          <select className="input input-sm" aria-label={`File format for ${label}`} value={conv} onChange={(e) => setConv(e.target.value)}>
+            <option value="">{f.ext.toUpperCase()} (original file)</option>
+            {conversions.map((c) => (
+              <option key={c} value={c}>
+                {c.toUpperCase()} (converted)
+              </option>
+            ))}
+          </select>
+        )}
+        <ActionButton t={t} label={label} compact onClick={() => choose(result, item.index, formatId, `${label} · ${f.label}`)} />
+        {t && <TransferStatus t={t} />}
+      </div>
+    </div>
+  );
+}
+
+function ZipButton({ result, selected, transferFor, chooseZip }: { result: ResultState; selected: number[]; transferFor: TransferFor; chooseZip: (r: ResultState, items: number[]) => void }) {
+  const items = [...selected].sort((a, b) => a - b);
+  const t = items.length >= 2 ? transferFor(result, `zip:${items.join(",")}`) : undefined;
+  const active = !!t && ACTIVE.includes(t.phase);
+  if (t && !active && t.phase !== "failed")
+    return (
+      <span className="zip-status">
+        <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status"><CircleCheck aria-hidden /> {phaseText(t)}</span>
+        {t.phase === "requested" && t.href && <a href={t.href} download>Save ZIP</a>}
+      </span>
+    );
+  return (
+    <button type="button" className="btn btn-sm btn-primary" disabled={items.length < 2 || active} onClick={() => chooseZip(result, items)}>
+      {active ? <LoaderCircle className="spin" aria-hidden /> : <FileArchive aria-hidden />}
+      {active ? phaseText(t!) : `Download selected as ZIP${items.length ? ` (${items.length})` : ""}`}
+    </button>
   );
 }

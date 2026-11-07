@@ -1,12 +1,14 @@
 import { categories } from "./categories";
-import { plannedTools, tools } from "./tools";
+import { plannedTools, tools as allTools } from "./tools";
 import { isAvailable } from "./availability";
 import type { Category, CategoryId, Tool } from "./types";
 
-export { categories, tools, plannedTools };
+/** Listed tools (search, categories, sitemap, navigation). Hidden tools keep their page via allTools. */
+const tools = allTools.filter((t) => !t.hidden);
+export { categories, tools, allTools, plannedTools };
 export type * from "./types";
 
-const bySlug = new Map(tools.map((t) => [t.slug, t]));
+const bySlug = new Map(allTools.map((t) => [t.slug, t]));
 const categoryById = new Map(categories.map((c) => [c.id, c]));
 
 export const getTool = (slug: string): Tool | undefined => bySlug.get(slug);
@@ -15,7 +17,7 @@ export const getCategoryBySlug = (slug: string): Category | undefined => categor
 export const toolsInCategory = (id: CategoryId): Tool[] => tools.filter((t) => t.category === id);
 /** Usable in this build: browser tools always; backend tools only when a backend is configured. */
 export { isAvailable };
-export const isIndexable = (t: Tool) => isAvailable(t);
+export const isIndexable = (t: Tool) => isAvailable(t) && !t.hidden;
 
 /** Explicit related tools first, then same-category tools, never the tool itself. */
 export function relatedTools(slug: string, limit = 4): Tool[] {
@@ -23,7 +25,7 @@ export function relatedTools(slug: string, limit = 4): Tool[] {
   if (!tool) return [];
   const out: Tool[] = [];
   const push = (t?: Tool) => {
-    if (t && t.slug !== slug && !out.includes(t)) out.push(t);
+    if (t && !t.hidden && t.slug !== slug && !out.includes(t)) out.push(t);
   };
   tool.related.forEach((s) => push(bySlug.get(s)));
   toolsInCategory(tool.category).forEach(push);

@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { jobPhase, phaseText } from "@/lib/downloader/phases";
 import { randomToken, startBrowserDownload, withParam } from "@/lib/downloader/browser-download";
-import { addHistory, clearHistory, readHistory, readPreferredFormat, savePreferredFormat } from "@/lib/downloader/history";
+import { readPreferredFormat, savePreferredFormat } from "@/lib/downloader/history";
 
 describe("download phases", () => {
   it("maps backend jobs to honest phases", () => {
@@ -83,34 +83,26 @@ describe("startBrowserDownload", () => {
   });
 });
 
-describe("local history", () => {
+describe("remembered quality (no history is kept)", () => {
   afterEach(() => vi.unstubAllGlobals());
   const memStorage = () => {
     const m = new Map<string, string>();
-    return { getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) };
+    return { m, getItem: (k: string) => m.get(k) ?? null, setItem: (k: string, v: string) => void m.set(k, v), removeItem: (k: string) => void m.delete(k) };
   };
 
-  it("stores title/platform/quality only, newest first, capped", () => {
-    vi.stubGlobal("localStorage", memStorage());
-    for (let i = 0; i < 25; i++) addHistory({ platform: "tiktok", title: `clip ${i}`, format: "720p", at: i });
-    const h = readHistory();
-    expect(h).toHaveLength(20);
-    expect(h[0].title).toBe("clip 24");
-    expect(Object.keys(h[0]).sort()).toEqual(["at", "format", "platform", "title"]);
-    clearHistory();
-    expect(readHistory()).toEqual([]);
-  });
-
-  it("remembers only known quality ids and survives blocked storage", () => {
-    vi.stubGlobal("localStorage", memStorage());
+  it("remembers only known quality ids, clears the old history key, survives blocked storage", () => {
+    const st = memStorage();
+    st.setItem("ytx-history", JSON.stringify([{ title: "old" }]));
+    vi.stubGlobal("localStorage", st);
     savePreferredFormat("v:720");
     expect(readPreferredFormat()).toBe("v:720");
+    expect(st.m.has("ytx-history")).toBe(false);
     savePreferredFormat("javascript:alert(1)");
+    savePreferredFormat("i:best~png");
     expect(readPreferredFormat()).toBe("v:720");
     vi.stubGlobal("localStorage", { getItem: () => { throw new Error("blocked"); }, setItem: () => { throw new Error("blocked"); }, removeItem: () => { throw new Error("blocked"); } });
-    expect(readHistory()).toEqual([]);
-    expect(() => addHistory({ platform: "x", title: "t", format: "f", at: 1 })).not.toThrow();
     expect(readPreferredFormat()).toBeNull();
+    expect(() => savePreferredFormat("v:720")).not.toThrow();
   });
 });
 

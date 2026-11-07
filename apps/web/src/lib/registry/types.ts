@@ -50,6 +50,8 @@ export interface Tool {
   related: string[];
   addedAt: string;
   seo: { title: string; description: string };
+  /** Kept reachable at its URL (noindex) but not listed anywhere: the platform doesn't work right now. */
+  hidden?: boolean;
   content: {
     intro: string;
     steps: string[];

@@ -7,7 +7,7 @@
  * checks resolved IP addresses on every redirect (SSRF protection).
  */
 
-export type PlatformId = "instagram" | "tiktok" | "youtube" | "facebook" | "x" | "pinterest" | "reddit" | "vimeo" | "dailymotion" | "twitch" | "soundcloud" | "bluesky" | "streamable";
+export type PlatformId = "instagram" | "tiktok" | "youtube" | "facebook" | "x" | "pinterest" | "reddit" | "vimeo" | "dailymotion" | "twitch" | "soundcloud" | "bluesky" | "streamable" | "9gag" | "kick" | "linkedin" | "medal" | "mixcloud" | "imgur";
 
 export interface PlatformInfo {
   id: PlatformId;
@@ -29,6 +29,12 @@ export const PLATFORMS: Record<PlatformId, PlatformInfo> = {
   soundcloud: { id: "soundcloud", name: "SoundCloud", toolSlug: "social-media-downloader" },
   bluesky: { id: "bluesky", name: "Bluesky", toolSlug: "social-media-downloader" },
   streamable: { id: "streamable", name: "Streamable", toolSlug: "social-media-downloader" },
+  "9gag": { id: "9gag", name: "9GAG", toolSlug: "social-media-downloader" },
+  kick: { id: "kick", name: "Kick", toolSlug: "social-media-downloader" },
+  linkedin: { id: "linkedin", name: "LinkedIn", toolSlug: "social-media-downloader" },
+  medal: { id: "medal", name: "Medal", toolSlug: "social-media-downloader" },
+  mixcloud: { id: "mixcloud", name: "Mixcloud", toolSlug: "social-media-downloader" },
+  imgur: { id: "imgur", name: "Imgur", toolSlug: "social-media-downloader" },
 };
 
 export type Detection =
@@ -49,7 +55,19 @@ const HOSTS: Array<[PlatformId, (h: string) => boolean]> = [
   ["soundcloud", (h) => is(h, "soundcloud.com")],
   ["bluesky", (h) => h === "bsky.app" || h === "www.bsky.app"],
   ["streamable", (h) => is(h, "streamable.com")],
+  ["9gag", (h) => is(h, "9gag.com")],
+  ["kick", (h) => is(h, "kick.com")],
+  ["linkedin", (h) => is(h, "linkedin.com")],
+  ["medal", (h) => is(h, "medal.tv")],
+  ["mixcloud", (h) => is(h, "mixcloud.com")],
+  ["imgur", (h) => is(h, "imgur.com") || is(h, "imgur.io")],
 ];
+
+/** Platforms that can't work from our servers right now: refused before any request (see docs/PLATFORM_DIAGNOSTICS.md). */
+const UNAVAILABLE: Partial<Record<PlatformId, string>> = {
+  reddit: "Reddit downloads aren't available: Reddit currently refuses requests from our server. We don't use accounts to get around this.",
+  vimeo: "Vimeo downloads aren't available: Vimeo now requires an account or serves DRM-protected streams to servers.",
+};
 
 function is(host: string, domain: string) {
   return host === domain || host.endsWith(`.${domain}`);
@@ -92,10 +110,12 @@ export function detectUrl(input: string): Detection {
     return {
       ok: false,
       reason: "unsupported-platform",
-      message: `${host} isn't a supported platform yet. Supported: ${Object.values(PLATFORMS).map((p) => p.name.replace(" (Twitter)", "")).join(", ")}.`,
+      message: `${host} isn't a supported platform yet. Supported: ${Object.values(PLATFORMS).filter((p) => !UNAVAILABLE[p.id]).map((p) => p.name.replace(" (Twitter)", "")).join(", ")}.`,
     };
   }
   const platform = PLATFORMS[match[0]];
+  const unavailable = UNAVAILABLE[platform.id];
+  if (unavailable) return { ok: false, reason: "unsupported-content", message: unavailable, platform };
   const path = url.pathname.replace(/\/+$/, "") || "/";
   const content = contentType(platform.id, host, path, url);
   if ("unsupported" in content) {
@@ -165,5 +185,26 @@ function contentType(id: PlatformId, host: string, path: string, url: URL): Cont
     case "streamable":
       if (/^\/(e\/|o\/|s\/)?[a-z0-9]{3,}$/.test(p)) return { type: "Video" };
       return { unsupported: "Paste the link of a specific Streamable video." };
+    case "9gag":
+      if (/^\/gag\/[a-z0-9]{5,}$/i.test(path)) return { type: "Post" };
+      return { unsupported: "Paste the link of a specific 9GAG post." };
+    case "kick":
+      if (/^\/[\w-]+\/clips\/clip_[a-z0-9]{10,}$/i.test(path) || /^clip_[a-z0-9]{10,}$/i.test(url.searchParams.get("clip") || "")) return { type: "Clip" };
+      return { unsupported: "Only Kick clips are supported (not live streams or VODs). Paste a clip link." };
+    case "linkedin":
+      if (/^\/posts\/[\w%.-]+$/.test(path) || /^\/feed\/update\/urn:li:(activity|ugcPost):\d+$/.test(path)) return { type: "Post video" };
+      return { unsupported: "Paste the link of a public LinkedIn post that contains a video." };
+    case "medal":
+      if (/^\/(games\/[\w-]+\/clips|clips?)\/[\w-]{6,}/.test(path)) return { type: "Clip" };
+      return { unsupported: "Paste the link of a specific Medal clip." };
+    case "mixcloud":
+      if (/^\/[\w.-]+\/[\w.%-]+$/.test(path) && !/^\/[\w.-]+\/(uploads|favorites|listens|playlists|followers|following|stream|reposts)$/.test(path) && !/^\/(discover|live|select)\//.test(path))
+        return { type: "Show (audio)" };
+      return { unsupported: "Paste the link of a specific Mixcloud show." };
+    case "imgur":
+      if (host === "i.imgur.com" && /^\/[a-z0-9]{5,8}\.(gifv|mp4|jpe?g|png|gif|webp)$/i.test(path)) return { type: "Media" };
+      if (/^\/(a|gallery)\/[\w-]{5,}$/.test(path)) return { type: "Album" };
+      if (/^\/(?:[\w-]+-)?[a-z0-9]{5,8}$/i.test(path)) return { type: "Post" };
+      return { unsupported: "Paste the link of a specific Imgur post or album." };
   }
 }

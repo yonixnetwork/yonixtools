@@ -17,12 +17,15 @@ test("supported platforms show honest, evidence-based status", async ({ page }) 
   const list = page.locator(".platform-status");
   await expect(list.locator('[data-platform="tiktok"]')).toContainText("Working");
   await expect(list.locator('[data-platform="youtube"]')).toContainText("Blocked by platform");
-  await expect(list.locator('[data-platform="reddit"]')).toContainText("Blocked by platform");
-  await expect(list.locator("li")).toHaveCount(13);
+  await expect(list.locator('[data-platform="reddit"]')).toHaveCount(0); // deliberately not shown
+  await expect(list.locator('[data-platform="vimeo"]')).toHaveCount(0);
+  await expect(list.locator("li")).toHaveCount(17);
   // Platforms that failed verification are never advertised as working in the hero.
   const hero = page.locator(".hero .platform-row");
   await expect(hero).not.toContainText("YouTube");
   await expect(hero).not.toContainText("Reddit");
+  await page.goto("/tools/");
+  await expect(page.getByText("Reddit Video Downloader")).toHaveCount(0);
 });
 
 test("desktop header: explore drawer lists every category with working links", async ({ page, request }) => {

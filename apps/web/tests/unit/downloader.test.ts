@@ -28,9 +28,6 @@ describe("URL detection", () => {
     ["https://twitter.com/user/status/1790000000000000000", "x", "Post video or GIF"],
     ["https://www.pinterest.com/pin/123456789/", "pinterest", "Pin"],
     ["https://pin.it/abc123", "pinterest", "Pin (short link)"],
-    ["https://www.reddit.com/r/videos/comments/abc123/some_title/", "reddit", "Post"],
-    ["https://v.redd.it/abc123", "reddit", "Media"],
-    ["https://vimeo.com/76979871", "vimeo", "Video"],
   ])("recognises %s", (url, platform, type) => expect(ok(url)).toEqual([platform, type]));
 
   it("pulls the URL out of pasted share text", () => {
@@ -130,4 +127,30 @@ describe("platforms added after live verification", () => {
     expect(d.ok).toBe(false);
     if (!d.ok) expect(d.reason).toBe("unsupported-platform");
   });
+});
+
+describe("platforms that can't work from our servers", () => {
+  it.each(["https://www.reddit.com/r/videos/comments/abc123/some_title/", "https://v.redd.it/abc123", "https://vimeo.com/76979871"])("refuses %s with the reason, before any request", (u) => {
+    const d = detectUrl(u);
+    expect(d.ok).toBe(false);
+    if (!d.ok) {
+      expect(d.reason).toBe("unsupported-content");
+      expect(d.message).toMatch(/aren't available/);
+    }
+  });
+  it("doesn't list them as supported", () => {
+    const d = detectUrl("https://example.com/x");
+    expect(!d.ok && d.message).not.toMatch(/Reddit|Vimeo/);
+  });
+});
+
+describe("platforms added in the media expansion (live-verified)", () => {
+  it.each([
+    ["https://9gag.com/gag/ae5Ag7B", "9gag", "Post"],
+    ["https://kick.com/spreen/clips/clip_01J8RGZRKHXHXXKJEHGRM932A5", "kick", "Clip"],
+    ["https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20", "linkedin", "Post video"],
+    ["https://medal.tv/games/valorant/clips/jTBFnLKdLy15K", "medal", "Clip"],
+    ["https://www.mixcloud.com/dholbach/cryptkeeper/", "mixcloud", "Show (audio)"],
+    ["https://imgur.com/a/iX265HX", "imgur", "Album"],
+  ])("%s", (u, id, type) => expect(ok(u)).toEqual([id, type]));
 });

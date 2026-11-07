@@ -24,9 +24,6 @@ from app.platforms import parse_media_url
     ("https://twitter.com/user/status/1790000000000000000", "x", "post"),
     ("https://www.pinterest.com/pin/123456789/", "pinterest", "pin"),
     ("https://pin.it/abc123", "pinterest", "pin"),
-    ("https://www.reddit.com/r/videos/comments/abc123/some_title/", "reddit", "post"),
-    ("https://v.redd.it/abc123", "reddit", "post"),
-    ("https://vimeo.com/76979871", "vimeo", "video"),
 ])
 def test_recognises_supported_urls(url, platform, ctype):
     p = parse_media_url(url)
@@ -114,3 +111,37 @@ def test_snapchat_is_not_claimed():
     with pytest.raises(ApiError) as e:
         parse_media_url("https://www.snapchat.com/spotlight/W7_EDlXWTBiXAEEniNoMPw")
     assert e.value.code == "unsupported_url"
+
+
+@pytest.mark.parametrize("url,platform", [
+    ("https://www.reddit.com/r/videos/comments/abc123/some_title/", "reddit"),
+    ("https://v.redd.it/abc123", "reddit"),
+    ("https://vimeo.com/76979871", "vimeo"),
+])
+def test_unavailable_platforms_are_refused_up_front_with_the_reason(url, platform):
+    with pytest.raises(ApiError) as e:
+        parse_media_url(url)
+    assert e.value.code == "unsupported_content" and e.value.platform == platform
+    assert "aren't available" in e.value.message
+
+
+@pytest.mark.parametrize("url,platform,ctype", [
+    ("https://9gag.com/gag/ae5Ag7B", "9gag", "post"),
+    ("https://kick.com/spreen/clips/clip_01J8RGZRKHXHXXKJEHGRM932A5", "kick", "clip"),
+    ("https://kick.com/mxddy?clip=clip_01GYXVB5Y8PWAPWCWMSBCFB05X", "kick", "clip"),
+    ("https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20", "linkedin", "post"),
+    ("https://medal.tv/games/valorant/clips/jTBFnLKdLy15K", "medal", "clip"),
+    ("https://www.mixcloud.com/dholbach/cryptkeeper/", "mixcloud", "mix"),
+    ("https://imgur.com/a/iX265HX", "imgur", "album"),
+    ("https://i.imgur.com/jxBXAMC.gifv", "imgur", "media"),
+])
+def test_platforms_added_after_live_verification(url, platform, ctype):
+    p = parse_media_url(url)
+    assert (p.platform.id, p.classification.content_type) == (platform, ctype)
+
+
+@pytest.mark.parametrize("url", ["https://kick.com/spreen", "https://www.linkedin.com/in/someone", "https://www.mixcloud.com/discover/house/",
+                                 "https://imgur.com/user/someone", "https://9gag.com/hot"])
+def test_new_platforms_reject_non_media_pages_too(url):
+    with pytest.raises(ApiError):
+        parse_media_url(url)

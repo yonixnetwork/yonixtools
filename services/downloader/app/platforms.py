@@ -40,6 +40,9 @@ class Platform:
     short_link_hosts: tuple[str, ...] = ()
     # Every host a redirect from a short link may land on.
     redirect_hosts: Callable[[str], bool] = field(default=lambda h: False)
+    # Set when the platform can't work from our servers: links are refused up front
+    # with this explanation instead of spending an extraction on a known failure.
+    unavailable: str | None = None
 
 
 def _unsupported(msg: str) -> ApiError:
@@ -218,8 +221,10 @@ PLATFORMS: dict[str, Platform] = {p.id: p for p in [
              gallerydl_fallback=True, short_link_hosts=("pin.it",), redirect_hosts=lambda h: bool(_PINTEREST_HOST.search(h)) or h == "pin.it"),
     Platform("reddit", "Reddit", lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it"), _reddit, ("reddit",),
              gallerydl_fallback=True, short_link_hosts=("redd.it", "v.redd.it", "www.reddit.com", "reddit.com"),
-             redirect_hosts=lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it")),
-    Platform("vimeo", "Vimeo", lambda h: _is(h, "vimeo.com"), _vimeo, ("vimeo",)),
+             redirect_hosts=lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it"),
+             unavailable="Reddit downloads aren't available: Reddit currently refuses requests from our server. We don't use accounts to get around this."),
+    Platform("vimeo", "Vimeo", lambda h: _is(h, "vimeo.com"), _vimeo, ("vimeo",),
+             unavailable="Vimeo downloads aren't available: Vimeo now requires an account or serves DRM-protected streams to servers."),
     Platform("dailymotion", "Dailymotion", lambda h: _is(h, "dailymotion.com") or h == "dai.ly", _dailymotion, ("dailymotion",)),
     Platform("twitch", "Twitch", lambda h: _is(h, "twitch.tv"), _twitch, ("twitch:clips",)),
     Platform("soundcloud", "SoundCloud", lambda h: _is(h, "soundcloud.com"), _soundcloud, ("soundcloud",),
@@ -278,7 +283,9 @@ def parse_media_url(raw: object) -> ParsedUrl:
         raise ApiError("unsafe_url")
     platform = next((p for p in PLATFORMS.values() if p.matches_host(host)), None)
     if platform is None:
-        raise ApiError("unsupported_url", f"{host} isn't a supported platform. Supported: {', '.join(p.name for p in PLATFORMS.values())}.")
+        raise ApiError("unsupported_url", f"{host} isn't a supported platform. Supported: {', '.join(p.name for p in PLATFORMS.values() if not p.unavailable)}.")
+    if platform.unavailable:
+        raise ApiError("unsupported_content", platform.unavailable, platform=platform.id)
     path = re.sub(r"/+$", "", parts.path) or "/"
     query: dict[str, list[str]] = {}
     for kv in parts.query.split("&"):

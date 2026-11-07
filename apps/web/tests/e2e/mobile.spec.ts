@@ -22,13 +22,11 @@ test("hamburger opens the tools drawer with search and categories", async ({ pag
   await expect(page).toHaveURL(/\/color-converter\/$/);
 });
 
-test("bottom bar: one compact nav, search opens the drawer focused", async ({ page }) => {
+test("one navigation system: the drawer (no bottom bar)", async ({ page }) => {
   await page.goto("/image-compressor/");
-  const bar = page.getByRole("navigation", { name: "Quick" });
-  await expect(bar).toBeVisible();
-  await expect(bar.getByRole("link")).toHaveCount(2);
-  await bar.getByRole("button", { name: "Search" }).click();
-  await expect(page.locator("#tools-drawer input")).toBeFocused();
+  await expect(page.locator(".bottom-nav")).toHaveCount(0);
+  await page.getByRole("button", { name: "Open menu" }).click();
+  await expect(page.locator("#tools-drawer .drawer-heading")).toHaveText("Tool categories");
   await page.getByRole("button", { name: "Close menu" }).click();
   await expect(page.locator("#tools-drawer")).toHaveCount(0);
 });
@@ -37,7 +35,7 @@ test("downloader is above the fold on a phone", async ({ page }) => {
   await page.goto("/");
   const vh = page.viewportSize()!.height;
   const submit = await page.getByRole("button", { name: "Download", exact: true }).boundingBox();
-  expect(submit!.y + submit!.height).toBeLessThan(vh - 58); // fully visible above the bottom bar
+  expect(submit!.y + submit!.height).toBeLessThan(vh);
 });
 
 test("downloader is usable at phone width", async ({ page }) => {

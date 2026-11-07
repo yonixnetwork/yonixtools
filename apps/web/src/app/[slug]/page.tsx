@@ -10,14 +10,14 @@ import { ToolIcon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
 import { ToolRenderer } from "@/components/tools/registry";
 import { VisitRecorder } from "@/components/VisitRecorder";
-import { getCategory, getTool, isAvailable, relatedTools, tools } from "@/lib/registry";
+import { allTools, getCategory, getTool, isAvailable, relatedTools } from "@/lib/registry";
 import { breadcrumbLd, faqLd, toolBreadcrumbs, toolLd, toolMetadata } from "@/lib/seo";
 import { categoryPath, toolPath } from "@/lib/site";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return tools.map((t) => ({ slug: t.slug }));
+  return allTools.map((t) => ({ slug: t.slug }));
 }
 
 type Props = { params: Promise<{ slug: string }> };
