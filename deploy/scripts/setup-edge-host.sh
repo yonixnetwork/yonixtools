@@ -25,7 +25,7 @@ if ss -ltnp 2>/dev/null | grep -E ':(80|443) ' | grep -vq nginx; then
 fi
 server_ip="$(curl -fsS --max-time 5 https://api.ipify.org || true)"
 for host in "$DOMAIN" "www.$DOMAIN"; do
-  ips="$(getent ahostsv4 "$host" | awk '{print $1}' | sort -u | tr '\n' ' ')"
+  ips="$( (getent ahostsv4 "$host" || true) | awk '{print $1}' | sort -u | tr '\n' ' ')"
   echo "  $host -> ${ips:-unresolved} (this server: ${server_ip:-unknown})"
   if [ -n "$server_ip" ] && ! grep -qw "$server_ip" <<<"$ips"; then
     die "$host does not point at this server yet. Switch DNS first: certificate issuance needs it."
