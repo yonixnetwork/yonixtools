@@ -19,34 +19,48 @@ jobs:
       fail-fast: false
       matrix:
         phase: [deployed, full]
-        platform: [youtube, tiktok, instagram, facebook, x, pinterest, reddit, vimeo, snapchat, dailymotion, twitch, soundcloud, bluesky, streamable]
-        exclude:
-          - { phase: deployed, platform: snapchat }
-          - { phase: deployed, platform: dailymotion }
-          - { phase: deployed, platform: twitch }
-          - { phase: deployed, platform: soundcloud }
-          - { phase: deployed, platform: bluesky }
-          - { phase: deployed, platform: streamable }
+        platform: [youtube, tiktok, instagram, facebook, x, pinterest, dailymotion, twitch, soundcloud, bluesky, streamable,
+                   tumblr, bandcamp, imgur, flickr, kick, rumble, mixcloud, 9gag, ted, loom, medal, audiomack, linkedin]
+        exclude:  # "deployed" = production regression baseline; candidates don't exist there
+          - { phase: deployed, platform: tumblr }
+          - { phase: deployed, platform: bandcamp }
+          - { phase: deployed, platform: imgur }
+          - { phase: deployed, platform: flickr }
+          - { phase: deployed, platform: kick }
+          - { phase: deployed, platform: rumble }
+          - { phase: deployed, platform: mixcloud }
+          - { phase: deployed, platform: 9gag }
+          - { phase: deployed, platform: ted }
+          - { phase: deployed, platform: loom }
+          - { phase: deployed, platform: medal }
+          - { phase: deployed, platform: audiomack }
+          - { phase: deployed, platform: linkedin }
     name: ${{ matrix.phase }} / ${{ matrix.platform }}
     defaults: { run: { working-directory: services/downloader } }
     steps:
       - uses: actions/checkout@v4
-      - name: Code exactly as deployed on the droplet (v1.0, c1b070c)
+      - name: Code exactly as in production (feature/downloader-reliability, c259dfc)
         if: matrix.phase == 'deployed'
         uses: actions/checkout@v4
-        with: { ref: c1b070c90ec1a45b181fe9626b2bfc7746e01137, path: deployed }
+        with: { ref: c259dfce2acd6a15687dff1de077cdf8d4b976f3, path: deployed }
       - uses: actions/setup-python@v5
         with: { python-version: "3.12" }
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
-      - name: Dependencies as deployed (v1.0)
+      - name: Dependencies as in production
         if: matrix.phase == 'deployed'
-        run: pip install -q fastapi==0.162.0 starlette==1.10.0 uvicorn==0.54.0 httpx==0.28.1 pydantic==2.13.4 yt-dlp==2026.10.26 gallery-dl==1.32.19
-      - name: Upgraded dependencies
+        run: pip install -q -r ${{ github.workspace }}/deployed/services/downloader/requirements.txt
+      - name: Candidate dependencies
         if: matrix.phase == 'full'
         run: pip install -q -r requirements.txt
-      - name: Deno (JavaScript runtime for YouTube)
-        if: matrix.phase == 'full'
+      - name: Deno (JavaScript runtime for YouTube, as in the production image)
         run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - name: YouTube experiment - PO token provider (bgutil, open source, local)
+        if: matrix.phase == 'full' && matrix.platform == 'youtube'
+        run: |
+          docker run -d --name bgutil -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider
+          pip install -q bgutil-ytdlp-pot-provider
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4416/ping && break; sleep 2; done
+          echo "DIAG_BGUTIL=1" >> "$GITHUB_ENV"
       - run: python -c "import yt_dlp, sys; print('yt-dlp', yt_dlp.version.__version__)"; deno --version 2>/dev/null | head -1 || echo "no deno"; python -c "import curl_cffi; print('curl_cffi', curl_cffi.__version__)" 2>/dev/null || echo "no curl_cffi"
       - run: python diagnostics/live_matrix.py --platform ${{ matrix.platform }} --phase ${{ matrix.phase }} --out results-${{ matrix.phase }}-${{ matrix.platform }}.json
         env:

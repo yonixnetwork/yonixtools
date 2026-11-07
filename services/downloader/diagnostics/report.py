@@ -16,7 +16,14 @@ for r in rows:
         res, det = "META-ONLY", r.get("download_error") or ""
     else:
         res, det = "FAIL", r.get("error") or ""
-    det = " ".join(str(det).split())[:230]
+    if r.get("entries"):
+        det += f' items={r.get("entries")} kinds={",".join(r.get("entry_kinds") or [])}'
+        if r.get("image_sizes"):
+            det += f' img_sizes={r["image_sizes"][:2]}'
+    po = [m for m in (r.get("messages") or []) if m.startswith("DEBUG")]
+    if po:
+        det += " | " + po[-1][:120]
+    det = " ".join(str(det).split())[:300]
     lines.append(f'{r["platform"]:<11} {r["phase"]:<8} {r["content"]:<9} {r["method"]:<27} {res:<11} {det}')
 print("\n".join(lines))
 s = os.environ.get("GITHUB_STEP_SUMMARY")

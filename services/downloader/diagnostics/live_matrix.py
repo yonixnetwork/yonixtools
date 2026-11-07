@@ -29,9 +29,12 @@ ROOT = Path(os.environ.get("DIAG_APP_ROOT") or Path(__file__).resolve().parents[
 SAMPLES: dict[str, list[tuple[str, str]]] = {
     "youtube": [("video", "https://www.youtube.com/watch?v=jNQXAC9IVRw"), ("video", "https://www.youtube.com/watch?v=IB3lcPjvWLA")],
     "tiktok": [("video", "https://www.tiktok.com/@barudakhb_/video/6984138651336838402"), ("video", "https://www.tiktok.com/@hara_yoimiya/video/7253412088251534594")],
-    "instagram": [("reel", "https://www.instagram.com/reel/Chunk8-jurw/"), ("post", "https://www.instagram.com/p/BQ0eAlwhDrw/")],
+    "instagram": [("reel", "https://www.instagram.com/reel/Chunk8-jurw/"), ("post", "https://www.instagram.com/p/BQ0eAlwhDrw/"),
+                  ("image", "https://www.instagram.com/p/BqvsDleB3lV/"), ("carousel", "https://www.instagram.com/p/BoHk1haB5tM/"),
+                  ("carousel-v", "https://www.instagram.com/p/BtOvDOfhvRr/")],
     "facebook": [("video", "https://www.facebook.com/cnn/videos/10155529876156509/"), ("video", "https://www.facebook.com/radiokicksfm/videos/3676516585958356/")],
-    "x": [("video", "https://twitter.com/starwars/status/665052190608723968"), ("gif", "https://twitter.com/oshtru/status/1577855540407197696"), ("video", "https://x.com/captainamerica/status/719944021058060289")],
+    "x": [("video", "https://twitter.com/starwars/status/665052190608723968"), ("gif", "https://twitter.com/oshtru/status/1577855540407197696"), ("video", "https://x.com/captainamerica/status/719944021058060289"),
+          ("multi", "https://twitter.com/UltimaShadowX/status/1577719286659006464")],
     "pinterest": [("video", "https://www.pinterest.com/pin/664281013778109217/"), ("image", "https://www.pinterest.ca/pin/441282463481903715/")],
     "reddit": [("video", "https://www.reddit.com/r/videos/comments/6rrwyj/that_small_heart_attack/"), ("video", "https://www.reddit.com/r/aww/comments/90bu6w/heat_index_was_110_degrees_so_we_offered_him_a/")],
     "vimeo": [("video", "https://vimeo.com/76979871"), ("video", "https://vimeo.com/33951933")],
@@ -41,12 +44,30 @@ SAMPLES: dict[str, list[tuple[str, str]]] = {
     "soundcloud": [("audio", "https://soundcloud.com/ethmusic/lostin-powers-she-so-heavy")],
     "bluesky": [("video", "https://bsky.app/profile/bsky.app/post/3l3vgf77uco2g")],
     "streamable": [("video", "https://streamable.com/dnd1")],
+    # Candidates (samples from yt-dlp / gallery-dl upstream test cases)
+    "tumblr": [("video", "https://maskofthedragon.tumblr.com/post/626907179849564160/mona-talking-in-english"), ("photo", "https://demo.tumblr.com/post/459265350")],
+    "bandcamp": [("audio", "https://benprunty.bandcamp.com/track/lanius-battle")],
+    "imgur": [("image", "https://imgur.com/21yMxCS"), ("video", "https://imgur.com/A61SaA1"), ("album", "https://imgur.com/a/iX265HX")],
+    "flickr": [("photo", "https://www.flickr.com/photos/departingyyz/16089302239")],
+    "kick": [("clip", "https://kick.com/spreen/clips/clip_01J8RGZRKHXHXXKJEHGRM932A5")],
+    "rumble": [("video", "https://rumble.com/vdmum1-moose-the-dog-helps-girls-dig-a-snow-fort.html")],
+    "mixcloud": [("audio", "https://www.mixcloud.com/dholbach/cryptkeeper/")],
+    "9gag": [("video", "https://9gag.com/gag/ae5Ag7B")],
+    "ted": [("video", "https://www.ted.com/talks/candace_parker_how_to_break_down_barriers_and_not_accept_limits")],
+    "loom": [("video", "https://www.loom.com/share/43d05f362f734614a2e81b4694a3a523")],
+    "medal": [("clip", "https://medal.tv/games/valorant/clips/jTBFnLKdLy15K")],
+    "audiomack": [("audio", "https://audiomack.com/song/roosh-williams/extraordinary")],
+    "linkedin": [("video", "https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20")],
 }
 EXTRACTORS = {
     "youtube": ["youtube"], "tiktok": ["tiktok", "vm.tiktok"], "instagram": ["instagram"], "facebook": ["facebook", "facebook:reel", "facebookpluginsvideo"],
     "x": ["twitter"], "pinterest": ["pinterest"], "reddit": ["reddit"], "vimeo": ["vimeo"], "snapchat": ["snapchatspotlight"],
     "dailymotion": ["dailymotion"], "twitch": ["twitch:clips"], "soundcloud": ["soundcloud"], "bluesky": ["bluesky"], "streamable": ["streamable"],
+    "tumblr": ["tumblr"], "bandcamp": ["bandcamp"], "imgur": ["imgur", "imgur:album", "imgur:gallery"], "flickr": ["flickr"], "kick": ["kick:clips", "kick:clip"],
+    "rumble": ["rumble", "rumbleembed"], "mixcloud": ["mixcloud"], "9gag": ["9gag"], "ted": ["tedtalk", "tedembed"], "loom": ["loom"], "medal": ["medaltv"],
+    "audiomack": ["audiomack"], "linkedin": ["linkedin"],
 }
+CANDIDATES = {"tumblr", "bandcamp", "imgur", "flickr", "kick", "rumble", "mixcloud", "9gag", "ted", "loom", "medal", "audiomack", "linkedin"}
 TIMEOUT = 120
 
 
@@ -70,11 +91,12 @@ import yt_dlp
 cfg = json.loads(sys.argv[1])
 msgs = []
 class L:
-    def debug(self, m): pass
+    def debug(self, m):
+        if "PO Token" in str(m) or "po_token" in str(m) or "bgutil" in str(m): msgs.append("DEBUG: " + str(m)[:200])
     def info(self, m): pass
     def warning(self, m): msgs.append("WARNING: " + str(m)[:300])
     def error(self, m): msgs.append(str(m)[:600])
-o = {"quiet": True, "no_warnings": False, "logger": L(), "allowed_extractors": [re.escape(e) for e in cfg["extractors"]],
+o = {"quiet": True, "no_warnings": False, "logger": L(), "ignore_no_formats_error": True, "verbose": bool(cfg["extra"].pop("_verbose", False)), "allowed_extractors": [re.escape(e) for e in cfg["extractors"]],
      "noplaylist": True, "cachedir": False, "socket_timeout": 20, "retries": 1, "extractor_retries": 1, "skip_download": True}
 o.update(cfg["extra"])
 res = {"ok": False}
@@ -86,6 +108,10 @@ try:
     fmts = [f for f in (first.get("formats") or []) if f.get("url")]
     real = [f for f in fmts if (f.get("vcodec") not in (None, "none") or f.get("acodec") not in (None, "none")) and f.get("protocol") != "mhtml"]
     heights = sorted({f.get("height") for f in real if f.get("height")}, reverse=True)
+    ents = list(entries) if entries else [info]
+    res["entries"] = len(ents)
+    res["entry_kinds"] = ["video" if [f for f in (e.get("formats") or []) if f.get("vcodec") not in (None, "none")] else ("audio" if e.get("formats") or e.get("url") else ("image" if e.get("thumbnails") else "none")) for e in ents][:20]
+    res["image_sizes"] = [sorted({(t.get("width"), t.get("height")) for t in (e.get("thumbnails") or []) if t.get("width")}, reverse=True)[:4] for e in ents if not e.get("formats")][:5]
     res.update(ok=bool(real or first.get("url")), title=(first.get("title") or "")[:80], formats=len(real), heights=heights[:8],
                extractor=info.get("extractor_key"), notes=sorted({str(f.get("format_note") or "")[:40] for f in real})[:10])
     if res["ok"] and cfg["download"]:
@@ -214,13 +240,26 @@ def run_reddit_json(url: str, impersonate: bool) -> dict:
 
 def methods_for(platform: str, phase: str):
     if phase == "deployed":
-        return [("worker (deployed code)", lambda u: run_worker(u, platform, 1536))]  # v1.0 production limit
-    m = [("worker (upgraded deps)", lambda u: run_worker(u, platform)),
+        return [("worker (production code)", lambda u: run_worker(u, platform))]
+    if platform in CANDIDATES:
+        m = [("yt-dlp", lambda u: run_ytdlp(u, platform))]
+        if platform in ("tumblr", "imgur", "flickr"):
+            m.append(("gallery-dl", run_gallerydl))
+        m.insert(0, ("worker (candidate code)", lambda u: run_worker(u, platform)))  # "url rejected" until the platform is added
+        return m
+    m = [("worker (candidate code)", lambda u: run_worker(u, platform)),
          ("yt-dlp", lambda u: run_ytdlp(u, platform)),
          ("yt-dlp, no JS runtime", lambda u: run_ytdlp(u, platform, {"js_runtimes": {}}, download=False))]
     if platform == "youtube":
-        for client in ("tv", "web_safari", "mweb", "android_vr", "ios"):
+        for client in ("tv", "tv_simply", "web_embedded", "web_safari", "mweb", "android_vr", "ios"):
             m.append((f"yt-dlp client={client}", lambda u, c=client: run_ytdlp(u, platform, {"extractor_args": {"youtube": {"player_client": [c]}}})))
+        if os.environ.get("DIAG_BGUTIL"):
+            # PO tokens from the bgutil provider (BotGuard attestation run locally, open source, no account).
+            for client in ("default", "mweb", "web_safari"):
+                ea = {"youtubepot-bgutilhttp": {"base_url": ["http://127.0.0.1:4416"]}}
+                if client != "default":
+                    ea["youtube"] = {"player_client": [client]}
+                m.append((f"yt-dlp PO token (bgutil) {client}", lambda u, e=ea: run_ytdlp(u, platform, {"extractor_args": e, "_verbose": True})))
     if platform == "x":
         m.append(("yt-dlp api=syndication", lambda u: run_ytdlp(u, platform, {"extractor_args": {"twitter": {"api": ["syndication"]}}})))
         m.append(("FxTwitter API (external)", run_fxtwitter))
