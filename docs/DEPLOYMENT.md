@@ -65,3 +65,25 @@ Set `GOOGLE_SITE_VERIFICATION=<token>` in the environment used by `docker compos
 ### GitHub Actions deploy (optional)
 
 `.github/workflows/deploy.yml` runs only when started manually, and only after approval for the `production` environment. It needs these secrets: `DEPLOY_HOST`, `DEPLOY_USER`, `DEPLOY_SSH_KEY`, `DEPLOY_KNOWN_HOSTS` and `DEPLOY_PATH`. Use a dedicated deploy user, not root.
+
+## 7. Testing the downloader reliability upgrade on the droplet (with approval)
+
+This upgrade is on `feature/downloader-reliability`. The droplet runs `feature/phase-1-redesign` (`c1b070c`), which is also the rollback point.
+
+```bash
+cd /opt/yonixtools
+git fetch origin
+git checkout feature/downloader-reliability   # new code; images are rebuilt (adds Deno and curl_cffi)
+bash deploy/scripts/deploy.sh                 # rebuilds, restarts, re-applies the egress firewall, smoke-tests
+SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh https://yonixtools.com
+bash deploy/scripts/diagnose-platforms.sh     # real downloads from THIS server's IP, every platform
+bash deploy/scripts/diagnose-platforms.sh youtube 'https://www.youtube.com/watch?v=…'   # your own links
+```
+
+If the droplet's results differ from `apps/web/src/lib/downloader/platform-status.ts` (for example, YouTube works from the droplet's IP), update that file from the evidence and redeploy.
+
+To roll back:
+
+```bash
+git checkout feature/phase-1-redesign && bash deploy/scripts/deploy.sh
+```
