@@ -234,7 +234,12 @@ class YtDlpBackend:
         )
         try:
             with yt_dlp.YoutubeDL({k: v for k, v in opts.items() if v is not None}) as ydl:
-                code = ydl.download([self.target(url)])
+                # Same as ydl.download(), but DRM-flagged formats are removed
+                # before format selection so a selector can never land on one
+                # (seen with Vimeo's player config).
+                info = ydl.extract_info(self.target(url), download=False, process=False)
+                ydl.process_ie_result(_strip_unusable(info), download=True)
+                code = ydl._download_retcode
         except Exception as e:
             raise BackendError("raw", " | ".join(logger.errors) or str(e)) from None
         files = [p for p in out_dir.iterdir() if p.is_file() and p.name.startswith("media.") and not p.name.endswith((".part", ".ytdl")) and ".f" not in p.suffixes[:-1]]
@@ -258,6 +263,19 @@ class VimeoPlayerBackend(YtDlpBackend):
             raise BackendError("unsupported_content", "no vimeo id")
         h = m.group(2) or (re.search(r"[?&]h=([0-9a-f]{6,20})", url) or [None, None])[1]
         return f"https://player.vimeo.com/video/{m.group(1)}" + (f"?h={h}" if h else "")
+
+
+def _strip_unusable(info: Any) -> Any:
+    """Drop DRM-protected formats (and storyboards) from an extractor result, in place."""
+    if not isinstance(info, dict):
+        return info
+    if isinstance(info.get("formats"), list):
+        info["formats"] = [f for f in info["formats"] if not f.get("has_drm") and not _is_storyboard(f)]
+    entries = info.get("entries")
+    if isinstance(entries, list):
+        for e in entries:
+            _strip_unusable(e)
+    return info
 
 
 def _is_storyboard(f: dict) -> bool:

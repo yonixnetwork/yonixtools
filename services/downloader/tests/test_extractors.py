@@ -214,3 +214,13 @@ def test_single_url_sources_without_format_list_still_offer_the_original():
     info = {"title": "Clip", "url": "https://clips-media.example/clip.mp4", "ext": "mp4", "height": 720, "vcodec": "avc1", "acodec": "mp4a"}
     m = YtDlpBackend(("twitch:clips",), 10**8, 3600, 10).to_media(info, "twitch")
     assert m.items[0].formats[0].id == "v:best"
+
+
+def test_drm_formats_are_removed_before_selection():
+    from app.adapters.ytdlp_backend import _strip_unusable
+    info = {"formats": [{"format_id": "dash-drm", "has_drm": True}, {"format_id": "hls-720"}, {"format_id": "sb0", "protocol": "mhtml"}],
+            "entries": [{"formats": [{"format_id": "x", "has_drm": True}, {"format_id": "y"}]}]}
+    out = _strip_unusable(info)
+    assert [f["format_id"] for f in out["formats"]] == ["hls-720"]
+    assert [f["format_id"] for f in out["entries"][0]["formats"]] == ["y"]
+    assert _strip_unusable(None) is None
