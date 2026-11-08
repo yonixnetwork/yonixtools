@@ -47,7 +47,7 @@ const baseTools: Tool[] = [
         "Temporary files are deleted automatically after download",
       ],
       faqs: [
-        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal, 9GAG and Imgur. YouTube asks cloud servers to sign in, so it may not work. The home page shows the current status of each platform." },
+        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal and 9GAG. YouTube asks cloud servers to sign in, so it may not work. The home page shows the current status of each platform." },
         ...downloaderFaqsCommon,
       ],
     },

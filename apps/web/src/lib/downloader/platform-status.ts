@@ -11,7 +11,7 @@ export type PlatformState = "working" | "limited" | "blocked";
 export interface PlatformStatus {
   id: PlatformId;
   state: PlatformState;
-  /** What can be downloaded. (Reddit and Vimeo are deliberately not listed: they refuse our server.) */
+  /** What can be downloaded. (Not listed: Reddit and Vimeo refuse our server; Imgur answers the production server with HTTP 429.) */
   content: string;
   /** Honest, short note for users. */
   note: string;
@@ -35,7 +35,6 @@ export const PLATFORM_STATUS: PlatformStatus[] = [
   { id: "medal", state: "working", content: "Game clips", note: "Public clips." },
   { id: "mixcloud", state: "working", content: "Shows (audio)", note: "Public shows, as original audio or MP3." },
   { id: "9gag", state: "working", content: "Videos and GIFs", note: "Public posts." },
-  { id: "imgur", state: "working", content: "Videos, GIFs and albums", note: "Albums show every item." },
   { id: "youtube", state: "blocked", content: "Videos and Shorts", note: "YouTube asks cloud servers to sign in to prove they aren't bots. We don't use accounts, so YouTube may not work from our server." },
 ];
 

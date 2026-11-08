@@ -7,7 +7,8 @@ Real-platform results come from the live platform matrix and the live browser ru
 - **Working:**
   - TikTok, Instagram (reels, videos, single images, carousels, mixed posts), Facebook, X, Pinterest;
   - Dailymotion, Twitch clips, SoundCloud, Bluesky, Streamable;
-  - new: LinkedIn, Kick clips, Medal, Mixcloud, 9GAG, Imgur.
+  - new: LinkedIn, Kick clips, Medal, Mixcloud, 9GAG.
+- **Imgur:** works from GitHub's IPs, but answers the production droplet with HTTP 429, so it is not advertised.
 - **YouTube: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, for every player client, with or without Deno, and **with PO tokens** (bgutil). Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`. A DigitalOcean IPv6 address is the remaining legitimate thing to try.
 - **Reddit and Vimeo:** refused up front with the reason, and hidden from the interface. Reddit returns 403 to datacenter IPs; Vimeo requires an account or sends DRM streams.
 - **Not added (failed live):** Threads (no extractor), Tumblr, Bandcamp, Rumble, Flickr, Audiomack, Loom, TED (download not verified), Snapchat.

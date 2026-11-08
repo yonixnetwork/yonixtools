@@ -194,3 +194,22 @@ Real website, real worker, real platforms. Chromium emulating an Android phone (
 | YouTube | honest error shown |
 
 Result: **9/9 passed** (run 12), then **11/11** in the final run 14.
+
+
+## Production droplet results (8 November 2026, `diagnose-platforms.sh` from the droplet's own IP)
+
+**Downloads work for:**
+
+- Instagram: reel, video post, single image, 5-image carousel, multi-video post;
+- TikTok, X (GIF, video, multi-video), Pinterest (video and image);
+- Dailymotion, Twitch, SoundCloud, Bluesky, Streamable;
+- LinkedIn, Kick, Medal, 9GAG.
+
+**Problems found, and what was done:**
+
+| Platform | Result | Action |
+|---|---|---|
+| YouTube | "Sign in to confirm you're not a bot", the same as from GitHub | confirms the IP-reputation cause |
+| Facebook | the CNN sample failed with "[Errno 101] Network is unreachable": an IPv6 connection attempt, and the Docker network has no IPv6 route | IPv4 is now forced (`YTX_IPV4_ONLY=1`, the image default). The login-only sample fails as everywhere |
+| Imgur | HTTP 429 on every sample | Imgur refuses the droplet's IP. It is **no longer advertised**; links still work and show an honest error when refused |
+| Mixcloud | a file-rename error during MP3 conversion (not seen on GitHub) | being investigated |

@@ -15,7 +15,7 @@ COPY app ./app
 COPY diagnostics ./diagnostics
 RUN mkdir -p /var/lib/yonixtools/tmp && chown -R app:app /var/lib/yonixtools
 USER app
-ENV APP_ENV=production TEMP_ROOT=/var/lib/yonixtools/tmp HOME=/tmp
+ENV APP_ENV=production TEMP_ROOT=/var/lib/yonixtools/tmp HOME=/tmp YTX_IPV4_ONLY=1
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/healthz', timeout=3).status == 200 else 1)"
 # One process only: job state lives in memory (see docs/ARCHITECTURE.md).

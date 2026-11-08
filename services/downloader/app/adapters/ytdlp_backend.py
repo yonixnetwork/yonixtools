@@ -89,6 +89,10 @@ class YtDlpBackend:
             "restrictfilenames": True,
             "windowsfilenames": True,
         }
+        from ..netguard import ipv4_only
+
+        if ipv4_only():
+            opts["source_address"] = "0.0.0.0"  # also covers libcurl (curl_cffi), which resolves on its own
         opts.update(extra)
         return opts
 

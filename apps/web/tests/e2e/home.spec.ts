@@ -19,7 +19,7 @@ test("supported platforms show honest, evidence-based status", async ({ page }) 
   await expect(list.locator('[data-platform="youtube"]')).toContainText("Blocked by platform");
   await expect(list.locator('[data-platform="reddit"]')).toHaveCount(0); // deliberately not shown
   await expect(list.locator('[data-platform="vimeo"]')).toHaveCount(0);
-  await expect(list.locator("li")).toHaveCount(17);
+  await expect(list.locator("li")).toHaveCount(16);
   // Platforms that failed verification are never advertised as working in the hero.
   const hero = page.locator(".hero .platform-row");
   await expect(hero).not.toContainText("YouTube");

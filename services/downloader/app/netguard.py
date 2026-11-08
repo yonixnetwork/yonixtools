@@ -17,6 +17,7 @@ yt-dlp inside the guarded Python process).
 from __future__ import annotations
 
 import ipaddress
+import os
 import socket
 from typing import Any
 
@@ -61,10 +62,17 @@ def _filtered_getaddrinfo(host: Any, *args: Any, **kwargs: Any):
     if flags & socket.AI_PASSIVE:
         return _original_getaddrinfo(host, *args, **kwargs)
     results = _original_getaddrinfo(host, *args, **kwargs)
-    safe = [r for r in results if r[0] in (socket.AF_INET, socket.AF_INET6) and is_public_ip(r[4][0].split("%")[0])]
+    families = (socket.AF_INET,) if ipv4_only() else (socket.AF_INET, socket.AF_INET6)
+    safe = [r for r in results if r[0] in families and is_public_ip(r[4][0].split("%")[0])]
     if not safe:
         raise BlockedAddressError(f"Refusing to connect to non-public address for {host!r}")
     return safe
+
+
+def ipv4_only() -> bool:
+    """YTX_IPV4_ONLY=1 (the Docker default): containers usually have no IPv6 route, so an
+    AAAA answer would fail with "Network is unreachable". Set 0 on hosts with working IPv6."""
+    return os.environ.get("YTX_IPV4_ONLY", "0") == "1"
 
 
 def install_socket_guard() -> None:

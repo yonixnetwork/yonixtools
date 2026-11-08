@@ -85,3 +85,23 @@ def test_curl_cffi_impersonation_requests_are_prechecked():
             with pytest.raises(Exception):
                 y.urlopen(Request(target, extensions={"impersonate": ImpersonateTarget("chrome")}))
     assert called == []
+
+
+def test_ipv4_only_drops_ipv6_answers(monkeypatch):
+    import socket
+    from app import netguard
+    fake = [(socket.AF_INET6, socket.SOCK_STREAM, 6, "", ("2a03:2880:f12f:83:face:b00c:0:25de", 443, 0, 0)),
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("157.240.22.35", 443))]
+    monkeypatch.setattr(netguard, "_original_getaddrinfo", lambda *a, **k: fake)
+    monkeypatch.setenv("YTX_IPV4_ONLY", "1")
+    assert [r[0] for r in netguard._filtered_getaddrinfo("www.facebook.com", 443)] == [socket.AF_INET]
+    monkeypatch.setenv("YTX_IPV4_ONLY", "0")
+    assert len(netguard._filtered_getaddrinfo("www.facebook.com", 443)) == 2
+
+
+def test_ipv4_only_sets_ytdlp_source_address(monkeypatch):
+    from app.adapters.ytdlp_backend import YtDlpBackend
+    monkeypatch.setenv("YTX_IPV4_ONLY", "1")
+    assert YtDlpBackend(("x",), 1, 1, 1)._opts()["source_address"] == "0.0.0.0"
+    monkeypatch.setenv("YTX_IPV4_ONLY", "0")
+    assert "source_address" not in YtDlpBackend(("x",), 1, 1, 1)._opts()
