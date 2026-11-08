@@ -1,0 +1,23 @@
+# Inspect the real Adsterra scripts and how each loading strategy behaves in real Chromium.
+name: Ads probe
+on:
+  push:
+    branches: ["feature/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  probe:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ads-probe]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: node scripts/ads/probe.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: ad-probe, path: "apps/web/ad-probe-results.json\napps/web/script-*.js" }
