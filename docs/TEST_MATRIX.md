@@ -24,7 +24,7 @@ Legend:
 | Medal (new) | L | U | L | — | n/a | n/a | n/a | L | L | — | I | U | none |
 | Mixcloud (new) | L | U | n/a | L (original + MP3) | n/a | n/a | n/a | L | L | — | I | U | none |
 | 9GAG (new) | L | U | L | — | — | — | — | L | L | — | I | U | none |
-| Imgur (new) | L | U | L (after fix: final run) | — | L | L (album) | — | L | L | L | I | U | gallery-dl |
+| Imgur (new) | L | U | L (GIF as MP4, browser) | — | L* | L (album) | — | L | L | L | L (browser) | U | gallery-dl |
 | YouTube | blocked | U | blocked by platform (IP bot check) | — | — | — | — | — | — | — | — | L (honest error) | none possible |
 | Reddit, Vimeo | refused up front | U | — | — | — | — | — | — | — | — | — | U, I (refused, no API call) | — |
 
@@ -36,7 +36,7 @@ Legend:
 | Web unit tests (`vitest`) | 169 | passing |
 | Browser e2e: static site (desktop + Pixel 7) | 117 | passing |
 | Browser e2e: integrated (real API, desktop + Pixel 7; WebKit iPhone in CI) | 22 (+ iPhone in CI) | passing |
-| Live browser on real platforms (Pixel 7 emulation) | 9 | passing (run 12) |
+| Live browser on real platforms (Pixel 7 emulation) | 11 | passing (final run 14) |
 | Live platform matrix (production code vs candidate code) | 29 jobs | see PLATFORM_DIAGNOSTICS.md |
 
 ## Not tested
@@ -46,3 +46,5 @@ Legend:
   2. Tap Download on one image: it should appear in Downloads.
   3. Select two images and tap ZIP: the .zip should appear in Downloads.
 - **Downloads from the droplet's own IP.** Run `bash deploy/scripts/diagnose-platforms.sh` there after deploying.
+
+\* The Imgur single-image sample (an upstream fixture from 2015) downloads, but as a 182-byte file. It may have been removed upstream. Static-image albums go through gallery-dl.

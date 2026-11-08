@@ -132,9 +132,19 @@ Regression baseline is the production code (`c259dfc`, `feature/downloader-relia
 | Medal | game clip | yt-dlp `medaltv` | none |
 | Mixcloud | show audio (89 MB), original + MP3 | yt-dlp `mixcloud` | none |
 | 9GAG | video post | yt-dlp `9gag` | none |
-| Imgur | album (2 images, PNG conversion, ZIP 783 KB); GIF/video posts | yt-dlp `imgur*` | gallery-dl |
+| Imgur | GIF post as MP4 (2.7 MB, live browser); album of 2 animated items (ZIP 783 KB) | yt-dlp `imgur*` (animated/video items) | gallery-dl (static images) |
 
-The Imgur GIF classification fix (a `.gif` entry plus MP4 copies is a video, not an image) was made after run 7 and is re-checked in the final run.
+**Imgur GIF classification fix (made after run 7).** A `.gif` entry plus MP4 copies is now a video, not an image. Verified in the final run (14): the GIF post downloads as MP4 in the browser. The sample album's items are animated, so they too are correctly reported as videos. yt-dlp only lists animated or video items of Imgur albums; static-image albums fall back to gallery-dl.
+
+### Final verification (run 14, commit `6364c03`)
+
+- All 31 jobs succeeded.
+- Live browser: **11/11** passed. Since run 12, it adds Imgur GIF (2.7 MB MP4) and LinkedIn (8.6 MB MP4).
+- No failure in the candidate code that the production code doesn't share for the same sample:
+  - a region-locked TikTok post;
+  - a login-only Facebook video;
+  - a dead 2016 X "Amplify" video;
+  - YouTube's bot check.
 
 ### Tested and not added
 
@@ -183,4 +193,4 @@ Real website, real worker, real platforms. Chromium emulating an Android phone (
 | X 4-video ZIP | 1.2 MB |
 | YouTube | honest error shown |
 
-Result: **9/9 passed**.
+Result: **9/9 passed** (run 12), then **11/11** in the final run 14.
