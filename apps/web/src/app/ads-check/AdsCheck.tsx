@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useState } from "react";
 import { AdSlot } from "@/components/AdSlot";
-import { AD_ISOLATION, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
+import { AD_ISOLATION, AD_ORIGIN, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
 
 const UNITS: AdUnitId[] = ["banner320x50", "banner300x250", "banner728x90", "native"];
 type Row = { state: string; height?: number; diag?: AdDiag; firstFilledMs?: number };
@@ -39,6 +39,7 @@ export function AdsCheck() {
     `Page: ${env.href}`,
     `Browser: ${env.ua}`,
     `Site mode: ${AD_ISOLATION}`,
+    `Ad frame origin: ${AD_ORIGIN || "this site (not isolated)"}`,
     "",
     ...modes.flatMap((m) => [
       `== ${m}${m === AD_ISOLATION ? " (used by the site)" : " (comparison only)"} ==`,

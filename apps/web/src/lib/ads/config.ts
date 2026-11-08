@@ -58,7 +58,16 @@ export const FILL_TIMEOUT_MS = 12000;
 /** Native units have no fixed size: reserve a small strip while loading and grow to the creative's real height. */
 export const NATIVE_RESERVE_PX = 100;
 
-export const adFrameUrl = (unit: AdUnitId, slotId: string) => `/ad-frame.html?u=${unit}&s=${encodeURIComponent(slotId)}`;
+/**
+ * Optional separate origin for the ad frame, e.g. "https://yonixtools.com:8443" or
+ * "https://ads.yonixtools.com" (build-time; empty = this site). On its own origin a
+ * same-origin-sandboxed frame keeps cookies/storage for Adsterra but cannot touch the page.
+ * Requires that origin to serve /ad-frame.html and the page CSP frame-src to allow it.
+ */
+const rawAdOrigin = (process.env.NEXT_PUBLIC_AD_ORIGIN || "").replace(/\/$/, "");
+export const AD_ORIGIN = /^https?:\/\/[a-z0-9.-]+(:\d+)?$/i.test(rawAdOrigin) ? rawAdOrigin : "";
+
+export const adFrameUrl = (unit: AdUnitId, slotId: string) => `${AD_ORIGIN}/ad-frame.html?u=${unit}&s=${encodeURIComponent(slotId)}`;
 
 export interface AdDiag {
   scripts: Record<string, { state: "loaded" | "failed"; ms: number }>;
