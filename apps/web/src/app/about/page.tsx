@@ -50,10 +50,21 @@ export default function About() {
           <FaqList faqs={HELP_FAQ} />
         </section>
         <section>
+          <h2>Install YoniXTools</h2>
+          <ul>
+            <li><strong>Android (Chrome, Edge, Samsung Internet):</strong> tap <b>Install</b> when YoniXTools offers it, or use the browser menu → <b>Install app</b> / <b>Add to Home screen</b>.</li>
+            <li><strong>Windows, macOS, Linux, ChromeOS (Chrome or Edge):</strong> click the install icon in the address bar, or menu → <b>Install YoniXTools</b>.</li>
+            <li><strong>iPhone and iPad (Safari):</strong> tap <b>Share</b>, then <b>Add to Home Screen</b>. Safari has no automatic install prompt.</li>
+            <li><strong>Firefox and other browsers:</strong> some don&apos;t support installing web apps; bookmark the site instead.</li>
+          </ul>
+          <p>The installed app is this website running in its own window. It isn&apos;t a separate download from an app store.</p>
+        </section>
+        <section>
           <h2>Privacy</h2>
           <p>
             Links you paste into the downloader are sent to our server so it can fetch the public media. Files are kept for at most 15 minutes and then deleted. Server
-            logs keep only the platform and a short anonymous fingerprint of the link, never the full link. Browser tools never upload your files. See the{" "}
+            logs keep only the platform and a short anonymous fingerprint of the link, never the full link. Browser tools never upload your files. The site shows
+            labelled third-party ads from Adsterra in isolated frames. See the{" "}
             <a href="/privacy/">privacy page</a>.
           </p>
         </section>

@@ -23,7 +23,9 @@ export default defineConfig({
       : []),
   ],
   projects: [
-    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /(mobile|integrated|live)\.spec\.ts/ },
+    { name: "desktop", use: { ...devices["Desktop Chrome"] }, testIgnore: /(mobile|integrated|live|pwa-ios)\.spec\.ts/ },
+    // iOS Safari user agent on Chromium (WebKit itself runs in CI for the integrated suite).
+    { name: "iphone-ua", use: { ...devices["iPhone 15"], browserName: "chromium" }, testMatch: /pwa-ios\.spec\.ts/ },
     { name: "mobile", use: { ...devices["Pixel 7"] }, testMatch: /mobile\.spec\.ts/ },
     ...(integrated
       ? [

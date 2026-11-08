@@ -5,12 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "node scripts/build-ad-frame.mjs && next build",
     "start": "node scripts/serve-static.mjs",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --trace off",
-    "build:integrated": "NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
+    "build:integrated": "node scripts/build-ad-frame.mjs && NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
     "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated --project=integrated-mobile"
   },
   "dependencies": {

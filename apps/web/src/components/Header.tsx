@@ -2,6 +2,7 @@
 import { ChevronDown, Download, Grid2x2, House, LifeBuoy, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
+import { InstallMenuItem } from "./InstallPrompt";
 import { Logo } from "./Logo";
 import { SearchBox } from "./SearchBox";
 import { ThemeToggle } from "./ThemeToggle";
@@ -123,6 +124,7 @@ export function Header({ nav }: { nav: NavCategory[] }) {
               <a href="/tools/" aria-current={path.startsWith("/tools/") ? "page" : undefined}><Grid2x2 aria-hidden /> All tools</a>
               <a href="/about/" aria-current={path.startsWith("/about/") ? "page" : undefined}><LifeBuoy aria-hidden /> Help</a>
             </nav>
+            <InstallMenuItem />
             <h2 className="drawer-heading">Tool categories</h2>
             <div className="drawer-cats" role="list">
               {nav.map((c) => (

@@ -1,5 +1,6 @@
 import { ArrowRight, CircleAlert, CircleCheck, CircleMinus, Gauge, Link as LinkIcon, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
+import { AdSlot } from "@/components/AdSlot";
 import { Downloader } from "@/components/Downloader";
 import { FaqList } from "@/components/Faq";
 import { Icon, PlatformIcon } from "@/components/Icon";
@@ -68,6 +69,10 @@ export default function Home() {
         </div>
       </section>
 
+      <div className="container">
+        <AdSlot responsive="leaderboard" />
+      </div>
+
       <section className="section" aria-labelledby="platforms-h">
         <div className="container">
           <div className="section-head">
@@ -98,6 +103,10 @@ export default function Home() {
           </ul>
         </div>
       </section>
+
+      <div className="container">
+        <AdSlot unit="native" className="ad-native" />
+      </div>
 
       <section className="section" aria-labelledby="popular-h">
         <div className="container">

@@ -588,3 +588,31 @@ table.data tr:last-child td { border-bottom: 0; }
 .media-card-body .btn { justify-content: center; }
 .media-card-label { font-size: 0.86rem; font-weight: 600; color: var(--text-2); }
 .input-sm { height: 36px; padding: 0 10px; font-size: 0.86rem; }
+
+/* ─── PWA install invitation ─── */
+.install-card { position: fixed; z-index: 90; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); max-width: 440px; margin-left: auto; display: grid; grid-template-columns: auto 1fr; gap: 10px 12px; align-items: center; padding: 14px 40px 14px 14px; border: 1px solid var(--border); border-radius: var(--radius-lg); background: var(--surface); box-shadow: var(--shadow-lg); animation: fade-in 0.2s ease; }
+.install-card > strong { grid-column: 1 / -1; }
+.install-icon { border-radius: 10px; }
+.install-text { display: grid; gap: 2px; font-size: 0.88rem; color: var(--text-2); }
+.install-text strong { color: var(--text); font-size: 0.95rem; }
+.install-actions { grid-column: 1 / -1; display: flex; gap: 8px; justify-content: flex-end; }
+.install-close { position: absolute; top: 6px; right: 6px; }
+.install-steps { grid-column: 1 / -1; margin: 0; padding-left: 20px; display: grid; gap: 6px; font-size: 0.9rem; color: var(--text-2); }
+.inline-icon { width: 16px; height: 16px; vertical-align: -3px; color: var(--accent); }
+.drawer-install { display: flex; align-items: center; justify-content: center; gap: 8px; height: 42px; border: 1px dashed var(--accent); border-radius: var(--radius); background: var(--accent-soft); color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.drawer-install svg { width: 17px; height: 17px; }
+@media (min-width: 1024px) { .install-card { right: 24px; bottom: 24px; } }
+
+/* ─── Advertising placements ─── */
+.ad-slot { display: flex; flex-direction: column; align-items: center; gap: 4px; margin: 32px auto; max-width: 100%; }
+.ad-label { font-size: 0.68rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.ad-box { overflow: hidden; border-radius: var(--radius-sm); background: color-mix(in srgb, var(--surface-2) 60%, transparent); }
+.ad-frame { display: block; border: 0; width: 100%; height: 100%; }
+.ad-slot[data-ad-state="filled"] .ad-box { background: transparent; }
+.ad-native { width: 100%; max-width: 728px; }
+.ad-desktop-only { display: none; }
+@media (min-width: 1024px) { .ad-desktop-only { display: flex; } }
+
+/* Long status badges in a tool header wrap on narrow screens instead of widening the page. */
+.tool-hero > * { min-width: 0; }
+.tool-hero .badge { white-space: normal; line-height: 1.35; }

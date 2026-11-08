@@ -22,6 +22,24 @@ export default function Privacy() {
           <p>Your browser&apos;s local storage holds your light or dark theme choice, a short list of tools you used recently, your recent downloads list and the last quality you chose. Both stay on your device, and clearing your site data removes them. YoniXTools does not set advertising or analytics cookies.</p>
         </section>
         <section>
+          <h2>Advertising</h2>
+          <p>
+            YoniXTools is free because it shows advertising from <strong>Adsterra</strong>, a third-party ad network. Ads are loaded in isolated frames that cannot read
+            this site&apos;s pages, your files or your downloads. Adsterra and its advertisers may use cookies, device identifiers and similar technologies in those
+            frames to show, measure and limit ads, and they receive technical data such as your IP address, browser and the page you are on. See{" "}
+            <a href="https://adsterra.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Adsterra&apos;s privacy policy</a> for how they use it and your
+            choices. You can block or delete these cookies in your browser settings, or use an ad blocker; the tools keep working either way.
+          </p>
+          <p>Advertising never decides whether a tool works: there are no forced ad clicks, countdowns or redirects, and pop-under or redirect ad formats are not used.</p>
+        </section>
+        <section>
+          <h2>App installation and offline use</h2>
+          <p>
+            If you install YoniXTools as an app, your browser keeps a copy of the site&apos;s pages and files so it opens faster and some pages work offline. Downloads
+            and anything you process are never stored in that copy. Whether you dismissed the install invitation is remembered in your browser for 30 days.
+          </p>
+        </section>
+        <section>
           <h2>Social media downloader</h2>
           <p>
             Links you submit are sent to the YoniXTools server so it can fetch the public media. The prepared file is deleted automatically at most 15 minutes after it is

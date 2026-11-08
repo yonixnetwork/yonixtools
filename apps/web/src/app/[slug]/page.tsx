@@ -2,6 +2,7 @@ import { Clock, MonitorSmartphone, Server } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { AdSlot } from "@/components/AdSlot";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
@@ -35,6 +36,7 @@ export default async function ToolPage({ params }: Props) {
   const related = relatedTools(tool.slug, 5);
   const isDownloader = tool.category === "social";
   const status = tool.platform ? PLATFORM_STATUS.find((p) => p.id === tool.platform) : undefined;
+  const ads = !tool.hidden; // no advertising on pages of unavailable platforms
 
   return (
     <>
@@ -91,6 +93,9 @@ export default async function ToolPage({ params }: Props) {
           {isDownloader ? <Downloader expectedPlatform={tool.platform} /> : <ToolRenderer slug={tool.slug} />}
         </section>
 
+        {/* Below the tool and its results, never between its controls. */}
+        {ads && (isDownloader ? <AdSlot responsive="leaderboard" /> : <AdSlot unit="banner300x250" />)}
+
         <div className="content-grid">
           <article className="prose">
             <section aria-labelledby="how-h">
@@ -101,6 +106,7 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ol>
             </section>
+            {ads && isDownloader && <AdSlot unit="native" className="ad-native" />}
             <section aria-labelledby="feat-h">
               <h2 id="feat-h">Features</h2>
               <ul>
@@ -109,10 +115,12 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ul>
             </section>
+            {ads && !isDownloader && <AdSlot unit="native" className="ad-native" />}
             <section aria-labelledby="faq-h">
               <h2 id="faq-h">Frequently asked questions</h2>
               <FaqList faqs={tool.content.faqs} />
             </section>
+            {ads && isDownloader && <AdSlot unit="banner300x250" />}
           </article>
           <aside>
             <div className="card aside-card">
@@ -133,6 +141,7 @@ export default async function ToolPage({ params }: Props) {
             </div>
           </aside>
         </div>
+        {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
       </div>
     </>
   );

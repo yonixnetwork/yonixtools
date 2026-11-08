@@ -1,3 +1,4 @@
+import { AdSlot } from "@/components/AdSlot";
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ToolsExplorer } from "@/components/ToolsExplorer";
@@ -18,6 +19,7 @@ export default function ToolsPage() {
         <p>Search by what you want to do. Synonyms and small typos are understood.</p>
       </header>
       <ToolsExplorer />
+      <AdSlot unit="native" className="ad-native" />
     </div>
   );
 }

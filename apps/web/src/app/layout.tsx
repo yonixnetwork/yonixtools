@@ -3,6 +3,7 @@ import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/Footer";
 import { Header, type NavCategory } from "@/components/Header";
+import { InstallPrompt } from "@/components/InstallPrompt";
 import { categories, toolsInCategory } from "@/lib/registry";
 import { ThemeScript } from "@/components/ThemeScript";
 import { categoryPath, site, toolPath } from "@/lib/site";
@@ -14,7 +15,8 @@ export const metadata: Metadata = {
   applicationName: site.name,
   openGraph: { siteName: site.name, type: "website", locale: "en_US" },
   twitter: { card: "summary" },
-  icons: { icon: "/favicon.svg" },
+  icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
+  appleWebApp: { capable: true, title: "YoniXTools", statusBarStyle: "black-translucent" },
   ...(site.googleVerification ? { verification: { google: site.googleVerification } } : {}),
 };
 
@@ -26,6 +28,9 @@ export const viewport: Viewport = {
     { media: "(prefers-color-scheme: dark)", color: "#0a0b0f" },
   ],
 };
+
+// Changes on every build: a new service worker URL makes browsers pick up the new version.
+const BUILD_VERSION = process.env.NEXT_PUBLIC_BUILD_ID || new Date().toISOString().replace(/[^0-9]/g, "").slice(0, 14);
 
 const nav: NavCategory[] = categories.map((c) => ({
   name: c.name,
@@ -47,6 +52,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Header nav={nav} />
         <main id="main">{children}</main>
         <Footer />
+        <InstallPrompt version={BUILD_VERSION} />
       </body>
     </html>
   );
