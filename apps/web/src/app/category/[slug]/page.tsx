@@ -1,4 +1,5 @@
 import { AdSlot } from "@/components/AdSlot";
+import { MonetagZones } from "@/components/MonetagZones";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { CategoryId } from "@/lib/registry";
@@ -67,6 +68,7 @@ export default async function CategoryPage({ params }: Props) {
         {list.map((t) => <ToolCard key={t.slug} tool={t} headingLevel={2} />)}
       </div>
       <AdSlot unit="native" className="ad-native" />
+      <MonetagZones />
       <section className="section" aria-labelledby="other-h" style={{ paddingBottom: 0 }}>
         <h2 id="other-h" style={{ fontSize: "1.1rem", marginBottom: 12 }}>
           Other categories

@@ -43,4 +43,4 @@ export function makePng(w: number, h: number): Buffer {
 
 
 /** Requests/console messages from the isolated ad frames or the ad network: third-party, not the app's. */
-export const isAdTraffic = (url: string) => /bellnewyork\.org|\/ad-frame\.html/.test(url);
+export const isAdTraffic = (url: string) => /bellnewyork\.org|\/ad-frame\.html|n6wxm\.com|nap5k\.com/.test(url);

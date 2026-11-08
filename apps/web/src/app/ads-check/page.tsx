@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { MonetagZones } from "@/components/MonetagZones";
 import { AdsCheck } from "./AdsCheck";
 
 export const metadata: Metadata = {
@@ -20,6 +21,7 @@ export default function AdsCheckPage() {
         approval). Please don&apos;t click the ads.
       </p>
       <AdsCheck />
+      <MonetagZones />
     </div>
   );
 }

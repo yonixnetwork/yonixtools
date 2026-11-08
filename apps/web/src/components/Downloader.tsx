@@ -407,7 +407,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
                   {t.phase === "requested" && t.href && (
                     <>
                       {" · "}
-                      <a href={t.href} download>
+                      <a href={t.href} download onClick={keepToPage}>
                         Save it here
                       </a>
                     </>
@@ -423,6 +423,9 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   );
 }
 
+
+/** Fallback "save" links: keep the click inside the app, away from page-level third-party listeners. */
+const keepToPage = (e: { stopPropagation: () => void }) => e.stopPropagation();
 
 // ── Result building blocks ─────────────────────────────────────────────────
 type TransferFor = (result: ResultState, key: string) => Transfer | undefined;
@@ -441,7 +444,7 @@ function TransferStatus({ t }: { t: Transfer }) {
       {t.phase === "requested" && t.href && (
         <span className="dl-note">
           Your browser was asked to save the file. Nothing in your downloads?{" "}
-          <a href={t.href} download>
+          <a href={t.href} download onClick={keepToPage}>
             Save it here
           </a>
           .
@@ -582,7 +585,7 @@ function ZipButton({ result, selected, transferFor, chooseZip }: { result: Resul
     return (
       <span className="zip-status">
         <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status"><CircleCheck aria-hidden /> {phaseText(t)}</span>
-        {t.phase === "requested" && t.href && <a href={t.href} download>Save ZIP</a>}
+        {t.phase === "requested" && t.href && <a href={t.href} download onClick={keepToPage}>Save ZIP</a>}
       </span>
     );
   return (

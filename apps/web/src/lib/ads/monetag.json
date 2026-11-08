@@ -1,0 +1,14 @@
+{
+  "vignette": {
+    "label": "Monetag Vignette Banner",
+    "zone": "12218952",
+    "src": "https://n6wxm.com/vignette.min.js",
+    "snippet": "<script>\n(function(s){\n    s.dataset.zone='12218952',\n    s.src='https://n6wxm.com/vignette.min.js'\n})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))\n</script>"
+  },
+  "inPagePush": {
+    "label": "Monetag In-Page Push",
+    "zone": "12218944",
+    "src": "https://nap5k.com/tag.min.js",
+    "snippet": "<script>\n(function(s){\n    s.dataset.zone='12218944',\n    s.src='https://nap5k.com/tag.min.js'\n})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))\n</script>"
+  }
+}

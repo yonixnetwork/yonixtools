@@ -15,6 +15,8 @@ services:
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
         NEXT_PUBLIC_ADS: ${ADS:-on}
         NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-same-origin}
+        # Monetag Vignette + In-Page Push. Off until the page CSP allows their hosts (see docs/ADS_AND_PWA.md).
+        NEXT_PUBLIC_MONETAG: ${MONETAG:-off}
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:

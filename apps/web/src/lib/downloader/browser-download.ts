@@ -41,10 +41,9 @@ export async function startBrowserDownload(fileUrl: string, opts: { timeoutMs?: 
   a.href = withParam(fileUrl, "dl", token);
   a.download = "";
   a.rel = "noopener";
-  a.style.display = "none";
-  document.body.appendChild(a);
+  // Clicked while detached from the page: the click event never reaches page-level
+  // listeners (e.g. third-party ad scripts), so nothing can intercept a download.
   a.click();
-  a.remove();
 
   const sameOrigin = new URL(fileUrl, location.href).origin === location.origin;
   if (!sameOrigin) return "requested"; // can't observe the cookie cross-origin (local development only)
