@@ -1,15 +1,18 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import { AD_ISOLATION, AD_UNITS, ADS_ENABLED, adFrameUrl, SANDBOX, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
+import { AD_ISOLATION, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, NATIVE_RESERVE_PX, SANDBOX, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
 
 /**
  * One advertising placement.
  *
  * - `unit` picks a fixed unit; `responsive="leaderboard"` picks 728×90 on wide
  *   screens and 320×50 on phones (never a stretched banner).
- * - Loads only when the slot comes near the viewport, inside an isolated iframe
- *   whose size is reserved up front (no layout shift while loading).
- * - Collapses quietly if nothing renders (ad blocker, no fill, network error).
+ * - Loads only when the slot comes near the viewport, inside its own iframe.
+ *   Banners reserve their exact size; native reserves a small strip and grows
+ *   to the creative's height. The "Advertisement" label appears only once a
+ *   real creative has rendered.
+ * - Collapses when nothing renders: at once if the ad scripts fail (ad blocker,
+ *   network), otherwise after about 8 s without a creative.
  * - One instance of each unit per page: a second mount of the same unit stays empty.
  */
 type Props = {
@@ -19,6 +22,8 @@ type Props = {
   isolation?: AdIsolation;
   /** Diagnostics page only: show unit/state, never collapse, allow the same unit twice. */
   debug?: boolean;
+  /** Diagnostics page only: receives each state/diagnostic report from the frame. */
+  onReport?: (r: { unit: AdUnitId; isolation: AdIsolation; state: string; height?: number; diag?: AdDiag }) => void;
 };
 
 const mounted = new Set<AdUnitId>(); // unit ids currently on the page
@@ -29,7 +34,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
   return null;
 }
 
-export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, debug }: Props) {
+export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, debug, onReport }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -62,46 +67,77 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
     return () => io.disconnect();
   }, [chosen]);
 
-  // Messages from this slot's isolated document only.
+  // Messages from this slot's own frame only (checked by window and origin).
+  const report = useRef(onReport);
+  report.current = onReport;
   useEffect(() => {
-    if (!near) return;
+    if (!near || !chosen) return;
     setState("loading");
+    const expected = isolation === "sandboxed" ? "null" : location.origin;
     const onMsg = (e: MessageEvent) => {
-      const d = e.data as { ytxAd?: string; state?: string; height?: number };
-      if (!d || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow) return;
+      const d = e.data as { ytxAd?: string; state?: string; height?: number; diag?: AdDiag };
+      if (!d || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow || e.origin !== expected) return;
+      report.current?.({ unit: chosen, isolation, state: d.state ?? "", height: d.height, diag: d.diag });
       if (d.state === "filled") {
         setState("filled");
-        if (chosen === "native" && typeof d.height === "number") setHeight(Math.min(Math.max(d.height, 60), 900));
+        if (chosen === "native" && typeof d.height === "number" && d.height > 0) setHeight(Math.min(Math.max(d.height, 60), 1200));
       } else if (d.state === "empty") setState((s) => (s === "filled" ? s : "empty"));
     };
     window.addEventListener("message", onMsg);
-    return () => window.removeEventListener("message", onMsg);
-  }, [near, slotId, chosen]);
+    // Safety net: a frame that never reports (failed to load) must not hold space.
+    const t = window.setTimeout(() => setState((s) => (s === "filled" ? s : "empty")), FILL_TIMEOUT_MS);
+    return () => {
+      window.removeEventListener("message", onMsg);
+      window.clearTimeout(t);
+    };
+  }, [near, slotId, chosen, isolation]);
 
-  if (!ADS_ENABLED || dropped || (state === "empty" && !debug)) return null;
+  // An empty slot collapses without moving what the visitor is looking at: right away when
+  // it's off screen, otherwise once it scrolls out of view or on the next tap/key press
+  // (layout changes right after input don't count as layout shift). Until then it's blank, unlabeled.
+  const [gone, setGone] = useState(false);
+  useEffect(() => {
+    if (state !== "empty" || debug || !ref.current) return;
+    const el = ref.current;
+    const collapse = () => setGone(true);
+    const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.every((e) => !e.isIntersecting) && collapse()) : null;
+    if (io) io.observe(el);
+    else collapse();
+    const opts = { capture: true, passive: true } as const;
+    window.addEventListener("pointerdown", collapse, opts);
+    window.addEventListener("keydown", collapse, opts);
+    return () => {
+      io?.disconnect();
+      window.removeEventListener("pointerdown", collapse, opts);
+      window.removeEventListener("keydown", collapse, opts);
+    };
+  }, [state, debug]);
+
+  if (!ADS_ENABLED || dropped || gone) return null;
   if (!chosen) {
-    // Server render and first paint: reserve the slot's exact size in the HTML so nothing shifts when it loads.
+    // Server render and first paint: reserve the slot's size in the HTML (label hidden until an ad renders).
     const fixed = unit ? AD_UNITS[unit] : null;
     return (
       <aside ref={ref} className={`ad-slot ad-reserve${responsive ? " ad-leaderboard" : ""}${unit ? ` ad-${unit}` : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
         <span className="ad-label">Advertisement</span>
-        <div className="ad-box" style={fixed ? { width: unit === "native" ? "100%" : fixed.width, maxWidth: "100%", height: fixed.height } : undefined} />
+        <div className="ad-box" style={fixed ? { width: unit === "native" ? "100%" : fixed.width, maxWidth: "100%", height: unit === "native" ? NATIVE_RESERVE_PX : fixed.height } : undefined} />
       </aside>
     );
   }
   const u = AD_UNITS[chosen];
   const isNative = chosen === "native";
+  const h = isNative ? (height ?? NATIVE_RESERVE_PX) : u.height;
   return (
-    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state}>
+    <aside ref={ref} className={`ad-slot ad-${chosen}${debug ? " ad-debug" : ""}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state}>
       <span className="ad-label">{debug ? `${u.label} · ${isolation} · ${state}` : "Advertisement"}</span>
-      <div className="ad-box" style={{ width: isNative ? "100%" : u.width, maxWidth: "100%", height: isNative ? (height ?? u.height) : u.height }}>
+      <div className="ad-box" style={{ width: isNative ? "100%" : u.width, maxWidth: "100%", height: h }}>
         {near && (
           <iframe
             ref={frame}
             title="Advertisement"
             className="ad-frame"
             width={isNative ? "100%" : u.width}
-            height={isNative ? (height ?? u.height) : u.height}
+            height={h}
             sandbox={SANDBOX[isolation]}
             referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"

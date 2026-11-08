@@ -147,3 +147,35 @@ To roll back:
 ```bash
 git checkout feature/media-expansion && bash deploy/scripts/deploy.sh
 ```
+
+## 10. Ads fix (`feature/ads-fix`): staging first, then deploy with approval
+
+**1. Before any deployment (works today):** on your phone, open `https://yonixtools.com/ads-check/` and look at the **"Mode: same-origin"** section. That is the mode this fix switches the whole site to. If a real ad appears there and not under "sandboxed", the fix addresses your problem. Don't click the ads.
+
+**2. Staging on the droplet, next to production and without touching it.** It runs on 127.0.0.1:8091, is not public, and changes no DNS or edge config:
+
+```bash
+cd /opt/yonixtools
+git fetch origin feature/ads-fix
+git worktree add /opt/yonixtools-staging origin/feature/ads-fix   # separate checkout; production's stays as it is
+cd /opt/yonixtools-staging
+bash deploy/scripts/staging-web.sh up        # builds yonixtools-web:staging, runs the smoke test against it
+```
+
+From your computer, run `ssh -L 8091:127.0.0.1:8091 root@<droplet>`, then open:
+- `http://localhost:8091/` and a few tool and downloader pages, to check layout, tools and downloads (staging uses the production downloader);
+- `http://localhost:8091/ads-check/` and tap Copy report.
+
+Ads may not fill on `localhost` (the ad network sees a different site), so real-ad delivery is judged on the live `/ads-check/` from step 1 and again after the deploy.
+
+Remove staging with `bash deploy/scripts/staging-web.sh down && cd /opt/yonixtools && git worktree remove /opt/yonixtools-staging`.
+
+**3. Deploy (only after your approval):**
+
+```bash
+cd /opt/yonixtools && git fetch origin && git checkout feature/ads-fix && bash deploy/scripts/deploy.sh
+```
+
+Then, on Android Chrome, iPhone Safari and desktop Chrome, open `/ads-check/` and send the copied reports, and look at the home page, one tool page and one downloader page.
+
+Roll back with `git checkout feature/ads-pwa && bash deploy/scripts/deploy.sh`.

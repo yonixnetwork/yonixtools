@@ -14,7 +14,7 @@ services:
         NEXT_PUBLIC_DOWNLOADER_API_URL: /api
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
         NEXT_PUBLIC_ADS: ${ADS:-on}
-        NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-sandboxed}
+        NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-same-origin}
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:

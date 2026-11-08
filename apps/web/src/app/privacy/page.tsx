@@ -24,8 +24,9 @@ export default function Privacy() {
         <section>
           <h2>Advertising</h2>
           <p>
-            YoniXTools is free because it shows advertising from <strong>Adsterra</strong>, a third-party ad network. Ads are loaded in isolated frames that cannot read
-            this site&apos;s pages, your files or your downloads. Adsterra and its advertisers may use cookies, device identifiers and similar technologies in those
+            YoniXTools is free because it shows advertising from <strong>Adsterra</strong>, a third-party ad network. Ads are loaded in separate frames, below or beside the
+            tools, never inside them. Those frames can&apos;t redirect the page, but they run Adsterra&apos;s own code on this site, as ads on most websites do, so
+            we can&apos;t fully control what that code does. Adsterra and its advertisers may use cookies, device identifiers and similar technologies in those
             frames to show, measure and limit ads, and they receive technical data such as your IP address, browser and the page you are on. See{" "}
             <a href="https://adsterra.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Adsterra&apos;s privacy policy</a> for how they use it and your
             choices. You can block or delete these cookies in your browser settings, or use an ad blocker; the tools keep working either way.

@@ -36,6 +36,12 @@ atOptions = {
 <script src="https://bellnewyork.org/22/184daaa0dde35a067c7494257f37cd70"></script>`,
 };
 
+// No real ad traffic from tests: by default the network's scripts load and render nothing
+// (a slot then stays "loading" for ~8 s before collapsing). Tests override this where needed.
+test.beforeEach(async ({ page }) => {
+  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
+});
+
 async function slots(page: Page) {
   await page.waitForTimeout(400);
   return page.locator("aside.ad-slot").evaluateAll((els) => els.map((e) => ({ unit: e.getAttribute("data-ad-unit"), label: e.querySelector(".ad-label")?.textContent, visible: (e as HTMLElement).offsetParent !== null })));
@@ -99,44 +105,101 @@ test.describe("phone placements", () => {
   });
 });
 
-test("frames are isolated: opaque-origin sandbox, no top navigation, exact size reserved, lazy", async ({ page }) => {
+const CREATIVE_300 = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250"><rect width="300" height="250" fill="#ccc"/></svg>')}`;
+const stub = (body: string) => ({ contentType: "application/javascript", body });
+
+test("frames: same-origin sandbox without top navigation, banner size reserved, label hidden until an ad renders, lazy", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/image-compressor/");
   const ad = page.locator('aside[data-ad-unit="banner300x250"]');
   await ad.scrollIntoViewIfNeeded();
   const frame = ad.locator("iframe");
-  await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-popups allow-popups-to-escape-sandbox");
+  // Adsterra's code throws in an opaque-origin sandbox (measured on the live site), so frames keep the site's origin, still without allow-top-navigation.
+  await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
   await expect(frame).toHaveAttribute("src", /^\/ad-frame\.html\?u=banner300x250&s=/);
   const box = await ad.locator(".ad-box").boundingBox();
   expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([300, 250]);
+  await expect(ad).toHaveAttribute("data-ad-state", "loading");
+  await expect(ad.locator(".ad-label")).toBeHidden(); // no "Advertisement" over empty space
+  // Native reserves a small strip only, not a tall empty box.
+  const native = page.locator('aside[data-ad-unit="native"] .ad-box');
+  expect(Math.round((await native.boundingBox())!.height)).toBeLessThanOrEqual(100);
   // The bottom leaderboard is far below the fold: not loaded yet.
   await expect(page.locator('aside[data-ad-unit="banner728x90"] iframe')).toHaveCount(0);
 });
 
-test("when the ad network is unreachable (or blocked), slots collapse and the page has no errors", async ({ page }) => {
+test("when the ad network is unreachable (or blocked), slots collapse within seconds and the page has no errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   page.on("console", (m) => m.type() === "error" && !m.location().url.includes("ad-frame") && !m.location().url.includes("bellnewyork") && errors.push(m.text()));
   await page.route("https://bellnewyork.org/**", (r) => r.abort("blockedbyclient"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/word-counter/");
-  await page.locator('aside[data-ad-unit="banner300x250"]').scrollIntoViewIfNeeded();
-  await expect(page.locator('aside[data-ad-unit="banner300x250"]')).toHaveCount(0, { timeout: 15_000 });
+  // It may already be gone by the time we scroll (scripts fail at once), so scroll without waiting on it.
+  await page.evaluate(() => document.querySelector('aside[data-ad-unit="banner300x250"]')?.scrollIntoView());
+  const ad = page.locator('aside[data-ad-unit="banner300x250"]');
+  // On screen: it turns blank and unlabeled within seconds, and collapses on the next interaction (no layout shift while being looked at).
+  await expect(ad).toHaveAttribute("data-ad-state", "empty", { timeout: 4_000 });
+  await expect(ad.locator(".ad-label")).toBeHidden();
+  await page.keyboard.press("Shift");
+  await expect(ad).toHaveCount(0);
+  // Off screen: slots collapse by themselves.
+  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+  await expect(page.locator('aside[data-ad-unit="native"]')).toHaveCount(0, { timeout: 4_000 });
   // The tool is unaffected.
   await page.locator("textarea").first().fill("one two three");
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
   expect(errors).toEqual([]);
 });
 
-test("plumbing (simulated creative, not proof of Adsterra delivery): a rendered ad keeps its slot", async ({ page }) => {
-  // Stand-in for the network's script: draws a 300×250 box where the real code would.
+test("a script that runs but returns nothing, or a blank iframe, is never treated as an ad: the slot collapses", async ({ page }) => {
   await page.route("https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40", (r) =>
-    r.fulfill({ contentType: "application/javascript", body: "document.write('<a href=\"https://example.com\" style=\"display:inline-block;width:300px;height:250px;background:#ddd\">ad</a>')" }));
+    r.fulfill(stub("var f=document.createElement('iframe');f.width=300;f.height=250;f.style.border=0;document.body.appendChild(f);")));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/image-converter/");
+  const ad = page.locator('aside[data-ad-unit="banner300x250"]');
+  await ad.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(3_000);
+  await expect(ad).toHaveAttribute("data-ad-state", "loading");
+  await expect(ad).toHaveAttribute("data-ad-state", "empty", { timeout: 10_000 });
+  await page.mouse.click(5, 5); // next interaction: collapses
+  await expect(ad).toHaveCount(0);
+});
+
+test("plumbing (simulated creative, not proof of Adsterra delivery): a rendered banner keeps its slot and shows the label", async ({ page }) => {
+  // Stand-in for the network's script: draws a 300×250 image where the real code would.
+  await page.route("https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40", (r) =>
+    r.fulfill(stub(`document.write('<a href="https://example.com"><img width="300" height="250" src="${CREATIVE_300}"></a>')`)));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/image-converter/");
   const ad = page.locator('aside[data-ad-unit="banner300x250"]');
   await ad.scrollIntoViewIfNeeded();
   await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
+  await expect(ad.locator(".ad-label")).toBeVisible();
   await page.waitForTimeout(10_000);
   await expect(ad).toHaveCount(1); // filled slots never collapse
+});
+
+test("plumbing (simulated): a native creative grows its slot to the creative's height", async ({ page }) => {
+  await page.route("https://bellnewyork.org/21/cdabddda1b7a8e769299c93b91d77822", (r) =>
+    r.fulfill(stub("var c=document.getElementById('container-cdabddda1b7a8e769299c93b91d77822');c.innerHTML='<div style=\"height:240px;background:#ddd\">Sponsored story headline text</div>';")));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/image-converter/");
+  const ad = page.locator('aside[data-ad-unit="native"]');
+  await ad.scrollIntoViewIfNeeded();
+  await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
+  await expect.poll(async () => Math.round((await ad.locator(".ad-box").boundingBox())!.height)).toBe(240);
+});
+
+test("/ads-check/ produces a copyable report that tells blocked scripts apart from no fill", async ({ page }) => {
+  await page.route("https://bellnewyork.org/22/**", (r) => r.abort("blockedbyclient"));
+  await page.route("https://bellnewyork.org/21/**", (r) => r.fulfill(stub("")));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/ads-check/");
+  for (const a of await page.locator("aside.ad-slot").all()) await a.scrollIntoViewIfNeeded();
+  const report = page.getByTestId("ads-report");
+  await expect(report).toContainText("Site mode: same-origin");
+  await expect(report).toContainText("banner300x250: EMPTY: ad script blocked or unreachable", { timeout: 15_000 });
+  await expect(report).toContainText("native: EMPTY: script loaded and ran without errors, no creative returned", { timeout: 15_000 });
+  await expect(report).toContainText("cookies=ok storage=ok");
 });

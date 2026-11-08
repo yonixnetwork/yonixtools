@@ -53,7 +53,8 @@ Real-platform results come from the live platform matrix and the live browser ru
 ## Advertising
 
 - **Delivery not confirmed from a server.** Adsterra answers datacenter IPs with HTTP 403, so real delivery wasn't observed by automated tests. Use `/ads-check/` on a real phone after deploying.
-- **Isolation and Adsterra's terms.** Units run inside sandboxed frames. If Adsterra's scripts need cookies or storage there, switch to `AD_ISOLATION=same-origin`, which gives weaker isolation. Adsterra's terms forbid altering ad tags without consent; the tags are unaltered but framed, so confirm with Adsterra.
+- **Isolation and Adsterra's terms.** Ad frames run on the site's own origin (`allow-same-origin`), because Adsterra's code throws in an opaque-origin sandbox (measured on the live site). The frames still can't navigate the page, and pages keep a strict CSP, but the ad code could read the page it is embedded in (as with any directly embedded ad tag). Full isolation with working ads needs the frame on a separate subdomain (e.g. `ads.yonixtools.com`), which needs a DNS record and your approval. Adsterra's terms forbid altering ad tags without consent; the tags are unaltered but framed, so confirm with Adsterra.
+- **Ad delivery is not verified from automation.** Ad servers treat datacenter and automated browsers differently; real delivery must be confirmed on real devices with `/ads-check/`.
 - **No consent banner** for EU/UK ad cookies.
 - **Native banner height** varies. 280 px is reserved, and the frame resizes to the ad's real height once it renders.
 

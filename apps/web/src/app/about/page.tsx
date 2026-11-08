@@ -64,7 +64,7 @@ export default function About() {
           <p>
             Links you paste into the downloader are sent to our server so it can fetch the public media. Files are kept for at most 15 minutes and then deleted. Server
             logs keep only the platform and a short anonymous fingerprint of the link, never the full link. Browser tools never upload your files. The site shows
-            labelled third-party ads from Adsterra in isolated frames. See the{" "}
+            labelled third-party ads from Adsterra in separate frames, outside the tools. See the{" "}
             <a href="/privacy/">privacy page</a>.
           </p>
         </section>

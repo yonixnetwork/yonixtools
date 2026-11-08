@@ -7,9 +7,9 @@ COPY . .
 ARG NEXT_PUBLIC_SITE_URL=https://yonixtools.com
 ARG NEXT_PUBLIC_DOWNLOADER_API_URL=/api
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
-# Advertising: ADS=off disables every ad; AD_ISOLATION=same-origin only if /ads-check/ shows it is needed.
+# Advertising: ADS=off disables every ad; AD_ISOLATION=sandboxed only for comparison (Adsterra fails in it).
 ARG NEXT_PUBLIC_ADS=on
-ARG NEXT_PUBLIC_AD_ISOLATION=sandboxed
+ARG NEXT_PUBLIC_AD_ISOLATION=same-origin
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_ADS=$NEXT_PUBLIC_ADS \
     NEXT_PUBLIC_AD_ISOLATION=$NEXT_PUBLIC_AD_ISOLATION \
