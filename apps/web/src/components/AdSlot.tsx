@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import { AD_ISOLATION, AD_ORIGIN, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, NATIVE_RESERVE_PX, SANDBOX, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
+import { AD_ISOLATION, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, NATIVE_RESERVE_PX, SANDBOX, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
 
 /**
  * One advertising placement.
@@ -73,7 +73,7 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
   useEffect(() => {
     if (!near || !chosen) return;
     setState("loading");
-    const expected = isolation === "sandboxed" ? "null" : AD_ORIGIN || location.origin;
+    const expected = isolation === "sandboxed" ? "null" : location.origin;
     const onMsg = (e: MessageEvent) => {
       const d = e.data as { ytxAd?: string; state?: string; height?: number; diag?: AdDiag };
       if (!d || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow || e.origin !== expected) return;
