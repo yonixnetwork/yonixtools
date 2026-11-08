@@ -525,7 +525,7 @@ table.data tr:last-child td { border-bottom: 0; }
 
 /* ─── Compact hero, quick tools, platform status ─── */
 .hero-compact { padding: 22px 0 20px; }
-.hero-compact h1 { max-width: 22ch; font-size: clamp(1.55rem, 5.2vw, 2.7rem); line-height: 1.15; }
+.hero-compact h1 { max-width: 24ch; font-size: clamp(1.4rem, 4.6vw, 2.5rem); line-height: 1.15; }
 .hero-compact .lede { margin-top: 10px; font-size: clamp(0.95rem, 1.4vw, 1.08rem); }
 .hero-compact .downloader { margin-top: 18px; }
 @media (min-width: 640px) { .hero-compact { padding: 44px 0 28px; } }

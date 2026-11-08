@@ -97,7 +97,7 @@ test("LinkedIn public post video", async ({ page }) => {
   await expectFile(page, () => page.locator(".format-item").first().getByRole("button", { name: /^Download/ }).click(), 100_000, /\.mp4$/);
 });
 
-test("YouTube: honest error instead of fake qualities", async ({ page }) => {
+test("YouTube: refused with the reason, never fake qualities", async ({ page }) => {
   await page.goto("/");
   await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=jNQXAC9IVRw");
   await page.getByRole("button", { name: "Download", exact: true }).click();

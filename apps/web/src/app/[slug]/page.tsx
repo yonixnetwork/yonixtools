@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { Downloader } from "@/components/Downloader";
-import { PLATFORMS } from "@/lib/downloader/detect";
+import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
 import { FaqList } from "@/components/Faq";
 import { ToolIcon } from "@/components/Icon";
@@ -70,6 +70,14 @@ export default async function ToolPage({ params }: Props) {
         </header>
 
         <section className={isDownloader ? "" : "card tool-surface"} aria-label={`${tool.name} tool`}>
+          {isDownloader && unavailableMessage(tool.platform) && (
+            <div className="notice notice-error" role="status" data-testid="platform-status">
+              <div>
+                <strong>Not available</strong>
+                {unavailableMessage(tool.platform)}
+              </div>
+            </div>
+          )}
           {isDownloader && status && status.state !== "working" && (
             <div className={`notice ${status.state === "blocked" ? "notice-error" : "notice-warn"}`} role="status" data-testid="platform-status">
               <div>

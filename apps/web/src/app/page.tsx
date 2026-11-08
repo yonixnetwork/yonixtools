@@ -21,7 +21,6 @@ const HOME_FAQ = [
   { q: "What is YoniXTools?", a: "A free website with two parts: a universal downloader for public social media posts, and a growing collection of online tools for images, QR codes, SEO, development, text and everyday calculations." },
   { q: "Do I need to choose the platform before pasting a link?", a: "No. Paste a link and YoniXTools works out which platform it's from and what kind of post it is. The Supported platforms section shows what currently works on each one." },
   { q: "Can I download every photo of an Instagram post?", a: "Yes. Paste the post link and every photo and video in it is shown with its own preview and download button. Select several to download them together as a ZIP." },
-  { q: "Why doesn't YouTube always work?", a: "YouTube asks cloud servers to sign in to prove they aren't bots. YoniXTools doesn't use accounts or cookies to get around this, so YouTube may not work from our server. The other platforms are not affected." },
   { q: "Are my files uploaded when I use the image and text tools?", a: "No. Tools marked as running in your browser process everything on your device. Your images, text and passwords are never sent to a server." },
   { q: "Is YoniXTools free?", a: "Yes. Every tool is free to use, with no account and no watermark." },
   { q: "Can I download private posts?", a: "No. The downloader only handles content that is publicly available without logging in, and it never bypasses privacy settings or DRM. Only download content you have the right to save." },
@@ -45,8 +44,8 @@ export default function Home() {
 
       <section className="hero hero-compact">
         <div className="container">
-          <h1>Download videos and photos from one link</h1>
-          <p className="lede">Paste a public link from TikTok, Instagram, Facebook, X, Pinterest and more. Pick a quality and the download starts.</p>
+          <h1>Download Videos, Images and Audio from Supported Platforms</h1>
+          <p className="lede">Save media in available formats and qualities from platforms you are permitted to download from. Paste a public link, pick a quality, and the download starts.</p>
           <Downloader />
           <div className="platform-row" aria-label="Working platforms">
             {working.map((p) => (

@@ -4,7 +4,7 @@ test("homepage structure", async ({ page }) => {
   await page.goto("/");
   await expect(page).toHaveTitle(/YoniXTools/);
   await expect(page.locator("h1")).toHaveCount(1);
-  await expect(page.locator("h1")).toContainText("Download videos and photos from one link");
+  await expect(page.locator("h1")).toContainText("Download Videos, Images and Audio from Supported Platforms");
   for (const h of ["Supported platforms", "Popular tools", "Browse by category", "Recently added", "Editor's picks", "Why use YoniXTools", "Frequently asked questions"]) {
     await expect(page.getByRole("main").getByRole("heading", { name: h, exact: true })).toBeVisible();
   }
@@ -16,10 +16,10 @@ test("supported platforms show honest, evidence-based status", async ({ page }) 
   await page.goto("/");
   const list = page.locator(".platform-status");
   await expect(list.locator('[data-platform="tiktok"]')).toContainText("Working");
-  await expect(list.locator('[data-platform="youtube"]')).toContainText("Blocked by platform");
+  await expect(list.locator('[data-platform="youtube"]')).toHaveCount(0); // failed verification: not shown
   await expect(list.locator('[data-platform="reddit"]')).toHaveCount(0); // deliberately not shown
   await expect(list.locator('[data-platform="vimeo"]')).toHaveCount(0);
-  await expect(list.locator("li")).toHaveCount(16);
+  await expect(list.locator("li")).toHaveCount(15);
   // Platforms that failed verification are never advertised as working in the hero.
   const hero = page.locator(".hero .platform-row");
   await expect(hero).not.toContainText("YouTube");
@@ -60,8 +60,10 @@ test.describe("universal downloader (no backend configured)", () => {
     const input = page.locator("#dl-url");
     await input.fill("https://www.instagram.com/reel/C9xAbCdEfGh/");
     await expect(page.locator("#dl-detect")).toContainText("Instagram · Reel detected");
-    await input.fill("Look https://youtube.com/shorts/abcdEFGhijk");
-    await expect(page.locator("#dl-detect")).toContainText("YouTube · Short detected");
+    await input.fill("Look https://www.facebook.com/reel/1234567890");
+    await expect(page.locator("#dl-detect")).toContainText("Facebook · Reel detected");
+    await input.fill("https://youtu.be/dQw4w9WgXcQ");
+    await expect(page.locator("#dl-detect")).toContainText("YouTube downloads aren't available");
     await input.fill("https://vm.tiktok.com/ZMabc123/");
     await expect(page.locator("#dl-detect")).toContainText("TikTok · Short link detected");
   });
@@ -71,7 +73,7 @@ test.describe("universal downloader (no backend configured)", () => {
     page.on("request", (r) => requests.push(r.url()));
     await page.goto("/");
     await expect(page.getByTestId("dl-status")).toContainText("Downloading turns on when the YoniXTools download service launches");
-    await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+    await page.locator("#dl-url").fill("https://www.tiktok.com/@a/video/7350000000000000000");
     await page.getByRole("button", { name: "Download", exact: true }).click();
     await expect(page.getByRole("status").filter({ hasText: "Downloading is not live yet" })).toBeVisible();
     await expect(page.getByText("Nothing was downloaded.")).toBeVisible();
@@ -119,8 +121,11 @@ test.describe("search & discovery", () => {
 
   test("slash shortcut focuses search", async ({ page }) => {
     await page.goto("/privacy/");
-    await page.keyboard.press("/");
-    await expect(page.locator(".nav-search input")).toBeFocused();
+    // The shortcut listener attaches on hydration; a real visitor never presses "/" in the first milliseconds.
+    await expect(async () => {
+      await page.keyboard.press("/");
+      await expect(page.locator(".nav-search input")).toBeFocused({ timeout: 500 });
+    }).toPass({ timeout: 10_000 });
   });
 
   test("all-tools page: query string, planned tools, empty state, category filter", async ({ page }) => {
@@ -165,7 +170,8 @@ test("theme toggle persists across reloads", async ({ page }) => {
 
 test("blocked platforms say so on their own page; help page exists", async ({ page }) => {
   await page.goto("/youtube-downloader/");
-  await expect(page.getByTestId("platform-status")).toContainText("blocked by platform");
+  await expect(page.getByTestId("platform-status")).toContainText("YouTube downloads aren't available");
+  await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", /noindex/);
   await page.goto("/tiktok-downloader/");
   await expect(page.getByTestId("platform-status")).toHaveCount(0);
   await page.goto("/about/");

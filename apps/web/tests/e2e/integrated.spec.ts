@@ -16,7 +16,7 @@ test.beforeEach(async ({ page }) => {
 test("one click on a quality downloads the file, with no second button", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByTestId("dl-status")).toHaveCount(0);
-  await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000001");
   await page.getByRole("button", { name: "Download", exact: true }).click();
   const card = page.locator(".media-result");
   await expect(card.getByRole("heading", { name: "Test clip" })).toBeVisible();
@@ -27,7 +27,7 @@ test("one click on a quality downloads the file, with no second button", async (
     card.locator(".format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
   ]);
   expect(download.url()).toMatch(/\/api\/v1\/jobs\/[A-Za-z0-9_-]{20,40}\/file\?dl=[a-z0-9]{8,32}$/);
-  expect(download.suggestedFilename()).toMatch(/^yonixtools-youtube-[A-Za-z0-9_-]{8}\.mp4$/);
+  expect(download.suggestedFilename()).toMatch(/^yonixtools-tiktok-[A-Za-z0-9_-]{8}\.mp4$/);
   const path = await download.path();
   const { statSync } = await import("node:fs");
   expect(statSync(path!).size).toBeGreaterThan(10_000);
@@ -42,7 +42,7 @@ test("one click on a quality downloads the file, with no second button", async (
 
 test("download another video resets the form but keeps started downloads", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=dQw4w9WgXcQ");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000002");
   await page.getByRole("button", { name: "Download", exact: true }).click();
   const downloads: string[] = [];
   page.on("download", (d) => downloads.push(d.url()));
@@ -65,17 +65,17 @@ test("clear button empties the link field", async ({ page }) => {
 
 test("extractor errors name the platform and never show success", async ({ page }) => {
   await page.goto("/");
-  await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=private123");
+  await page.locator("#dl-url").fill("https://www.facebook.com/someone/videos/private123/");
   await page.getByRole("button", { name: "Download", exact: true }).click();
   const alert = page.locator(".notice[role=alert]");
-  await expect(alert).toContainText("YouTube extraction failed");
+  await expect(alert).toContainText("Facebook extraction failed");
   await expect(alert).toContainText("private");
   await expect(page.getByRole("link", { name: "Save file" })).toHaveCount(0);
 });
 
 test("failed download job is reported", async ({ page }) => {
-  await page.goto("/youtube-downloader/");
-  await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=failjob1234");
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000001234?failjob=1");
   await page.getByRole("button", { name: "Download", exact: true }).click();
   await page.locator(".format-item").first().getByRole("button", { name: /^Download/ }).click();
   await expect(page.locator(".notice[role=alert]")).toContainText("Download failed");

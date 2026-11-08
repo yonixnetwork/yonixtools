@@ -13,7 +13,7 @@ export const generateStaticParams = () => categories.map((c) => ({ slug: c.slug 
 type Props = { params: Promise<{ slug: string }> };
 
 const TITLES: Record<string, string> = {
-  social: "Social Media Downloaders – Instagram, TikTok, YouTube",
+  social: "Social Media Downloaders – Instagram, TikTok, Facebook",
   qr: "Free QR Code Generators – Links, Wi-Fi & Contacts",
   image: "Free Image Tools – Compress, Resize & Convert",
   seo: "Free SEO Tools – Meta Tags, Robots.txt & SERP Preview",

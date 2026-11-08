@@ -27,7 +27,7 @@ const baseTools: Tool[] = [
     icon: "Download",
     keywords: ["social media downloader", "video downloader", "online video downloader", "download video from link", "all in one downloader"],
     synonyms: ["universal downloader", "media saver", "link downloader", "save video", "reels downloader"],
-    related: ["instagram-downloader", "tiktok-downloader", "youtube-downloader", "facebook-downloader"],
+    related: ["instagram-downloader", "tiktok-downloader", "facebook-downloader", "x-video-downloader"],
     addedAt: PHASE1,
     seo: {
       title: "Social Media Video Downloader – One Link, Any Platform",
@@ -47,7 +47,7 @@ const baseTools: Tool[] = [
         "Temporary files are deleted automatically after download",
       ],
       faqs: [
-        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal and 9GAG. YouTube asks cloud servers to sign in, so it may not work. The home page shows the current status of each platform." },
+        { q: "Which platforms are supported?", a: "TikTok, Instagram, Facebook, X (Twitter), Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal and 9GAG. The home page shows what works on each platform." },
         ...downloaderFaqsCommon,
       ],
     },
@@ -121,6 +121,7 @@ const baseTools: Tool[] = [
   },
   {
     slug: "youtube-downloader",
+    hidden: true, // YouTube refuses our server ("not a bot" check, 8 clients + PO tokens tested): docs/PLATFORM_DIAGNOSTICS.md
     name: "YouTube Downloader",
     tagline: "Download public YouTube videos and Shorts in available qualities.",
     category: "social",

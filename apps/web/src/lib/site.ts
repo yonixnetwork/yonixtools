@@ -3,7 +3,7 @@ export const site = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://yonixtools.com").replace(/\/+$/, ""),
   tagline: "Free online tools and a universal social media downloader",
   description:
-    "Download public videos and photos from Instagram, TikTok, YouTube, Facebook, X, Pinterest and Reddit with one link, plus free browser-based QR, image, SEO, developer, text and calculator tools.",
+    "Download videos, images and audio from TikTok, Instagram, Facebook, X, Pinterest and more with one link, plus free browser-based PDF, image, video, QR, SEO, developer, text and calculator tools.",
   downloaderApiUrl: (process.env.NEXT_PUBLIC_DOWNLOADER_API_URL || "").replace(/\/+$/, ""),
   googleVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
 };

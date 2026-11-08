@@ -254,5 +254,5 @@ export const popularSearches = [
   "Image compressor",
   "JSON formatter",
   "Password generator",
-  "YouTube downloader",
+  "TikTok downloader",
 ];

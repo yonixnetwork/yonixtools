@@ -65,6 +65,9 @@ const HOSTS: Array<[PlatformId, (h: string) => boolean]> = [
 
 /** Platforms that can't work from our servers right now: refused before any request (see docs/PLATFORM_DIAGNOSTICS.md). */
 const UNAVAILABLE: Partial<Record<PlatformId, string>> = {
+  // To re-enable YouTube once it works from the server: remove this line, unhide the
+  // youtube-downloader tool and add it back to platform-status.ts (the backend keeps its adapter).
+  youtube: "YouTube downloads aren't available: YouTube asks our server to sign in to prove it isn't a bot, and we don't use accounts to get around this.",
   reddit: "Reddit downloads aren't available: Reddit currently refuses requests from our server. We don't use accounts to get around this.",
   vimeo: "Vimeo downloads aren't available: Vimeo now requires an account or serves DRM-protected streams to servers.",
 };
@@ -208,3 +211,6 @@ function contentType(id: PlatformId, host: string, path: string, url: URL): Cont
       return { unsupported: "Paste the link of a specific Imgur post or album." };
   }
 }
+
+/** Why a platform is refused up front (undefined when it is available). */
+export const unavailableMessage = (id?: string): string | undefined => (id ? UNAVAILABLE[id as PlatformId] : undefined);

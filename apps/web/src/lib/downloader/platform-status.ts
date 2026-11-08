@@ -35,7 +35,6 @@ export const PLATFORM_STATUS: PlatformStatus[] = [
   { id: "medal", state: "working", content: "Game clips", note: "Public clips." },
   { id: "mixcloud", state: "working", content: "Shows (audio)", note: "Public shows, as original audio or MP3." },
   { id: "9gag", state: "working", content: "Videos and GIFs", note: "Public posts." },
-  { id: "youtube", state: "blocked", content: "Videos and Shorts", note: "YouTube asks cloud servers to sign in to prove they aren't bots. We don't use accounts, so YouTube may not work from our server." },
 ];
 
 export const STATE_LABEL: Record<PlatformState, string> = { working: "Working", limited: "Limited", blocked: "Blocked by platform" };
