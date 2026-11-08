@@ -23,6 +23,7 @@ case "${1:-up}" in
       --build-arg NEXT_PUBLIC_ADS="${ADS:-on}" \
       --build-arg NEXT_PUBLIC_AD_ISOLATION="${AD_ISOLATION:-same-origin}" \
       --build-arg NEXT_PUBLIC_AD_ORIGIN="${AD_ORIGIN:-}" \
+      --build-arg NEXT_PUBLIC_MONETAG="${MONETAG:-off}" \
       apps/web
     docker rm -f "$NAME" >/dev/null 2>&1 || true
     docker run -d --name "$NAME" --network yonixtools_stack -p "127.0.0.1:$PORT:80" \

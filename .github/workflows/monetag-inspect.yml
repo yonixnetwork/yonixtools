@@ -1,0 +1,18 @@
+# Static review of the Monetag loader scripts (downloads text, never executes it).
+name: Monetag inspect
+on:
+  push:
+    branches: ["feature/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[monetag-inspect]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: node apps/web/scripts/ads/inspect-monetag.mjs

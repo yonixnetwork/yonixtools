@@ -17,6 +17,8 @@ services:
         NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-same-origin}
         # Separate origin for the ad frame (e.g. https://yonixtools.com:8443). Empty = this site. See docs/ADS_ISOLATION_PROPOSAL.md.
         NEXT_PUBLIC_AD_ORIGIN: ${AD_ORIGIN:-}
+        # Monetag Vignette + In-Page Push. Off until the page CSP allows their hosts (see docs/ADS_AND_PWA.md).
+        NEXT_PUBLIC_MONETAG: ${MONETAG:-off}
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:

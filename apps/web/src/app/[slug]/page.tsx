@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AdSlot } from "@/components/AdSlot";
+import { MonetagZones } from "@/components/MonetagZones";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
@@ -142,6 +143,7 @@ export default async function ToolPage({ params }: Props) {
           </aside>
         </div>
         {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
+        {ads && <MonetagZones />}
       </div>
     </>
   );

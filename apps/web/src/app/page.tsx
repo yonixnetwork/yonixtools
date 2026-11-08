@@ -1,6 +1,7 @@
 import { ArrowRight, CircleAlert, CircleCheck, CircleMinus, Gauge, Link as LinkIcon, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
 import { AdSlot } from "@/components/AdSlot";
+import { MonetagZones } from "@/components/MonetagZones";
 import { Downloader } from "@/components/Downloader";
 import { FaqList } from "@/components/Faq";
 import { Icon, PlatformIcon } from "@/components/Icon";
@@ -106,6 +107,7 @@ export default function Home() {
 
       <div className="container">
         <AdSlot unit="native" className="ad-native" />
+        <MonetagZones />
       </div>
 
       <section className="section" aria-labelledby="popular-h">

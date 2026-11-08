@@ -15,6 +15,10 @@ All four units live in one file, `apps/web/src/lib/ads/units.json`. They are cop
 
 Popunder, Smartlink and Social Bar are **not** used.
 
+**Real-device result (8 Nov 2026, your saved `/ads-check/` page):**
+- in "same-origin" frames, all four Adsterra units rendered real creatives (image banners in 320×50, 300×250 and 728×90, plus native tiles);
+- in "sandboxed" frames (the first release), the banners produced empty documents and native nothing.
+
 ### How the units are loaded, and why
 
 **What the codes do:**
@@ -94,6 +98,40 @@ Ad servers treat datacenter and automated traffic differently, so delivery can o
 - Adsterra's publisher terms say the publisher "shall not alter the Adsterra Ad Tag in any way without Adsterra's prior written consent". The tags are unchanged, but they run inside an isolated frame. **Confirm this setup with Adsterra support** before relying on the revenue.
 - The privacy policy (`/privacy/`) now discloses Adsterra, cookies and identifiers in the ad frames, and links to Adsterra's privacy policy.
 - **EU/UK visitors:** ad cookies may require prior consent (ePrivacy/GDPR). No consent banner (CMP) is included; adding one is recommended if a meaningful share of traffic comes from the EU/UK.
+
+## Monetag (Vignette Banner + In-Page Push)
+
+| Zone | ID | Script |
+|---|---|---|
+| Vignette Banner | `12218952` | `https://n6wxm.com/vignette.min.js` |
+| In-Page Push (banner) | `12218944` | `https://nap5k.com/tag.min.js` |
+
+**Code and loading:**
+- The snippets are stored verbatim in `apps/web/src/lib/ads/monetag.json`; a test compares them with the supplied code.
+- `<MonetagZones />` loads them on eligible pages: home, tool pages, downloader pages, All tools and category pages. Never on privacy, help, offline or unavailable-platform pages.
+- Each snippet is wrapped unchanged in a once-per-page guard, so a re-render or second mount adds nothing.
+- They load with `next/script` `lazyOnload`, after the page has loaded, so they never block the tools.
+- Navigation between pages is a full page load, so each page view loads each zone exactly once.
+
+**Formats and settings:**
+- Both formats draw over the page, so they run in the page itself, unlike the Adsterra frames.
+- Where and how often they appear, and their close controls, are Monetag's. Set frequency caps in the Monetag dashboard. No timing or close button is added by us.
+- Not used: MultiTag, Popunder, Push Notifications, and Monetag's service worker (`5gvci.com`, zone `10832998`). The PWA service worker is unchanged.
+
+**Downloads:**
+- Download buttons start the file from a link that isn't attached to the page, so the click never reaches page-level listeners.
+- The "Save it here" fallback links stop their click inside the app.
+- A test proves page-level click listeners see nothing.
+
+**Switch:** `MONETAG=on|off`, default **off** in Docker builds.
+
+### Blocked: the page Content-Security-Policy
+
+Pages currently allow scripts only from this site (`deploy/nginx/security-headers.conf`), so the browser blocks Monetag's scripts. For the zones to work, the page policy needs at least:
+- Monetag's script hosts in `script-src` and `connect-src`: `https://n6wxm.com`, `https://nap5k.com`, plus any further hosts `/ads-check/` reports as blocked;
+- `frame-src 'self' https:` for the creatives.
+
+That loosens the site's security policy, so it needs your explicit decision. Until then, keep `MONETAG=off`.
 
 ## PWA
 

@@ -1,4 +1,5 @@
 import { AdSlot } from "@/components/AdSlot";
+import { MonetagZones } from "@/components/MonetagZones";
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ToolsExplorer } from "@/components/ToolsExplorer";
@@ -20,6 +21,7 @@ export default function ToolsPage() {
       </header>
       <ToolsExplorer />
       <AdSlot unit="native" className="ad-native" />
+      <MonetagZones />
     </div>
   );
 }

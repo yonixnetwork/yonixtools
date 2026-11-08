@@ -31,6 +31,13 @@ export default function Privacy() {
             <a href="https://adsterra.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Adsterra&apos;s privacy policy</a> for how they use it and your
             choices. You can block or delete these cookies in your browser settings, or use an ad blocker; the tools keep working either way.
           </p>
+          <p>
+            We may also show ads from <strong>Monetag</strong>: a small in-page banner and, occasionally, a full-screen ad between pages that you can close. These run
+            Monetag&apos;s code directly on the page. Monetag and its advertisers may use cookies, device identifiers and similar technologies, and receive technical
+            data such as your IP address, browser and the page you are on. See{" "}
+            <a href="https://monetag.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Monetag&apos;s privacy policy</a>. We don&apos;t use push
+            notification ads, and nothing subscribes you to notifications.
+          </p>
           <p>Advertising never decides whether a tool works: there are no forced ad clicks, countdowns or redirects, and pop-under or redirect ad formats are not used.</p>
         </section>
         <section>

@@ -2,6 +2,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { AdSlot } from "@/components/AdSlot";
 import { AD_ISOLATION, AD_ORIGIN, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
+import { MONETAG_ENABLED, MONETAG_ZONES } from "@/lib/ads/monetag";
+import { useMonetagWatch } from "./useMonetagWatch";
 
 const UNITS: AdUnitId[] = ["banner320x50", "banner300x250", "banner728x90", "native"];
 type Row = { state: string; height?: number; diag?: AdDiag; firstFilledMs?: number };
@@ -21,6 +23,7 @@ function verdict(r: Row | undefined): string {
 export function AdsCheck() {
   const [rows, setRows] = useState<Record<string, Row>>({});
   const [copied, setCopied] = useState(false);
+  const mt = useMonetagWatch();
   const [env, setEnv] = useState({ ua: "", href: "", at: "" });
   useEffect(() => setEnv({ ua: navigator.userAgent, href: location.href, at: new Date().toISOString() }), []);
 
@@ -60,6 +63,15 @@ export function AdsCheck() {
       }),
       "",
     ]),
+    `== Monetag (page-level formats) ==`,
+    ...(MONETAG_ENABLED
+      ? [
+          ...Object.values(MONETAG_ZONES).map((z) => `${z.label} (zone ${z.zone}): script ${mt.scripts[z.zone]}`),
+          `  blocked by this site's security policy: ${mt.csp.join(" | ") || "nothing"}`,
+          `  elements Monetag added: ${mt.overlays.join(", ") || "none yet"}`,
+          "  A VISIBLE fixed element means a Monetag ad is on screen; the vignette usually appears only when you go to another page.",
+        ]
+      : ["disabled in this build (MONETAG=off)"]),
   ].join("\n");
 
   return (

@@ -26,9 +26,7 @@ export function downloadBlob(blob: Blob, filename: string) {
   const a = document.createElement("a");
   a.href = url;
   a.download = filename;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
+  a.click(); // detached: page-level listeners (e.g. ad scripts) never see this click
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
