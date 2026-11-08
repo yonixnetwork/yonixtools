@@ -18,6 +18,8 @@ export const metadata: Metadata = {
   icons: { icon: [{ url: "/favicon.svg", type: "image/svg+xml" }, { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" }], apple: "/icons/apple-touch-icon.png" },
   appleWebApp: { capable: true, title: "YoniXTools", statusBarStyle: "black-translucent" },
   ...(site.googleVerification ? { verification: { google: site.googleVerification } } : {}),
+  // Monetag website ownership verification (exact value supplied by Monetag). Verification only: no Monetag ad code.
+  other: { monetag: "d69414fd01256df4752b5cfc142c85c0" },
 };
 
 export const viewport: Viewport = {
