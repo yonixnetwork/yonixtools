@@ -87,3 +87,31 @@ To roll back:
 ```bash
 git checkout feature/phase-1-redesign && bash deploy/scripts/deploy.sh
 ```
+
+
+## 8. Testing the media expansion on the droplet (with approval)
+
+`feature/media-expansion` builds on what production runs now (`feature/downloader-reliability`, `c259dfc`). That production branch is the rollback point.
+
+```bash
+cd /opt/yonixtools
+git fetch origin
+git checkout feature/media-expansion
+bash deploy/scripts/deploy.sh
+SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh https://yonixtools.com
+bash deploy/scripts/diagnose-platforms.sh            # every platform from the droplet's IP
+bash deploy/scripts/diagnose-platforms.sh instagram 'https://www.instagram.com/p/BoHk1haB5tM/'
+```
+
+Then check by hand on an Android phone in Chrome:
+
+1. Paste an Instagram carousel link: every photo should be shown.
+2. Tap Download on one photo.
+3. Tick two photos and tap ZIP.
+4. Both files should appear in Downloads.
+
+To roll back:
+
+```bash
+git checkout feature/downloader-reliability && bash deploy/scripts/deploy.sh
+```

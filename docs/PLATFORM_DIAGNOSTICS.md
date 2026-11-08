@@ -1,4 +1,9 @@
-# Platform diagnostics (downloader reliability)
+# Platform diagnostics
+
+> **Update, media expansion (8 November 2026):** see "Media expansion results" at the end of this page.
+> Reddit and Vimeo are now refused up front and hidden from the interface. Six platforms were added.
+
+## Downloader reliability (7 November 2026)
 
 How each platform was diagnosed, what was wrong, what changed, and what is still blocked.
 Everything here comes from **real requests and real downloads**, not mocks.
@@ -91,3 +96,91 @@ TikTok, Instagram, Facebook, X and Pinterest **already worked in v1.0** from a d
 1. Run the matrix: push a commit whose message contains `[live-matrix]`, or use "Run workflow" on the Live platform matrix.
 2. Also run `deploy/scripts/diagnose-platforms.sh` on the droplet.
 3. Update `apps/web/src/lib/downloader/platform-status.ts` (state, note, `VERIFIED_ON`) only from that evidence.
+
+
+## Media expansion results (live matrix runs 5–8, live browser run 12)
+
+Regression baseline is the production code (`c259dfc`, `feature/downloader-reliability`). Every result comes from real posts, downloaded from GitHub-hosted (datacenter) IPs.
+
+### Regression: previously working platforms
+
+| Platform | Production code | Candidate code |
+|---|---|---|
+| TikTok | download OK (one sample region-locked in both) | download OK |
+| Instagram reel / video posts | download OK | download OK; multi-video posts also as ZIP (3.5 MB, 5.2 MB) |
+| Facebook | download OK (one login-only sample fails in both) | download OK |
+| X | download OK | download OK; 4-video post as ZIP (0.9 MB) |
+| Pinterest (image + video) | download OK | download OK |
+| Dailymotion, Twitch, SoundCloud, Bluesky, Streamable | download OK | download OK |
+
+### Fixed by this upgrade
+
+| Content | Production code | Candidate code |
+|---|---|---|
+| Instagram single image | **FAIL** "There is no video in this post" | image item: 383 KB JPG, PNG conversion 4.0 MB |
+| Instagram 5-image carousel | **FAIL** "No video formats found" | 5 image items: 192 KB JPG each item, PNG conversion, ZIP 527 KB |
+| Instagram image fallback (gallery-dl) | 429 / timeout from datacenter IPs | no longer needed: yt-dlp returns every carousel item |
+
+**Instagram image sizes.** Logged-out Instagram returns one display URL per image, with no list of alternative sizes. So images are offered as "Original" (plus the dimensions when known) with optional JPG/PNG/WebP conversion. No other sizes are invented.
+
+### New platforms (worker extraction **and** real download verified)
+
+| Platform | Content verified | Primary | Fallback |
+|---|---|---|---|
+| LinkedIn | public post video (8.6 MB) | yt-dlp `linkedin` | none |
+| Kick | clip (51 MB) | yt-dlp `kick:clip(s)` | none |
+| Medal | game clip | yt-dlp `medaltv` | none |
+| Mixcloud | show audio (89 MB), original + MP3 | yt-dlp `mixcloud` | none |
+| 9GAG | video post | yt-dlp `9gag` | none |
+| Imgur | album (2 images, PNG conversion, ZIP 783 KB); GIF/video posts | yt-dlp `imgur*` | gallery-dl |
+
+The Imgur GIF classification fix (a `.gif` entry plus MP4 copies is a video, not an image) was made after run 7 and is re-checked in the final run.
+
+### Tested and not added
+
+| Candidate | Result from datacenter IP |
+|---|---|
+| Threads | no extractor in yt-dlp or gallery-dl (only an unmerged yt-dlp PR) |
+| Tumblr | yt-dlp connection dropped; gallery-dl "Daily API rate limit exceeded" (needs your own OAuth app) |
+| Bandcamp | "Got client challenge webpage response" |
+| Rumble | HTTP 403 |
+| Flickr | HTTP 403 / 502 |
+| Audiomack | "Failed to parse JSON" |
+| Loom | "The downloaded file is empty" |
+| TED | metadata only; download not verified |
+| Snapchat | "Unable to extract next.js data" (runs 2–4) |
+
+### Deliberately hidden
+
+Reddit (HTTP 403 even on public JSON) and Vimeo (account required or DRM streams) are refused before any extraction, with the reason. They are not shown in the status list, navigation, search or sitemap. Their old pages stay reachable but are noindex.
+
+### YouTube
+
+Conclusive (runs 5–8):
+
+- **Every method tried fails** with "Sign in to confirm you're not a bot":
+  - 8 player clients (default, `tv`, `tv_simply`, `web_embedded`, `web_safari`, `mweb`, `android_vr`, `ios`);
+  - with and without Deno;
+  - with **PO tokens from the bgutil provider**.
+- **Cause:** IP reputation; see [RESEARCH_MEDIA_EXTRACTION.md](RESEARCH_MEDIA_EXTRACTION.md#youtube-root-cause).
+- **What users see:** the site shows the honest explanation (verified in the live browser run).
+
+### Live browser journeys (run 12)
+
+Real website, real worker, real platforms. Chromium emulating an Android phone (Pixel 7). Every step asserts a real file arrived in the browser:
+
+| Journey | File received |
+|---|---|
+| TikTok | 780 KB MP4 |
+| Instagram reel | 1.9 MB MP4 |
+| Instagram carousel: image | 192 KB JPG |
+| Instagram carousel: PNG conversion | 2.2 MB PNG |
+| Instagram carousel: ZIP of 2 | 342 KB ZIP |
+| Instagram single image | 383 KB JPG |
+| SoundCloud MP3 | 3.4 MB |
+| Facebook | 7.7 MB |
+| Twitch clip | 16 MB |
+| X 4-video ZIP | 1.2 MB |
+| YouTube | honest error shown |
+
+Result: **9/9 passed**.

@@ -13,6 +13,7 @@ from ..media import MediaFormat, MediaInfo, MediaItem, split_format
 
 HEIGHTS = (2160, 1440, 1080, 720, 480, 360, 240)
 IMAGE_EXTS = {"jpg", "jpeg", "png", "webp", "gif", "avif"}
+VIDEO_EXTS = {"mp4", "webm", "mov", "m4v", "mkv"}
 
 
 class BackendError(Exception):
@@ -154,7 +155,8 @@ class YtDlpBackend:
                         "height": e.get("height"), "filesize": e.get("filesize")}]
         if not formats:
             return None
-        videos = [f for f in formats if f.get("vcodec") not in (None, "none") or (f.get("height") and f.get("ext") not in IMAGE_EXTS)]
+        videos = [f for f in formats if f.get("vcodec") not in (None, "none") or (f.get("height") and f.get("ext") not in IMAGE_EXTS)
+                  or (f.get("vcodec") is None and str(f.get("ext") or "").lower() in VIDEO_EXTS)]
         audios = [f for f in formats if f.get("acodec") not in (None, "none") and f.get("vcodec") in (None, "none")]
         images = [f for f in formats if (f.get("ext") or "").lower() in IMAGE_EXTS]
         out: list[MediaFormat] = []

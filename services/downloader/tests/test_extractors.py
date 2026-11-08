@@ -291,3 +291,11 @@ def test_anonymous_instagram_images_without_dimensions_still_work():
     assert m.items[1].formats[0].label == "Original · 1080×1080 · JPG"
     assert m.items[0].formats[0].label == "Original · JPG"  # unknown size: not guessed
     assert m.extra["sources"]["3:i:best"]["url"] == "https://scontent.cdninstagram.com/3.jpg?stp=1"
+
+
+def test_gif_posts_with_mp4_copies_are_videos_not_images():
+    # Imgur "gifv" (live matrix run 7): a .gif entry plus MP4 entries without codec info.
+    info = {"title": "gif", "formats": [{"format_id": "gif", "url": "https://i.imgur.com/a.gif", "ext": "gif"},
+                                        {"format_id": "mp4", "url": "https://i.imgur.com/a.mp4", "ext": "mp4", "width": 480}]}
+    it = backend().to_media(info, "imgur").items[0]
+    assert it.kind == "video" and it.formats[0].id == "v:best"

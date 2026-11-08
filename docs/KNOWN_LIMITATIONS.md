@@ -1,22 +1,27 @@
 # Known limitations
 
-## Platforms (verified live, 7 November 2026)
+## Platforms (verified live, 8 November 2026)
 
-Real-platform results come from the live platform matrix: real extraction and download from a cloud IP. Details are in [PLATFORM_DIAGNOSTICS.md](PLATFORM_DIAGNOSTICS.md).
+Real-platform results come from the live platform matrix and the live browser run (real extraction and download from a cloud IP). Details are in [PLATFORM_DIAGNOSTICS.md](PLATFORM_DIAGNOSTICS.md) and [TEST_MATRIX.md](TEST_MATRIX.md).
 
-- **Working:** TikTok, Instagram, Facebook, X, Pinterest, Dailymotion, Twitch clips, SoundCloud, Bluesky, Streamable.
-- **YouTube: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, with every player client tried. Deno and yt-dlp-ejs are installed, so YouTube works if the server's IP is not challenged. Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`.
-- **Reddit: blocked by platform.** Reddit returns 403 to anonymous datacenter requests, including its JSON endpoints.
-- **Vimeo: blocked by platform.** The API needs an account, and the embed player's streams are DRM-protected.
-- **Snapchat: not offered.** yt-dlp's extractor fails.
-- **Individual posts can still fail:** login-only Facebook videos, region-locked TikTok posts, and private or deleted content.
-- The matrix runs from GitHub's IPs, not the droplet's. The droplet's own results may differ in either direction, so run `diagnose-platforms.sh` after each deploy.
-- **No cookies, accounts, or paid or residential proxies are used**, by design. Platforms change often, so keeping yt-dlp updated is the main maintenance task.
+- **Working:**
+  - TikTok, Instagram (reels, videos, single images, carousels, mixed posts), Facebook, X, Pinterest;
+  - Dailymotion, Twitch clips, SoundCloud, Bluesky, Streamable;
+  - new: LinkedIn, Kick clips, Medal, Mixcloud, 9GAG, Imgur.
+- **YouTube: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, for every player client, with or without Deno, and **with PO tokens** (bgutil). Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`. A DigitalOcean IPv6 address is the remaining legitimate thing to try.
+- **Reddit and Vimeo:** refused up front with the reason, and hidden from the interface. Reddit returns 403 to datacenter IPs; Vimeo requires an account or sends DRM streams.
+- **Not added (failed live):** Threads (no extractor), Tumblr, Bandcamp, Rumble, Flickr, Audiomack, Loom, TED (download not verified), Snapchat.
+- **Instagram image sizes:** logged out, Instagram serves one copy per image, so only "Original" is offered (plus JPG/PNG/WebP conversion). No other sizes are invented.
+- **Individual posts can still fail:** login-only Facebook videos, region-locked TikTok posts, private or deleted content, and Instagram rate limits under heavy use.
+- **Collections:** playlists, profiles and channels aren't downloaded. Multi-item *posts* (carousels, albums, multi-video tweets) are.
+- The matrix runs from GitHub's IPs, not the droplet's, so results may differ in either direction. Run `diagnose-platforms.sh` after each deploy.
+- **No cookies, accounts, or paid or residential proxies are used**, by design.
 
 ## Direct download
 
 - The page confirms "Download started" only when the file response's one-time cookie arrives, which proves the browser received the response headers. This works only when the API is same-origin, as in production (`/api`). Otherwise, and in browsers that hide download responses, the page says "Download requested" and offers a manual "Save it here" link. It never claims success without evidence.
-- iOS Safari saves to Files → Downloads. Automated tests cover Chromium desktop, Pixel 7 emulation and WebKit (iPhone emulation) in CI, not a physical iPhone.
+- iOS Safari saves to Files → Downloads. Automated tests cover Chromium desktop, Pixel 7 emulation (including live downloads from real platforms) and WebKit (iPhone emulation) in CI. No physical phone was tested.
+- ZIP downloads contain the best copy of each selected item and are capped at the per-download size limit.
 - The video tools decode in the browser, so they handle only formats the browser can play (e.g. no H.264 in some Linux Chromium builds, HEVC mostly only in Safari).
 
 ## Product scope

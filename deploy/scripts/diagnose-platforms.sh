@@ -12,7 +12,7 @@ HERE="$(cd "$(dirname "$0")/.." && pwd)"
 dc() { docker compose -p yonixtools -f "$HERE/docker-compose.yml" "$@"; }
 dc ps --status running downloader | grep -q downloader || { echo "ERROR: the downloader container is not running (run deploy/scripts/deploy.sh)." >&2; exit 1; }
 
-ALL="instagram tiktok youtube facebook x pinterest reddit vimeo dailymotion twitch soundcloud bluesky streamable"
+ALL="instagram tiktok youtube facebook x pinterest dailymotion twitch soundcloud bluesky streamable linkedin kick medal mixcloud 9gag imgur"
 platforms="${1:-$ALL}"
 shift || true
 url_args=()

@@ -86,6 +86,17 @@ test("X post with several videos: cards and ZIP", async ({ page }) => {
   await expectFile(page, () => page.getByRole("button", { name: /Download selected as ZIP/ }).click(), 100_000, /\.zip$/);
 });
 
+test("Imgur GIF post downloads as a video (not mislabelled as an image)", async ({ page }) => {
+  await analyse(page, "https://imgur.com/A61SaA1");
+  await expect(page.getByTestId("media-kind")).toHaveText("Video");
+  await expectFile(page, () => page.locator(".format-item").first().getByRole("button", { name: /^Download/ }).click(), 100_000, /\.mp4$/);
+});
+
+test("LinkedIn public post video", async ({ page }) => {
+  await analyse(page, "https://www.linkedin.com/posts/mishalkhawaja_sendinblueviews-toronto-digitalmarketing-ugcPost-6850898786781339649-mM20");
+  await expectFile(page, () => page.locator(".format-item").first().getByRole("button", { name: /^Download/ }).click(), 100_000, /\.mp4$/);
+});
+
 test("YouTube: honest error instead of fake qualities", async ({ page }) => {
   await page.goto("/");
   await page.locator("#dl-url").fill("https://www.youtube.com/watch?v=jNQXAC9IVRw");
