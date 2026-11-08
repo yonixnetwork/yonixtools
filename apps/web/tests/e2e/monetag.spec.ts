@@ -19,6 +19,9 @@ const EXACT = {
 </script>`,
 };
 
+const OFF = process.env.NEXT_PUBLIC_MONETAG === "off"; // production default: the build must contain no Monetag at all
+test.beforeEach(({}, info) => test.skip(OFF && !info.title.startsWith("[off]"), "Monetag disabled in this build"));
+
 const requests: string[] = [];
 // No real ad traffic from tests: Monetag's scripts are stubbed (they load, draw nothing).
 test.beforeEach(async ({ page }) => {
@@ -36,17 +39,40 @@ test("the Monetag codes are stored byte for byte", () => {
   expect(zones.inPagePush.snippet).toBe(EXACT.inPagePush);
 });
 
-test("eligible pages load each zone exactly once, after the page, with the supplied zone ids and URLs", async ({ page }) => {
-  for (const path of ["/", "/image-compressor/", "/instagram-downloader/", "/tools/", "/category/pdf-tools/"]) {
+test("allowed utility pages load each zone exactly once, after the page, with the supplied zone ids and URLs", async ({ page }) => {
+  const allowed = ["/image-compressor/", "/pdf-merger/", "/json-formatter/", "/tools/", "/category/pdf-tools/"];
+  for (const path of allowed) {
     await page.goto(path);
     await loaded(page);
     expect(await zoneScripts(page), path).toEqual(["12218944 https://nap5k.com/tag.min.js", "12218952 https://n6wxm.com/vignette.min.js"]);
     await page.waitForTimeout(1500);
     expect(await zoneScripts(page), path).toHaveLength(2); // no re-render duplicates
   }
-  // One request per zone per page view (5 pages).
-  expect(requests.filter((u) => u.includes("vignette.min.js"))).toHaveLength(5);
-  expect(requests.filter((u) => u.includes("tag.min.js"))).toHaveLength(5);
+  // One request per zone per page view.
+  expect(requests.filter((u) => u.includes("vignette.min.js"))).toHaveLength(allowed.length);
+  expect(requests.filter((u) => u.includes("tag.min.js"))).toHaveLength(allowed.length);
+});
+
+test("never on the homepage, any downloader page (with results) or the downloader category", async ({ page }) => {
+  for (const path of ["/", "/social-media-downloader/", "/instagram-downloader/", "/tiktok-downloader/", "/facebook-downloader/", "/category/social-media-downloaders/"]) {
+    const res = await page.goto(path);
+    if (res?.status() === 404) continue; // category slug differs: covered by the build-wide test
+    await page.waitForTimeout(1500);
+    expect(await zoneScripts(page), path).toEqual([]);
+    expect(await page.locator('script[id^="monetag-"]').count(), path).toBe(0);
+  }
+  expect(requests.filter((u) => /n6wxm|nap5k/.test(u))).toEqual([]);
+});
+
+test("runtime guard: the loader refuses a page that has the downloader, even if placed there by mistake", async ({ page }) => {
+  await page.goto("/word-counter/");
+  await loaded(page);
+  const code = await page.evaluate(() => document.getElementById("monetag-12218952")?.textContent ?? "");
+  expect(code).toContain("data-ytx-media-input");
+  await page.goto("/instagram-downloader/"); // has the URL box and results area
+  await page.evaluate((c) => { (window as unknown as { __ytxMonetag?: object }).__ytxMonetag = undefined; new Function(c)(); }, code);
+  await page.waitForTimeout(500);
+  expect(await zoneScripts(page)).toEqual([]);
 });
 
 test("the once-per-page guard: running a zone's loader again adds nothing", async ({ page }) => {
@@ -100,4 +126,14 @@ test("/ads-check/ reports each Monetag zone's script state", async ({ page }) =>
   await expect(report).toContainText("Monetag Vignette Banner (zone 12218952): script loaded", { timeout: 10_000 });
   await expect(report).toContainText("Monetag In-Page Push (zone 12218944): script loaded");
   await expect(report).toContainText("blocked by this site's security policy: nothing");
+});
+
+test("[off] a MONETAG=off build loads no Monetag zone anywhere", async ({ page }) => {
+  test.skip(!OFF, "only for MONETAG=off builds");
+  for (const path of ["/pdf-merger/", "/image-compressor/", "/tools/", "/category/pdf-tools/", "/ads-check/"]) {
+    await page.goto(path);
+    await page.waitForTimeout(1200);
+    expect(await zoneScripts(page), path).toEqual([]);
+  }
+  expect(requests.filter((u) => /n6wxm|nap5k/.test(u))).toEqual([]);
 });

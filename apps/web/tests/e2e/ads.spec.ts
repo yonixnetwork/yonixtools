@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { isAdTraffic } from "./helpers";
 
 // The four publisher codes exactly as supplied (whitespace included).
 const EXACT = {
@@ -116,7 +117,7 @@ test("frames: same-origin sandbox without top navigation, banner size reserved, 
   const frame = ad.locator("iframe");
   // Adsterra's code throws in an opaque-origin sandbox (measured on the live site), so frames keep the site's origin, still without allow-top-navigation.
   await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
-  await expect(frame).toHaveAttribute("src", /^\/ad-frame\.html\?u=banner300x250&s=/);
+  await expect(frame).toHaveAttribute("src", /^(https?:\/\/[^/]+)?\/ad-frame\.html\?u=banner300x250&s=/);
   const box = await ad.locator(".ad-box").boundingBox();
   expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([300, 250]);
   await expect(ad).toHaveAttribute("data-ad-state", "loading");
@@ -131,8 +132,9 @@ test("frames: same-origin sandbox without top navigation, banner size reserved, 
 test("when the ad network is unreachable (or blocked), slots collapse within seconds and the page has no errors", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  page.on("console", (m) => m.type() === "error" && !m.location().url.includes("ad-frame") && !m.location().url.includes("bellnewyork") && errors.push(m.text()));
-  await page.route("https://bellnewyork.org/**", (r) => r.abort("blockedbyclient"));
+  page.on("console", (m) => m.type() === "error" && !isAdTraffic(m.location().url) && errors.push(m.text()));
+  // Every ad network blocked, as an ad blocker would (the browser's own "failed to load" notices for them are not app errors).
+  for (const host of ["https://bellnewyork.org/**", "https://n6wxm.com/**", "https://nap5k.com/**"]) await page.route(host, (r) => r.abort("blockedbyclient"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/word-counter/");
   // It may already be gone by the time we scroll (scripts fail at once), so scroll without waiting on it.
