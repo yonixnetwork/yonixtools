@@ -35,9 +35,12 @@ export const ADS_ENABLED = (process.env.NEXT_PUBLIC_ADS || "on") !== "off";
  *   access they need. Measured on the live site (scripts/ads/inspect-prod.mjs):
  *   in the opaque-origin sandbox Adsterra's code throws ("Service worker is
  *   disabled because the context is sandboxed and lacks the 'allow-same-origin'
- *   flag") and renders nothing. The frame still has no top-navigation right and
- *   pages keep their strict CSP, so the ad can't inject scripts into them; it
- *   can, however, read the embedding page (as any directly embedded ad tag can).
+ *   flag") and renders nothing.
+ *   SECURITY: a same-origin frame is NOT isolated. Its code can read the page
+ *   and, because the page CSP allows inline scripts, run code in the page,
+ *   including redirecting it (tested: docs/ADS_FIX_TEST_REPORT.md §5). That is
+ *   the same exposure as pasting the ad tag into the page. Isolation with
+ *   working ads needs the frame on a separate origin (NEXT_PUBLIC_AD_ORIGIN).
  * - "sandboxed": opaque origin, full isolation. Adsterra's scripts fail in it;
  *   kept for comparison on /ads-check/ only.
  */

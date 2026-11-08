@@ -33,9 +33,7 @@ Fill/approval is a separate question. It can only be answered from real devices.
 
 - **Frames run with `allow-same-origin`** (default `AD_ISOLATION=same-origin`):
   - the publisher codes are unchanged, and so are the IDs, the provider and the placements;
-  - frames still have no top navigation, and pages keep the strict CSP.
-  - Trade-off: the ad code can read the page it is embedded in, as any directly embedded ad tag can. The privacy page was corrected accordingly.
-  - Full isolation *with* working ads needs a subdomain such as `ads.yonixtools.com` (needs DNS and your approval).
+  - **This removes isolation**: see §5 (security review) before production.
 - **Strict fill detection.** A slot is "filled" only for real visible content, seen twice in a row:
   - a sized iframe that loaded a page, or that has content;
   - a loaded image, a video or a canvas;
@@ -92,3 +90,33 @@ Please run `/ads-check/` (step 1 of DEPLOYMENT.md §10 works on the live site to
 For each unit, the report gives script status, execution (loaded / errors), container DOM, whether an ad rendered and when, and frame errors.
 - "EMPTY: script loaded and ran without errors, no creative returned" on every device points to fill or unit approval: check the Adsterra dashboard and units.
 - "script ran but threw errors" points to an integration problem: send the report.
+
+## 5. Security review of same-origin frames (added after review)
+
+**Real-device evidence (your saved `/ads-check/` page, 8 Nov 2026):**
+- **same-origin frames:** all four units rendered real ads. Banners: `<a><img width=320/300/728 …></a>` from `cdn.storageimagedisplay.com`. Native: populated tiles.
+- **sandboxed frames:** banners produced an empty inner document; native rendered nothing.
+
+**Isolation test.** A simulated hostile creative (a local stub standing in for the ad script) ran in each mode on the local build:
+
+| Attempt from inside the ad frame | sandboxed | same-origin |
+|---|---|---|
+| Read the page's DOM | blocked | **possible** |
+| Inject an inline `<script>` into the page and run it | blocked | **runs** (page CSP has `'unsafe-inline'`) |
+| Add an external `<script src>` to the page | blocked | tag added. Production's page CSP (`script-src 'self'`) would block the load; the test server has no CSP |
+| `top.location = …` from the frame | blocked | blocked (`SecurityError`) |
+| **Redirect the page via injected inline code** | blocked | **page redirected to https://example.org/redirect** |
+| Use its own storage | blocked | possible |
+
+**Conclusion:** the change makes ads render but **weakens isolation**. A malicious or compromised creative could read what visitors type or paste and force-redirect the page. That is the same exposure as Adsterra's standard direct-in-page tag, but worse than what the site has today. **Not recommended for production as is.**
+
+**Fix: serve the ad frame from a separate origin we own.** The frame then keeps `allow-same-origin`, which gives Adsterra cookies, storage and service worker on *its own* origin. The browser blocks access to the page, and there's still no top navigation.
+- **Option A, no DNS change:** `https://yonixtools.com:8443`, the same hostname on another port, with the existing certificate. Needs:
+  - an edge Nginx server on 8443 that serves only `/ad-frame.html`;
+  - the firewall port opened;
+  - the page CSP `frame-src` gaining exactly that origin.
+
+  Cookies are not port-isolated: the frame could read this site's non-HttpOnly cookies. Today that is only the download-progress tokens. Storage, DOM and service worker are isolated.
+- **Option B:** `https://ads.yonixtools.com`. Needs a DNS A record and a certificate. Fully isolated, cookies included.
+
+The frontend switch for this is on branch `feature/ads-isolated-origin` (`NEXT_PUBLIC_AD_ORIGIN`, default off). The exact config changes are in `docs/ADS_ISOLATION_PROPOSAL.md`. Nothing is applied until you approve.

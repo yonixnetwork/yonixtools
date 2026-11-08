@@ -34,9 +34,9 @@ Popunder, Smartlink and Social Bar are **not** used.
   - `document.write` works.
 - **Frame isolation (default `same-origin`):** `sandbox="allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox"`.
   - Adsterra's code gets the cookies, storage, service-worker and top-window access it needs.
-  - There is no top navigation: the ad cannot redirect the page, and a click opens the advertiser in a new tab.
-  - Pages keep the strict CSP, so the ad cannot inject scripts into them.
-  - **Trade-off:** the ad code can read the page it is embedded in, as any directly embedded ad tag can. Full isolation *with* working ads needs the frame on its own subdomain (e.g. `ads.yonixtools.com`), which requires DNS. That is not done without approval.
+  - A click opens the advertiser in a new tab.
+  - **Security: this is not isolation.** A same-origin frame can read the page. Because the page CSP allows inline scripts (Next.js needs them), it can also run code in the page, including redirecting it. This was tested with a simulated hostile creative (`ADS_FIX_TEST_REPORT.md` §5). The exposure equals pasting the ad tag into the page.
+  - Isolation *with* working ads needs the frame on a separate origin we control: `https://yonixtools.com:8443` (no DNS change) or `ads.yonixtools.com` (DNS). See §5 of the report; it needs your approval.
 - **CSP:** only `/ad-frame.html` gets an ad-friendly policy (any https host, since ad creatives rotate across many). Every other page keeps the strict site-wide policy.
 - **Space:**
   - banners reserve their exact size (300 × 250, 728 × 90, 320 × 50);
