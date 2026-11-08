@@ -37,14 +37,15 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
   const [near, setNear] = useState(false);
   const [state, setState] = useState<"idle" | "loading" | "filled" | "empty">("idle");
   const [height, setHeight] = useState<number | null>(null);
+  const [dropped, setDropped] = useState(false); // this page already shows the unit, or ads are off
 
   // Decide the unit on the client (depends on screen width) and claim it for this page.
   useEffect(() => {
     if (!ADS_ENABLED) return;
     const u = pick(unit, responsive);
-    if (!u) return;
+    if (!u) return setDropped(true);
     if (debug) return setChosen(u);
-    if (mounted.has(u)) return; // already shown on this page: never duplicate a unit
+    if (mounted.has(u)) return setDropped(true); // already shown on this page: never duplicate a unit
     mounted.add(u);
     setChosen(u);
     return () => {
@@ -77,7 +78,17 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
     return () => window.removeEventListener("message", onMsg);
   }, [near, slotId, chosen]);
 
-  if (!ADS_ENABLED || !chosen || (state === "empty" && !debug)) return null;
+  if (!ADS_ENABLED || dropped || (state === "empty" && !debug)) return null;
+  if (!chosen) {
+    // Server render and first paint: reserve the slot's exact size in the HTML so nothing shifts when it loads.
+    const fixed = unit ? AD_UNITS[unit] : null;
+    return (
+      <aside ref={ref} className={`ad-slot ad-reserve${responsive ? " ad-leaderboard" : ""}${unit ? ` ad-${unit}` : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
+        <span className="ad-label">Advertisement</span>
+        <div className="ad-box" style={fixed ? { width: unit === "native" ? "100%" : fixed.width, maxWidth: "100%", height: fixed.height } : undefined} />
+      </aside>
+    );
+  }
   const u = AD_UNITS[chosen];
   const isNative = chosen === "native";
   return (

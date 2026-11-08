@@ -62,3 +62,14 @@ test("category pages and 404", async ({ page }) => {
   expect(res?.status()).toBe(404);
   await expect(page.locator("h1")).toHaveText("Page not found");
 });
+
+test("every category page has its own title and description", async ({ page }) => {
+  const seen = new Set<string>();
+  for (const c of categories) {
+    await page.goto(`/category/${c.slug}/`);
+    const t = await page.title();
+    expect(t.length, c.slug).toBeGreaterThan(10);
+    expect(seen.has(t), c.slug).toBe(false);
+    seen.add(t);
+  }
+});

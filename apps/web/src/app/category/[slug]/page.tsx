@@ -1,6 +1,7 @@
 import { AdSlot } from "@/components/AdSlot";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import type { CategoryId } from "@/lib/registry";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { JsonLd } from "@/components/JsonLd";
 import { ToolCard } from "@/components/ToolCard";
@@ -13,7 +14,8 @@ export const generateStaticParams = () => categories.map((c) => ({ slug: c.slug 
 
 type Props = { params: Promise<{ slug: string }> };
 
-const TITLES: Record<string, string> = {
+// Typed by category id: a new category without a title is a build error (video/converters/utilities/pdf once shipped without one).
+const TITLES: Record<CategoryId, string> = {
   social: "Social Media Downloaders – Instagram, TikTok, Facebook",
   qr: "Free QR Code Generators – Links, Wi-Fi & Contacts",
   image: "Free Image Tools – Compress, Resize & Convert",
@@ -21,6 +23,10 @@ const TITLES: Record<string, string> = {
   developer: "Free Developer Tools – JSON, Base64, JWT & Regex",
   text: "Free Text Tools – Word Counter, Case Converter & More",
   calculators: "Free Online Calculators – Percent, Loan, BMI & Age",
+  pdf: "Free PDF Tools – Merge, Split, Compress & Convert",
+  video: "Free Video Tools – Frames, Audio Extraction & Video Info",
+  converters: "Free Converters – Units, Colours, Timestamps & Time Zones",
+  utilities: "Free Online Utilities – Random Numbers, Stopwatch & Timer",
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {

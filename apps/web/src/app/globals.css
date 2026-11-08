@@ -554,7 +554,7 @@ table.data tr:last-child td { border-bottom: 0; }
 .drawer-cat:last-child { border-bottom: 0; }
 .drawer-cat summary { padding: 10px 6px; }
 .drawer-cat summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.drawer-count { min-width: 24px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); }
+.drawer-count { min-width: 24px; text-align: center; padding: 1px 7px; border-radius: 999px; background: var(--surface-2); color: var(--text-2); }
 .drawer-cat ul { margin-left: 46px; padding-bottom: 6px; }
 
 /* ─── Media results: single items, galleries, mixed posts ─── */
@@ -616,3 +616,7 @@ table.data tr:last-child td { border-bottom: 0; }
 /* Long status badges in a tool header wrap on narrow screens instead of widening the page. */
 .tool-hero > * { min-width: 0; }
 .tool-hero .badge { white-space: normal; line-height: 1.35; }
+/* Reserved space before hydration: responsive leaderboard is 320×50 on phones, 728×90 from 768px. */
+.ad-leaderboard .ad-box { width: 320px; max-width: 100%; height: 50px; }
+@media (min-width: 768px) { .ad-leaderboard .ad-box { width: 728px; height: 90px; } }
+.ad-native.ad-reserve .ad-box { width: 100%; }

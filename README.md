@@ -3,8 +3,8 @@
 A universal social media downloader and 44 free browser-based tools. Source for **yonixtools.com**.
 
 > **Status:**
-> - Production runs the downloader reliability upgrade (`feature/downloader-reliability`, `c259dfc`).
-> - The media expansion is on `feature/media-expansion` and is **not deployed**. Deploying it needs your approval.
+> - Media expansion (`feature/media-expansion`) is deployed.
+> - Advertising (Adsterra) and PWA installation are on `feature/ads-pwa` and are **not deployed**. Deploying needs your approval; see [docs/ADS_AND_PWA.md](docs/ADS_AND_PWA.md).
 >
 > See [docs/RELEASE_REPORT.md](docs/RELEASE_REPORT.md) and [docs/PLATFORM_DIAGNOSTICS.md](docs/PLATFORM_DIAGNOSTICS.md).
 
@@ -12,7 +12,7 @@ A universal social media downloader and 44 free browser-based tools. Source for 
 
 | | |
 |---|---|
-| **Universal downloader** | One link box. It detects the platform and what the link really contains: a video, several videos, an image, a carousel, a mixed post or audio. Each item gets a preview and its real quality options; images can be converted to JPG/PNG/WebP, audio downloaded as the original or MP3, and several items saved as one ZIP. One click starts the download, and the page confirms the browser really received it. Working today: TikTok, Instagram, Facebook, X, Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal, 9GAG and Imgur. YouTube blocks cloud servers; see [docs/PLATFORM_DIAGNOSTICS.md](docs/PLATFORM_DIAGNOSTICS.md). Self-hosted yt-dlp (with Deno), gallery-dl and FFmpeg. Public content only. |
+| **Universal downloader** | One link box. It detects the platform and what the link really contains: a video, several videos, an image, a carousel, a mixed post or audio. Each item gets a preview and its real quality options; images can be converted to JPG/PNG/WebP, audio downloaded as the original or MP3, and several items saved as one ZIP. One click starts the download, and the page confirms the browser really received it. Working today: TikTok, Instagram, Facebook, X, Pinterest, LinkedIn, Dailymotion, Twitch and Kick clips, SoundCloud, Mixcloud, Bluesky, Streamable, Medal, 9GAG and Imgur. YouTube is not offered: it refuses cloud servers (see [docs/PLATFORM_DIAGNOSTICS.md](docs/PLATFORM_DIAGNOSTICS.md)). Self-hosted yt-dlp (with Deno), gallery-dl and FFmpeg. Public content only. |
 | **53 browser tools** | Video (frame extractor, audio to WAV, video info), converters (units, colours, timestamps, number bases, time zones), utilities (random numbers, stopwatch and timer), PDF (merge, split, compress, to image, from images, rotate), image (compress, resize, convert, crop), QR (generate, Wi-Fi, vCard, scan), developer (JSON, Base64, URL, UUID, JWT, hashes, regex, HTML/CSS/JS minifiers), SEO (meta tags, SERP preview, robots.txt, slugs, sitemap, schema, Open Graph preview, keyword ideas, title ideas), text (word counter, case, passwords, lorem ipsum, diff), calculators (percentage, age, BMI, loan, compound interest). Files never leave the device. |
 | **Discovery** | Search that understands synonyms and typos, categories, related tools, recently used tools. |
 | **SEO** | A static page per tool with unique metadata, FAQs, breadcrumbs and JSON-LD; sitemap; robots.txt. |
@@ -56,6 +56,7 @@ See [docs/TESTING.md](docs/TESTING.md). In short:
 - [Platform diagnostics](docs/PLATFORM_DIAGNOSTICS.md)
 - [Media extraction research](docs/RESEARCH_MEDIA_EXTRACTION.md)
 - [Test matrix](docs/TEST_MATRIX.md)
+- [Advertising and PWA](docs/ADS_AND_PWA.md)
 - [Deployment](docs/DEPLOYMENT.md)
 - [Migration from YonixAlpha](docs/MIGRATION_FROM_YONIXALPHA.md)
 - [Testing](docs/TESTING.md)

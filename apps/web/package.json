@@ -30,6 +30,7 @@
     "terser": "5.51.2"
   },
   "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
     "@playwright/test": "1.63.0",
     "@types/csso": "5.0.5",
     "@types/html-minifier-terser": "7.0.2",

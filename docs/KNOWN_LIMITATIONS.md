@@ -9,7 +9,8 @@ Real-platform results come from the live platform matrix and the live browser ru
   - Dailymotion, Twitch clips, SoundCloud, Bluesky, Streamable;
   - new: LinkedIn, Kick clips, Medal, Mixcloud, 9GAG.
 - **Imgur:** works from GitHub's IPs, but answers the production droplet with HTTP 429, so it is not advertised.
-- **YouTube: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, for every player client, with or without Deno, and **with PO tokens** (bgutil). Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`. A DigitalOcean IPv6 address is the remaining legitimate thing to try.
+- **YouTube: not offered.** It was removed from the interface (8 November 2026); the backend adapter is kept, and re-enabling is described in `detect.ts`. Evidence follows.
+- **YouTube evidence: blocked by platform.** "Sign in to confirm you're not a bot" from datacenter IPs, for every player client, with or without Deno, and **with PO tokens** (bgutil). Check the droplet with `deploy/scripts/diagnose-platforms.sh youtube`. A DigitalOcean IPv6 address is the remaining legitimate thing to try.
 - **Reddit and Vimeo:** refused up front with the reason, and hidden from the interface. Reddit returns 403 to datacenter IPs; Vimeo requires an account or sends DRM streams.
 - **Not added (failed live):** Threads (no extractor), Tumblr, Bandcamp, Rumble, Flickr, Audiomack, Loom, TED (download not verified), Snapchat.
 - **Instagram image sizes:** logged out, Instagram serves one copy per image, so only "Original" is offered (plus JPG/PNG/WebP conversion). No other sizes are invented.
@@ -47,3 +48,16 @@ Real-platform results come from the live platform matrix and the live browser ru
 - Not deployed. The DigitalOcean server was never accessed from this environment, so its real resources, containers and ports are unknown until `scripts/do-audit.sh` is run.
 - The Docker images were not built here (no Docker daemon in the sandbox). CI builds them on GitHub.
 - The edge proxy choice (inside YonixAlpha's Nginx or a host Nginx) needs your decision.
+
+
+## Advertising
+
+- **Delivery not confirmed from a server.** Adsterra answers datacenter IPs with HTTP 403, so real delivery wasn't observed by automated tests. Use `/ads-check/` on a real phone after deploying.
+- **Isolation and Adsterra's terms.** Units run inside sandboxed frames. If Adsterra's scripts need cookies or storage there, switch to `AD_ISOLATION=same-origin`, which gives weaker isolation. Adsterra's terms forbid altering ad tags without consent; the tags are unaltered but framed, so confirm with Adsterra.
+- **No consent banner** for EU/UK ad cookies.
+- **Native banner height** varies. 280 px is reserved, and the frame resizes to the ad's real height once it renders.
+
+## PWA
+
+- The install prompt, home-screen icon, shortcuts and iOS Add to Home Screen were not tried on physical devices. Chromium's installability check passes, and the flows were tested by emulation.
+- iOS Safari offers no install prompt, so iPhone users get a guide instead.

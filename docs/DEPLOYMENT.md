@@ -115,3 +115,35 @@ To roll back:
 ```bash
 git checkout feature/downloader-reliability && bash deploy/scripts/deploy.sh
 ```
+
+
+## 9. Ads + PWA release (`feature/ads-pwa`, with approval)
+
+This builds on `feature/media-expansion` (what production runs). No server configuration changes are needed; the Nginx rules for the ad frame, service worker and manifest ship inside the web image.
+
+```bash
+cd /opt/yonixtools
+git fetch origin
+git checkout feature/ads-pwa
+bash deploy/scripts/deploy.sh                   # ads on by default; ADS=off to build without them
+SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh https://yonixtools.com
+bash deploy/scripts/diagnose-platforms.sh       # downloader regression from the droplet
+```
+
+Then check on real devices:
+
+- **Ads (phone, no ad blocker or VPN):** open `https://yonixtools.com/ads-check/`. Each unit should reach **filled** in at least one mode.
+  - If only "same-origin" fills, rebuild with `AD_ISOLATION=same-origin bash deploy/scripts/deploy.sh`. This trades some isolation for ad delivery; see ADS_AND_PWA.md.
+- **Android (Chrome):** open the site and wait ~12 s.
+  1. The "Install YoniXTools" card should appear.
+  2. Tap Install: the app should land on the home screen and open full screen.
+  3. Shortcuts: long-press the icon.
+- **Desktop (Chrome or Edge):** the install icon appears in the address bar; the card's Install button opens the same dialog.
+- **iPhone (Safari):** the card shows "How to install"; Share → Add to Home Screen.
+- **Offline:** open a few pages, switch to airplane mode, and reopen them. Pages you didn't open show the offline page.
+
+To roll back:
+
+```bash
+git checkout feature/media-expansion && bash deploy/scripts/deploy.sh
+```

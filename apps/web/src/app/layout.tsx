@@ -1,4 +1,4 @@
-import "@fontsource-variable/inter";
+import "./fonts.css";
 import "./globals.css";
 import type { Metadata, Viewport } from "next";
 import { Footer } from "@/components/Footer";

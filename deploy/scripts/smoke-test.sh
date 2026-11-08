@@ -32,6 +32,20 @@ echo "$hdr" | grep -qiE "^server: .*[0-9]" && bad "server version exposed" || ok
 asset="$(curl "${args[@]}" "$BASE/" | grep -o '/_next/static/[^"]*\.js' | head -1)"
 curl "${args[@]}" -D - -o /dev/null -H 'Accept-Encoding: gzip' "$BASE$asset" | grep -qi "immutable" && ok "static assets cached immutably" || bad "static asset caching"
 
+# Pages keep the strict policy: scripts only from this site (ads run in the isolated frame).
+echo "$hdr" | grep -i "^content-security-policy:" | grep -q "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';" && ok "pages keep the strict CSP" || bad "page CSP changed"
+
+echo "Advertising frame and PWA"
+check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"
+afh="$(curl "${args[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
+echo "$afh" | grep -i "^content-security-policy:" | grep -q "frame-ancestors 'self'" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
+curl "${args[@]}" "$BASE/ad-frame.html" | grep -q "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" && ok "ad frame contains the publisher units" || bad "ad frame units"
+check 200 "GET /manifest.webmanifest" "$BASE/manifest.webmanifest"
+curl "${args[@]}" -D - -o /dev/null "$BASE/manifest.webmanifest" | grep -qi "^content-type: application/manifest+json" && ok "manifest content type" || bad "manifest content type"
+curl "${args[@]}" -D - -o /dev/null "$BASE/sw.js" | grep -qi "^cache-control: no-cache" && ok "service worker is always revalidated" || bad "sw.js caching"
+check 200 "GET /icons/icon-512.png" "$BASE/icons/icon-512.png"
+check 200 "GET /offline/" "$BASE/offline/"
+
 echo "Downloader API"
 check 200 "GET /api/healthz" "$BASE/api/healthz"
 check 200 "GET /api/readyz" "$BASE/api/readyz"
