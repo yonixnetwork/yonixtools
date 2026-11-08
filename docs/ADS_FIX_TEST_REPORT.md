@@ -120,3 +120,32 @@ For each unit, the report gives script status, execution (loaded / errors), cont
 - **Option B:** `https://ads.yonixtools.com`. Needs a DNS A record and a certificate. Fully isolated, cookies included.
 
 The frontend switch for this is on branch `feature/ads-isolated-origin` (`NEXT_PUBLIC_AD_ORIGIN`, default off). The exact config changes are in `docs/ADS_ISOLATION_PROPOSAL.md`. Nothing is applied until you approve.
+
+## 6. Staging run (approved): `feature/ads-fix`
+
+On the droplet. Production containers, edge proxy, firewall and DNS are untouched:
+
+```bash
+cd /opt/yonixtools && git fetch origin
+git worktree add /opt/yonixtools-staging origin/feature/ads-fix 2>/dev/null || (cd /opt/yonixtools-staging && git checkout --detach origin/feature/ads-fix)
+cd /opt/yonixtools-staging
+bash deploy/scripts/staging-web.sh up       # build + smoke test on 127.0.0.1:8091
+bash deploy/scripts/staging-web.sh tunnel   # prints "Staging URL: https://<random>.trycloudflare.com"
+```
+
+**Caveat:** the staging hostname isn't yonixtools.com. If Adsterra doesn't serve that hostname, "no creative returned" on staging is not an integration failure. Rendering with the same frame mode is already proven on yonixtools.com (§5, your saved page).
+
+**Checklist.** Run in a clean session, then with an ad blocker, on Android Chrome, iPhone Safari and desktop Chrome. Don't click ads.
+
+| Check | How |
+|---|---|
+| All four units render | `<staging>/ads-check/` → wait 15 s → Copy report. Expect "AD RENDERED" for banner320x50, banner300x250, banner728x90 and native in "same-origin" |
+| Real pages | Home, `/image-compressor/`, `/instagram-downloader/`: ads appear with the "Advertisement" label only above a real ad |
+| Empty frames collapse | With an ad blocker: report says "script blocked"; on real pages the slots disappear (when scrolled away or on the next tap) with no label left behind |
+| No layout break | No horizontal scrolling on phones; nothing covers the URL box, previews, quality options or Download buttons |
+| Downloader | Paste a public TikTok/Instagram link → preview → Download: the file saves |
+| PWA | Desktop Chrome: install icon still offered; `/offline/` works |
+
+Clean up with `bash deploy/scripts/staging-web.sh down`.
+
+**Security status for production:** this branch is **not** recommended for production as is (§5). Stage `feature/ads-isolated-origin` once its config is approved (`docs/ADS_ISOLATION_PROPOSAL.md` on that branch).

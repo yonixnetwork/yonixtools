@@ -5,8 +5,11 @@
 # private network only so /api/ reaches the existing downloader. Production
 # containers, images, Nginx edge config and DNS are not changed.
 #   bash deploy/scripts/staging-web.sh up     # build and start
-#   bash deploy/scripts/staging-web.sh down   # stop and remove
-# View it from your computer through an SSH tunnel:
+#   bash deploy/scripts/staging-web.sh tunnel # temporary public https URL (for phones)
+#   bash deploy/scripts/staging-web.sh down   # stop and remove (tunnel included)
+# The tunnel is a Cloudflare "quick tunnel" (random *.trycloudflare.com URL, no
+# account, no DNS or firewall change); it exposes only the staging container.
+# Or view it from your computer through SSH:
 #   ssh -L 8091:127.0.0.1:8091 root@<droplet>   then open http://localhost:8091/
 set -euo pipefail
 cd "$(dirname "$0")/../.."
@@ -28,10 +31,21 @@ case "${1:-up}" in
     SITE_HOST="${SITE_HOST:-yonixtools.com}" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:$PORT"
     echo "Staging running on 127.0.0.1:$PORT ($(git rev-parse --short HEAD)). Production untouched."
     ;;
+  tunnel)
+    docker rm -f "$NAME-tunnel" >/dev/null 2>&1 || true
+    docker run -d --name "$NAME-tunnel" --network host cloudflare/cloudflared:latest tunnel --no-autoupdate --url "http://127.0.0.1:$PORT" >/dev/null
+    for _ in $(seq 1 30); do
+      url="$(docker logs "$NAME-tunnel" 2>&1 | grep -o 'https://[a-z0-9-]*\.trycloudflare\.com' | head -1)"
+      [ -n "$url" ] && break
+      sleep 1
+    done
+    [ -n "${url:-}" ] && echo "Staging URL: $url   (ads check: $url/ads-check/)" || { echo "No tunnel URL yet; see: docker logs $NAME-tunnel"; exit 1; }
+    ;;
   down)
+    docker rm -f "$NAME-tunnel" >/dev/null 2>&1 || true
     docker rm -f "$NAME" >/dev/null 2>&1 || true
     docker image rm yonixtools-web:staging >/dev/null 2>&1 || true
     echo "Staging removed."
     ;;
-  *) echo "usage: $0 up|down" >&2; exit 2 ;;
+  *) echo "usage: $0 up|tunnel|down" >&2; exit 2 ;;
 esac
