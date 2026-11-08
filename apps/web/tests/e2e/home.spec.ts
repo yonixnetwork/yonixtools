@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { isAdTraffic } from "./helpers";
 
 test("homepage structure", async ({ page }) => {
   await page.goto("/");
@@ -78,7 +79,7 @@ test.describe("universal downloader (no backend configured)", () => {
     await expect(page.getByRole("status").filter({ hasText: "Downloading is not live yet" })).toBeVisible();
     await expect(page.getByText("Nothing was downloaded.")).toBeVisible();
     await expect(page.getByText(/Save file|ready|success/i)).toHaveCount(0);
-    expect(requests.filter((u) => !u.startsWith("http://localhost:4173"))).toEqual([]);
+    expect(requests.filter((u) => !u.startsWith("http://localhost:4173") && !isAdTraffic(u))).toEqual([]); // no downloader request leaves the site
   });
 
   test("explains unsupported and unsafe links", async ({ page }) => {

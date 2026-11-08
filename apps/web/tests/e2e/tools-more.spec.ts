@@ -1,5 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test as base } from "@playwright/test";
+import { isAdTraffic } from "./helpers";
 
 const test = base.extend({
   page: async ({ page }, use) => {
@@ -23,7 +24,7 @@ test("video info reads duration and resolution locally", async ({ page }) => {
   await page.getByTestId("vi-file").setInputFiles(CLIP);
   await expect(page.getByTestId("vi-res")).toHaveText("160 × 120 (4:3)");
   await expect(page.getByTestId("vi-duration")).toContainText("0:01.");
-  expect(requests.filter((u) => !u.startsWith("http://localhost:4173") && !u.startsWith("blob:"))).toEqual([]);
+  expect(requests.filter((u) => !u.startsWith("http://localhost:4173") && !u.startsWith("blob:") && !isAdTraffic(u))).toEqual([]); // the video never leaves the device
 });
 
 test("frame extractor saves a PNG of the current frame", async ({ page }) => {

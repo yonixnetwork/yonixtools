@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { categories, tools } from "../../src/lib/registry";
+import { isAdTraffic } from "./helpers";
 
 const SITE = "https://yonixtools.com";
 
@@ -9,7 +10,7 @@ test.describe("every tool landing page", () => {
     test(`${tool.slug}: renders, unique metadata, structured data`, async ({ page }) => {
       const errors: string[] = [];
       page.on("pageerror", (e) => errors.push(e.message));
-      page.on("console", (m) => m.type() === "error" && errors.push(m.text()));
+      page.on("console", (m) => m.type() === "error" && !isAdTraffic(m.location().url) && errors.push(m.text()));
       const res = await page.goto(`/${tool.slug}/`);
       expect(res?.status()).toBe(200);
 

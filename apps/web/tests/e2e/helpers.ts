@@ -41,3 +41,6 @@ export function makePng(w: number, h: number): Buffer {
   return Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
+
+/** Requests/console messages from the isolated ad frames or the ad network: third-party, not the app's. */
+export const isAdTraffic = (url: string) => /bellnewyork\.org|\/ad-frame\.html/.test(url);
