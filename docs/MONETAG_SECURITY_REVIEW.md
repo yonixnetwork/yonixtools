@@ -1,6 +1,17 @@
 # Monetag security review (zones 12218952 Vignette, 12218944 In-Page Push)
 
-Status: **review only. Nothing applied.** Production builds keep `MONETAG=off`.
+Status:
+- **Stage 1 approved for staging only** (8 Nov 2026). It's applied at image build time only when `MONETAG=on`, by `deploy/nginx/apply-build-options.sh`.
+- Production `docker-compose.yml` doesn't pass `MONETAG`, so production can't enable it.
+- The production smoke test fails if the Monetag hosts ever appear in a production build.
+
+**Where Monetag may run (central rule, owner decision 8 Nov 2026):** only ordinary utility pages, All tools, non-downloader category pages and `/ads-check/`. It never runs on:
+- the homepage;
+- any downloader page, results included;
+- the downloader category;
+- any page containing the URL box.
+
+This is enforced in `apps/web/src/lib/ads/monetag-policy.ts` (the component renders nothing), again at runtime by the loader (path deny-list built from the registry + the downloader's `data-ytx-media-input` marker), and by tests over every built page.
 
 ## 1. The complete current page CSP (`deploy/nginx/security-headers.conf`)
 
