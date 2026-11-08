@@ -210,7 +210,7 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   const preview = (u?: string) => (u ? resolveDownloadUrl(api_base, u) : undefined);
 
   return (
-    <div className="downloader" id="downloader">
+    <div className="downloader" id="downloader" data-ytx-media-input="">
       <form className="dl-form" onSubmit={submit} noValidate>
         <label htmlFor="dl-url" className="sr-only">
           Paste a {expected ? expected.name : "social media"} link

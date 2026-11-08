@@ -21,7 +21,7 @@ export default function AdsCheckPage() {
         approval). Please don&apos;t click the ads.
       </p>
       <AdsCheck />
-      <MonetagZones />
+      <MonetagZones page={{ kind: "diagnostics" }} />
     </div>
   );
 }

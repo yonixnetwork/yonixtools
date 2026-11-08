@@ -21,7 +21,7 @@ export default function ToolsPage() {
       </header>
       <ToolsExplorer />
       <AdSlot unit="native" className="ad-native" />
-      <MonetagZones />
+      <MonetagZones page={{ kind: "tools" }} />
     </div>
   );
 }

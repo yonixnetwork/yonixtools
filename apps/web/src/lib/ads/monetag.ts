@@ -20,9 +20,10 @@ export const MONETAG_ZONES = zones as Record<MonetagZoneId, { label: string; zon
 /** Build-time switch: NEXT_PUBLIC_MONETAG=off removes both zones (ADS=off removes every ad). */
 export const MONETAG_ENABLED = ADS_ENABLED && (process.env.NEXT_PUBLIC_MONETAG || "on") !== "off";
 
-/** The snippet's own code (between its <script> tags), unchanged, inside a once-per-page guard. */
-export function guardedSnippet(id: MonetagZoneId): string {
+/** The snippet's own code (between its <script> tags), unchanged, inside a once-per-page guard that also refuses media-URL pages. */
+export function guardedSnippet(id: MonetagZoneId, deniedPaths: string[]): string {
   const { zone, snippet } = MONETAG_ZONES[id];
   const code = snippet.replace(/^<script>\n/, "").replace(/\n<\/script>$/, "");
-  return `(function(){var w=window,k=${JSON.stringify(zone)};w.__ytxMonetag=w.__ytxMonetag||{};if(w.__ytxMonetag[k]||document.querySelector('script[data-zone="'+k+'"]'))return;w.__ytxMonetag[k]=1;\n${code}\n})();`;
+  const denied = JSON.stringify(deniedPaths);
+  return `(function(){var w=window,k=${JSON.stringify(zone)};if(${denied}.indexOf(location.pathname)!==-1||document.querySelector("[data-ytx-media-input]"))return;w.__ytxMonetag=w.__ytxMonetag||{};if(w.__ytxMonetag[k]||document.querySelector('script[data-zone="'+k+'"]'))return;w.__ytxMonetag[k]=1;\n${code}\n})();`;
 }

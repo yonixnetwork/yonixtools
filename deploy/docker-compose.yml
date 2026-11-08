@@ -15,10 +15,8 @@ services:
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
         NEXT_PUBLIC_ADS: ${ADS:-on}
         NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-same-origin}
-        # Separate origin for the ad frame (e.g. https://yonixtools.com:8443). Empty = this site. See docs/ADS_ISOLATION_PROPOSAL.md.
-        NEXT_PUBLIC_AD_ORIGIN: ${AD_ORIGIN:-}
-        # Monetag Vignette + In-Page Push. Off until the page CSP allows their hosts (see docs/ADS_AND_PWA.md).
-        NEXT_PUBLIC_MONETAG: ${MONETAG:-off}
+        # Not passed here on purpose: NEXT_PUBLIC_AD_ORIGIN and NEXT_PUBLIC_MONETAG stay off in production
+        # (staging only, via deploy/scripts/staging-web.sh) until the owner approves them.
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:

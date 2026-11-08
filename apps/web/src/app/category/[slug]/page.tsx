@@ -68,7 +68,7 @@ export default async function CategoryPage({ params }: Props) {
         {list.map((t) => <ToolCard key={t.slug} tool={t} headingLevel={2} />)}
       </div>
       <AdSlot unit="native" className="ad-native" />
-      <MonetagZones />
+      <MonetagZones page={{ kind: "category", id: c.id }} />
       <section className="section" aria-labelledby="other-h" style={{ paddingBottom: 0 }}>
         <h2 id="other-h" style={{ fontSize: "1.1rem", marginBottom: 12 }}>
           Other categories

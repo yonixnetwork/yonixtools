@@ -26,6 +26,14 @@ FROM nginx:1.27-alpine
 RUN rm /etc/nginx/conf.d/default.conf && mkdir -p /etc/nginx/snippets
 COPY --from=deploy web.conf /etc/nginx/conf.d/yonixtools.conf
 COPY --from=deploy security-headers.conf /etc/nginx/snippets/security-headers.conf
+# Build options -> nginx security config (no-op with the production defaults). See the script's header.
+ARG NEXT_PUBLIC_SITE_URL=https://yonixtools.com
+ARG NEXT_PUBLIC_AD_ORIGIN=
+ARG AD_FRAME_PARENT=
+ARG NEXT_PUBLIC_MONETAG=off
+COPY --from=deploy apply-build-options.sh /tmp/apply-build-options.sh
+RUN SITE_URL="$NEXT_PUBLIC_SITE_URL" AD_ORIGIN="$NEXT_PUBLIC_AD_ORIGIN" AD_FRAME_PARENT="$AD_FRAME_PARENT" MONETAG="$NEXT_PUBLIC_MONETAG" \
+    sh /tmp/apply-build-options.sh /etc/nginx/snippets/security-headers.conf /etc/nginx/conf.d/yonixtools.conf && rm /tmp/apply-build-options.sh
 COPY --from=build /app/out /usr/share/nginx/html
 EXPOSE 80
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 CMD wget -qO- http://127.0.0.1/healthz || exit 1

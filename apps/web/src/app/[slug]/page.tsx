@@ -143,7 +143,7 @@ export default async function ToolPage({ params }: Props) {
           </aside>
         </div>
         {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
-        {ads && <MonetagZones />}
+        {ads && <MonetagZones page={{ kind: "tool", tool }} />}
       </div>
     </>
   );

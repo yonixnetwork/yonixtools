@@ -32,13 +32,16 @@ echo "$hdr" | grep -qiE "^server: .*[0-9]" && bad "server version exposed" || ok
 asset="$(curl "${args[@]}" "$BASE/" | grep -o '/_next/static/[^"]*\.js' | head -1)"
 curl "${args[@]}" -D - -o /dev/null -H 'Accept-Encoding: gzip' "$BASE$asset" | grep -qi "immutable" && ok "static assets cached immutably" || bad "static asset caching"
 
-# Pages keep the strict policy: scripts only from this site (ads run in the isolated frame).
-echo "$hdr" | grep -i "^content-security-policy:" | grep -q "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';" && ok "pages keep the strict CSP" || bad "page CSP changed"
+# Pages keep the strict policy: scripts only from this site, never eval or blanket https/wildcard permissions.
+csp="$(echo "$hdr" | grep -i "^content-security-policy:")"
+if echo "$csp" | grep -Eq "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'( https://n6wxm.com https://nap5k.com)?;" && ! echo "$csp" | grep -Eq "'unsafe-eval'|script-src[^;]* https:( |;)|frame-src[^;]* https:( |;)|\*"; then ok "pages keep the strict CSP"; else bad "page CSP changed or broadened"; fi
+# Monetag's stage-1 hosts are approved for staging only (STAGING=1 is set by staging-web.sh).
+if echo "$csp" | grep -q "n6wxm.com"; then [ "${STAGING:-0}" = "1" ] && echo "  NOTE  staging build: page CSP includes the Monetag stage-1 hosts" || bad "Monetag CSP present in a production build"; fi
 
 echo "Advertising frame and PWA"
 check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"
 afh="$(curl "${args[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
-echo "$afh" | grep -i "^content-security-policy:" | grep -q "frame-ancestors 'self'" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
+echo "$afh" | grep -i "^content-security-policy:" | grep -Eq "frame-ancestors 'self'( https://[A-Za-z0-9.:-]+)?;" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
 curl "${args[@]}" "$BASE/ad-frame.html" | grep -q "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" && ok "ad frame contains the publisher units" || bad "ad frame units"
 check 200 "GET /manifest.webmanifest" "$BASE/manifest.webmanifest"
 curl "${args[@]}" -D - -o /dev/null "$BASE/manifest.webmanifest" | grep -qi "^content-type: application/manifest+json" && ok "manifest content type" || bad "manifest content type"
