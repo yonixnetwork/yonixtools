@@ -18,6 +18,8 @@ for (const [name, path] of [["home", "/"], ["tool page", "/image-compressor/"], 
 
 test("open drawer and install invitation have no violations", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
+  // Measure the settled UI, not the 0.2 s slide/fade-in (axe would sample half-transparent text).
+  await page.emulateMedia({ reducedMotion: "reduce" });
   await page.goto("/?installDelay=0");
   await page.locator("html[data-pwa-ready]").waitFor({ state: "attached" });
   await page.evaluate(() => {
@@ -30,5 +32,15 @@ test("open drawer and install invitation have no violations", async ({ page }) =
   expect(await audit(page)).toEqual([]);
   await page.getByRole("button", { name: "Open menu" }).click();
   await expect(page.locator("#tools-drawer")).toBeVisible();
+  await page.waitForTimeout(300);
   expect(await audit(page)).toEqual([]);
 });
+
+for (const path of ["/", "/image-compressor/", "/instagram-downloader/"]) {
+  test(`dark theme ${path} has no WCAG A/AA violations`, async ({ page }) => {
+    await page.emulateMedia({ colorScheme: "dark", reducedMotion: "reduce" });
+    await page.goto(path);
+    await page.waitForTimeout(500);
+    expect(await audit(page)).toEqual([]);
+  });
+}
