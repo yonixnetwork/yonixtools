@@ -94,7 +94,9 @@ case "${1:-}" in
   up)
     preflight || { echo "Preflight failed: nothing started."; exit 1; }
     [ -f "$ST/urls" ] || { echo "Run 'tunnels' first."; exit 1; }
-    . "./$ST/urls"
+    # Read the two URLs as data (never execute the state file) and re-validate them.
+    SITE="$(sed -n 's/^SITE=//p' "$ST/urls")"; ADS="$(sed -n 's/^ADS=//p' "$ST/urls")"
+    for u in "$SITE" "$ADS"; do printf '%s' "$u" | grep -Eq '^https://[a-z0-9-]+\.trycloudflare\.com$' || { echo "bad tunnel URL in $ST/urls: '$u'"; exit 1; }; done
     if [ ! -f "$ST/auth" ]; then
       pw="$(openssl rand -base64 24 | tr -dc 'A-Za-z0-9' | head -c 24)"
       ( umask 077; printf 'staging:%s\n' "$pw" > "$ST/auth" )
