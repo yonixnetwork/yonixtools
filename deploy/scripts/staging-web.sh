@@ -93,6 +93,12 @@ case "${1:-}" in
     ;;
   up)
     preflight || { echo "Preflight failed: nothing started."; exit 1; }
+    # Exact, clean code only: refuse a dirty checkout or a different commit than requested.
+    [ -z "$(git status --porcelain --untracked-files=no)" ] || { echo "Working tree has changes: refusing (git status)."; exit 1; }
+    head="$(git rev-parse HEAD)"
+    if [ -n "${EXPECT_COMMIT:-}" ]; then case "$head" in "$EXPECT_COMMIT"*) ok "commit $EXPECT_COMMIT (clean tree)";; *) echo "HEAD is ${head:0:7}, expected $EXPECT_COMMIT: refusing."; exit 1;; esac; else note "commit ${head:0:7} (set EXPECT_COMMIT to enforce)"; fi
+    # Production fingerprint before: container ids + start times must be identical afterwards.
+    prod_before="$(docker ps -a --filter 'name=^yonixtools-(web|downloader)-1$' --format '{{.Names}}' | sort | xargs -r docker inspect -f '{{.Name}} {{.Id}} {{.State.StartedAt}} {{.RestartCount}}')"
     [ -f "$ST/urls" ] || { echo "Run 'tunnels' first."; exit 1; }
     # Read the two URLs as data (never execute the state file) and re-validate them.
     SITE="$(sed -n 's/^SITE=//p' "$ST/urls")"; ADS="$(sed -n 's/^ADS=//p' "$ST/urls")"
@@ -134,8 +140,22 @@ case "${1:-}" in
     [ "$(code "http://127.0.0.1:$ADS_PORT/")" = 404 ] && ok "ad-frame origin serves nothing else" || bad "ad-frame origin exposes the site"
     [ "$(code "http://127.0.0.1:$ADS_PORT/ad-frame.html")" = 200 ] && ok "ad frame served" || bad "ad frame"
     curl -s --noproxy '*' -D - -o /dev/null "http://127.0.0.1:$SITE_PORT/" | grep -qi '^x-robots-tag: noindex' && ok "noindex header" || bad "noindex header"
+    echo "Isolation checks"
+    for c in "$P-web" "$P-downloader" "$P-proxy"; do
+      nets="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$c")"
+      case " $nets" in *" yonixtools_stack "*) bad "$c is on the production network ($nets)";; *) ok "$c networks: $nets";; esac
+    done
+    if [ "$BACKEND" = test ]; then
+      [ "$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$P-downloader")" = "$NET_INT " ] && ok "staging backend: internal network only (no internet, no production)" || bad "staging backend has extra networks"
+      [ "$(docker inspect -f '{{range .Mounts}}{{.Destination}} {{end}}' "$P-downloader")" = "/stg/fake_worker.py " ] && ok "staging backend: no volumes, no production .env (only the test worker mounted)" || bad "staging backend mounts"
+      title="$(curl -s --noproxy '*' -u "$(cat "$ST/auth")" -H 'Content-Type: application/json' -d '{"url":"https://www.tiktok.com/@creator/video/7350000000000000001"}' "http://127.0.0.1:$SITE_PORT/api/v1/extract" | sed -n 's/.*"title": *"\([^"]*\)".*/\1/p')"
+      [ "$title" = "Test clip" ] && ok "downloader answers from the staging test backend (simulated 'Test clip')" || bad "downloader test extract returned '${title:-nothing}'"
+    fi
+    prod_after="$(docker ps -a --filter 'name=^yonixtools-(web|downloader)-1$' --format '{{.Names}}' | sort | xargs -r docker inspect -f '{{.Name}} {{.Id}} {{.State.StartedAt}} {{.RestartCount}}')"
+    [ "$prod_before" = "$prod_after" ] && ok "production containers unchanged (same ids, start times, restarts)" || bad "production containers changed!"
     STAGING=1 SITE_HOST=yonixtools.com CURL_AUTH="$(cat "$ST/auth")" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:$SITE_PORT" || true
     echo
+    [ "${FAILED:-0}" = 0 ] || { echo; echo "SOME CHECKS FAILED: do not use this staging; run 'down' and send me the output."; exit 1; }
     echo "Staging ready ($(git rev-parse --short HEAD); backend $BACKEND; Monetag ${MONETAG:-off})"
     echo "  Site:      $SITE/"
     echo "  Ad test (admin): $SITE/admin/ads/"
