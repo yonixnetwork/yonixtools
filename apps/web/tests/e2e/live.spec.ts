@@ -1,5 +1,6 @@
 import { statSync } from "node:fs";
 import { expect, test, type Page } from "@playwright/test";
+import { blockExternal } from "./helpers";
 
 // REAL platforms, REAL worker (no fake): the full journey a visitor makes.
 // Runs only with E2E_LIVE=1 (GitHub Actions "live browser" job). Samples are
@@ -7,6 +8,7 @@ import { expect, test, type Page } from "@playwright/test";
 test.describe.configure({ mode: "serial", timeout: 180_000 });
 
 test.beforeEach(async ({ page }) => {
+  await blockExternal(page); // the browser never needs external hosts (the server fetches the platforms)
   const goto = page.goto.bind(page);
   page.goto = async (url, opts) => {
     const r = await goto(url, opts);

@@ -105,7 +105,7 @@ export default function Home() {
       </section>
 
       <div className="container">
-        <AdSlot unit="native" className="ad-native" />
+        <AdSlot unit="native" className="ad-native ad-wide-only" />
       </div>
 
       <section className="section" aria-labelledby="popular-h">

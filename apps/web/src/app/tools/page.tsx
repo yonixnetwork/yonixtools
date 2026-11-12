@@ -20,8 +20,8 @@ export default function ToolsPage() {
         <p>Search by what you want to do. Synonyms and small typos are understood.</p>
       </header>
       <ToolsExplorer />
-      <AdSlot unit="native" className="ad-native" />
-      <MonetagZones page={{ kind: "tools" }} />
+      <AdSlot unit="native" className="ad-native ad-wide-only" />
+      <MonetagZones page={{ kind: "tools" }} narrowOnly />
     </div>
   );
 }

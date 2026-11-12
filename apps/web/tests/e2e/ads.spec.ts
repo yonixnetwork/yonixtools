@@ -41,7 +41,7 @@ atOptions = {
 // No real ad traffic from tests: by default the network's scripts load and render nothing
 // (a slot then stays "loading" for ~8 s before collapsing). Tests override this where needed.
 test.beforeEach(async ({ page }) => {
-  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
+  for (const h of ["https://bellnewyork.org/**", "https://nap5k.com/**", "https://n6wxm.com/**"]) await page.route(h, (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
 });
 
 async function slots(page: Page) {
@@ -74,7 +74,7 @@ test.describe("desktop placements", () => {
     for (const path of ["/image-compressor/", "/pdf-merger/", "/qr-code-generator/", "/json-formatter/", "/loan-calculator/", "/color-converter/", "/video-info/", "/random-number-generator/", "/meta-tag-generator/", "/word-counter/"]) {
       await page.goto(path);
       const s = await slots(page);
-      expect(s.map((x) => x.unit), path).toEqual(["banner300x250", "native", "banner728x90", "monetagPush"]);
+      expect(s.map((x) => x.unit), path).toEqual(["banner300x250", "monetagPush", "native", "banner728x90"]);
       expect(new Set(s.map((x) => x.unit)).size, path).toBe(s.length); // never the same unit twice
       expect(s.every((x) => x.label === "Advertisement"), path).toBe(true);
       // The first ad comes after the tool surface, never inside it.
@@ -99,14 +99,14 @@ test.describe("desktop placements", () => {
 test.describe("phone placements", () => {
   test.use({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
 
-  test("phones get 320×50 (never a squeezed 728×90) and at most two ads on a tool page", async ({ page }) => {
+  test("phones get 320×50 (never a squeezed 728×90), no native (its 4 tiles stack), at most two ads on a tool page", async ({ page }) => {
+    const visible = async () => (await slots(page)).filter((x) => x.visible).map((x) => x.unit);
     await page.goto("/");
-    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner320x50", "native"]);
+    expect(await visible()).toEqual(["banner320x50"]);
     await page.goto("/image-compressor/");
-    const s = (await slots(page)).filter((x) => x.visible);
-    expect(s.map((x) => x.unit)).toEqual(["banner300x250", "native"]); // leaderboard and In-Page Push are desktop-only on tool pages
+    expect(await visible()).toEqual(["banner300x250"]); // leaderboard, native and In-Page Push are wide-screen only on tool pages
     await page.goto("/tiktok-downloader/");
-    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner320x50", "native", "banner300x250"]);
+    expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
     expect(overflow).toBeLessThanOrEqual(0);
   });

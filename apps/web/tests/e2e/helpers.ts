@@ -44,3 +44,9 @@ export function makePng(w: number, h: number): Buffer {
 
 /** Requests/console messages from the isolated ad frames or the ad network: third-party, not the app's. */
 export const isAdTraffic = (url: string) => /bellnewyork\.org|\/ad-frame\.html|n6wxm\.com|nap5k\.com/.test(url);
+
+/** Page-level lock (works in every browser, incl. WebKit): abort every request that isn't local.
+ *  Tests that want an ad-network stub register their own route AFTER this one (later routes win). */
+export async function blockExternal(page: import("@playwright/test").Page) {
+  await page.route(/^https?:\/\/(?!localhost[:/]|127\.0\.0\.1[:/])/, (r) => r.abort("blockedbyclient"));
+}

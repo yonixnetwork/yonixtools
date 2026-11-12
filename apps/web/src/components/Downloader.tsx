@@ -3,6 +3,7 @@ import { Check, CircleAlert, CircleCheck, ClipboardPaste, Clock, Copy, Download,
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { PlatformIcon } from "./Icon";
 import { detectUrl, PLATFORMS } from "@/lib/downloader/detect";
+import { DownloadPanel } from "./DownloadPanel";
 import { createJob, createZipJob, describeMedia, DownloaderError, extractMedia, getJob, jobReady, resolveDownloadUrl, type ExtractResult, type MediaFormat, type MediaItem } from "@/lib/downloader/client";
 import { startBrowserDownload } from "@/lib/downloader/browser-download";
 import { readPreferredFormat, savePreferredFormat } from "@/lib/downloader/history";
@@ -20,7 +21,7 @@ type State =
  * One quality the user clicked. Transfers outlive the result card: "Download
  * another video" never cancels them, they finish and start in the background.
  */
-interface Transfer {
+export interface Transfer {
   key: string; // `${resultId}:${itemIndex}:${formatId}` or `${resultId}:zip:${items}`
   resultId: number;
   title: string;
@@ -69,6 +70,8 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
   const [copied, setCopied] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const unmounted = useRef(false);
+  const cancelled = useRef(new Set<string>()); // transfers the visitor cancelled
+  const [panelKey, setPanelKey] = useState<string | null>(null); // transfer shown in the download panel
   const resultSeq = useRef(0);
   const detection = useMemo(() => (value.trim() ? detectUrl(value) : null), [value]);
   const api = useMemo(() => ({ baseUrl: site.downloaderApiUrl }), []);
@@ -147,13 +150,15 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
     try {
       let j = t.zipItems ? await createZipJob(api, t.url, t.zipItems) : await createJob(api, t.url, t.itemIndex, t.formatId);
       const started = Date.now();
-      while (!unmounted.current && (j.status === "queued" || j.status === "running")) {
+      while (!unmounted.current && !cancelled.current.has(t.key) && (j.status === "queued" || j.status === "running")) {
         patch(t.key, { phase: jobPhase(j), progress: j.progress });
         if (Date.now() - started > POLL_LIMIT_MS) throw new DownloaderError("timeout", "The download took too long and was stopped.");
         await new Promise((r) => setTimeout(r, POLL_MS));
+        if (cancelled.current.has(t.key)) break;
         j = await getJob(api, j.id);
       }
       if (unmounted.current) return;
+      if (cancelled.current.has(t.key)) return patch(t.key, { phase: "cancelled" }); // never start the file
       if (!jobReady(j)) {
         patch(t.key, { phase: "failed", message: j.error?.message || (j.status === "expired" ? "The file expired. Choose the quality again." : "The download failed. Nothing was saved.") });
         return;
@@ -163,13 +168,22 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
       const outcome = await startBrowserDownload(href);
       patch(t.key, { phase: outcome });
     } catch (err) {
+      if (cancelled.current.has(t.key)) return patch(t.key, { phase: "cancelled" });
       patch(t.key, { phase: "failed", message: err instanceof Error && err.message ? err.message : "The download failed. Nothing was saved." });
     }
   };
 
   const start = (t: Transfer) => {
+    cancelled.current.delete(t.key);
     setTransfers((ts) => [t, ...ts.filter((x) => x.key !== t.key)].slice(0, 16));
+    setPanelKey(t.key); // show progress (and, when ads are on, one labelled ad) while the file is prepared
     void run(t);
+  };
+
+  /** Cancel a download that is still being prepared: stop waiting and never start the file. */
+  const cancel = (key: string) => {
+    cancelled.current.add(key);
+    patch(key, { phase: "cancelled" });
   };
 
   /** One click on a quality (or an image's Download button) starts the download. */
@@ -211,6 +225,10 @@ export function Downloader({ expectedPlatform, autoFocus }: { expectedPlatform?:
 
   return (
     <div className="downloader" id="downloader" data-ytx-media-input="">
+      {panelKey && (() => {
+        const t = transfers.find((x) => x.key === panelKey);
+        return t ? <DownloadPanel transfer={t} onCancel={() => cancel(t.key)} onClose={() => setPanelKey(null)} /> : null;
+      })()}
       <form className="dl-form" onSubmit={submit} noValidate>
         <label htmlFor="dl-url" className="sr-only">
           Paste a {expected ? expected.name : "social media"} link
@@ -458,7 +476,7 @@ function TransferStatus({ t }: { t: Transfer }) {
 /** Download / progress / done button for one choice. */
 function ActionButton({ t, label, onClick, compact }: { t?: Transfer; label: string; onClick: () => void; compact?: boolean }) {
   const active = !!t && ACTIVE.includes(t.phase);
-  if (t && !active && t.phase !== "failed")
+  if (t && !active && t.phase !== "failed" && t.phase !== "cancelled")
     return (
       <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status">
         <CircleCheck aria-hidden /> {phaseText(t)}
@@ -581,7 +599,7 @@ function ZipButton({ result, selected, transferFor, chooseZip }: { result: Resul
   const items = [...selected].sort((a, b) => a - b);
   const t = items.length >= 2 ? transferFor(result, `zip:${items.join(",")}`) : undefined;
   const active = !!t && ACTIVE.includes(t.phase);
-  if (t && !active && t.phase !== "failed")
+  if (t && !active && t.phase !== "failed" && t.phase !== "cancelled")
     return (
       <span className="zip-status">
         <span className={`dl-done${t.phase === "started" ? " ok" : ""}`} role="status"><CircleCheck aria-hidden /> {phaseText(t)}</span>

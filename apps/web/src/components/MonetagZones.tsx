@@ -6,7 +6,7 @@ import { monetagAllowed, type MonetagPage } from "@/lib/ads/monetag-policy";
  * origin (like the Adsterra units). Renders nothing on media-URL pages (central rule)
  * or when Monetag/ads are off.
  */
-export function MonetagZones({ page, desktopOnly }: { page: MonetagPage; desktopOnly?: boolean }) {
+export function MonetagZones({ page, desktopOnly, narrowOnly }: { page: MonetagPage; desktopOnly?: boolean; narrowOnly?: boolean }) {
   if (!monetagAllowed(page)) return null;
-  return <AdSlot unit="monetagPush" className={`ad-monetagPush${desktopOnly ? " ad-desktop-only" : ""}`} />;
+  return <AdSlot unit="monetagPush" className={`ad-monetagPush${desktopOnly ? " ad-desktop-only" : ""}${narrowOnly ? " ad-narrow-only" : ""}`} />;
 }

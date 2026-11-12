@@ -45,7 +45,7 @@ test.describe("desktop", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
   test("allowed utility pages: In-Page Push loads once, inside the ad-origin frame, never in the page", async ({ page }) => {
-    const allowed = ["/image-compressor/", "/pdf-merger/", "/json-formatter/", "/tools/", "/category/pdf-tools/"];
+    const allowed = ["/image-compressor/", "/pdf-merger/", "/json-formatter/"]; // listing pages show it on phones only (tested below)
     for (const path of allowed) {
       await page.goto(path);
       const slot = pushSlot(page);
@@ -62,8 +62,7 @@ test.describe("desktop", () => {
   test("Vignette never loads on the site (an overlay can't be isolated)", async ({ page }) => {
     for (const path of ["/image-compressor/", "/tools/", "/category/pdf-tools/"]) {
       await page.goto(path);
-      for (const a of await page.locator("aside.ad-slot").all()) await a.scrollIntoViewIfNeeded().catch(() => {});
-      await page.waitForTimeout(1500);
+      for (const y of [0.5, 1]) { await page.evaluate((f) => window.scrollTo(0, document.body.scrollHeight * f), y); await page.waitForTimeout(700); }
     }
     expect(requests.filter((r) => r.url.includes("vignette"))).toEqual([]);
     expect(requests.filter((r) => r.inPage)).toEqual([]);

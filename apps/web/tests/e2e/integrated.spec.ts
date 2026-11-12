@@ -1,10 +1,12 @@
 import { expect, test } from "@playwright/test";
+import { blockExternal } from "./helpers";
 
 // Frontend build wired to the real downloader API (fake worker for the platform step),
 // served same-origin under /api exactly like production.
 const API = "/api/";
 
 test.beforeEach(async ({ page }) => {
+  await blockExternal(page); // no ad network or other external host, in any browser
   const goto = page.goto.bind(page);
   page.goto = async (url, opts) => {
     const r = await goto(url, opts);
@@ -156,4 +158,80 @@ test("Reddit and Vimeo links are refused with the reason, without calling the AP
   await page.getByRole("button", { name: "Download", exact: true }).click();
   await expect(page.locator(".notice[role=alert]")).toContainText("Reddit downloads aren't available");
   expect(apiCalls).toEqual([]);
+});
+
+// ── Download panel (owner request 12 Nov 2026): progress while the file is prepared, one
+//    labelled ad, Cancel / Hide; the download never waits for the ad. ─────────────────────
+const AD_300 = "https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40";
+const creative = `document.write('<a href="https://example.com"><img width="300" height="250" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22/%3E"></a>')`;
+
+test("download panel: progress while preparing, a labelled ad, then 'Download started' until closed", async ({ page }) => {
+  await page.route(AD_300, (r) => r.fulfill({ contentType: "application/javascript", body: creative }));
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000101");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const card = page.locator(".media-result");
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 20_000 }),
+    card.locator(".format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
+  ]);
+  const panel = page.getByTestId("download-panel");
+  await expect(panel).toBeVisible();
+  expect(download.suggestedFilename()).toMatch(/\.mp4$/);
+  await expect(panel).toHaveAttribute("data-phase", /started|requested/, { timeout: 20_000 });
+  await expect(panel).toContainText("Download started");
+  const ad = panel.locator('aside[data-ad-unit="banner300x250"]');
+  await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
+  await expect(ad.locator(".ad-label")).toHaveText("Advertisement");
+  await page.waitForTimeout(1500);
+  await expect(panel).toBeVisible(); // stays until the visitor closes it
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(panel).toHaveCount(0);
+});
+
+test("download panel: the download never waits for the ad (ad script hangs)", async ({ page }) => {
+  await page.route(AD_300, () => { /* never answers */ });
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000102");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const t0 = Date.now();
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15_000 }),
+    page.locator(".media-result .format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/\.mp4$/);
+  expect(Date.now() - t0).toBeLessThan(10_000);
+});
+
+test("download panel: Cancel stops a download that is still being prepared; no file is saved", async ({ page }) => {
+  let downloads = 0;
+  page.on("download", () => downloads++);
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000103?slowjob");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const item = page.locator(".media-result .format-item").nth(1);
+  await item.getByRole("button", { name: /Download 720p/ }).click();
+  const panel = page.getByTestId("download-panel");
+  await expect(panel).toContainText("Preparing your download");
+  await panel.getByRole("button", { name: "Cancel download" }).click();
+  await expect(panel).toContainText("Download cancelled");
+  await page.waitForTimeout(3000);
+  expect(downloads).toBe(0);
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(item.getByRole("button", { name: /Download 720p/ })).toBeEnabled(); // can start again
+});
+
+test("download panel: Hide keeps the download going", async ({ page }) => {
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000104");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 20_000 }),
+    (async () => {
+      await page.locator(".media-result .format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click();
+      await page.getByTestId("download-panel").getByRole("button", { name: /^(Hide|Close)$/ }).click();
+    })(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/\.mp4$/);
+  await expect(page.getByTestId("download-panel")).toHaveCount(0);
 });

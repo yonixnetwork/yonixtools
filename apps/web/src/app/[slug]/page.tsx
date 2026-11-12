@@ -107,7 +107,8 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ol>
             </section>
-            {ads && isDownloader && <AdSlot unit="native" className="ad-native" />}
+            {ads && isDownloader && <AdSlot unit="native" className="ad-native ad-wide-only" />}
+            {ads && <MonetagZones page={{ kind: "tool", tool }} desktopOnly />}
             <section aria-labelledby="feat-h">
               <h2 id="feat-h">Features</h2>
               <ul>
@@ -116,7 +117,7 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ul>
             </section>
-            {ads && !isDownloader && <AdSlot unit="native" className="ad-native" />}
+            {ads && !isDownloader && <AdSlot unit="native" className="ad-native ad-wide-only" />}
             <section aria-labelledby="faq-h">
               <h2 id="faq-h">Frequently asked questions</h2>
               <FaqList faqs={tool.content.faqs} />
@@ -143,7 +144,6 @@ export default async function ToolPage({ params }: Props) {
           </aside>
         </div>
         {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
-        {ads && <MonetagZones page={{ kind: "tool", tool }} desktopOnly />}
       </div>
     </>
   );

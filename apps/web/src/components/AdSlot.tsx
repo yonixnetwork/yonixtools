@@ -20,6 +20,8 @@ type Props = {
   unit?: AdUnitId;
   responsive?: "leaderboard";
   className?: string;
+  /** Allow a second instance of a unit (download panel only: its own isolated frame). */
+  duplicate?: boolean;
 };
 
 const mounted = new Set<AdUnitId>(); // unit ids currently on the page
@@ -30,7 +32,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
   return null;
 }
 
-export function AdSlot({ unit, responsive, className }: Props) {
+export function AdSlot({ unit, responsive, className, duplicate }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -45,13 +47,14 @@ export function AdSlot({ unit, responsive, className }: Props) {
     if (!ADS_ENABLED) return;
     const u = pick(unit, responsive);
     if (!u) return setDropped(true);
+    if (duplicate) return setChosen(u);
     if (mounted.has(u)) return setDropped(true); // already shown on this page: never duplicate a unit
     mounted.add(u);
     setChosen(u);
     return () => {
       mounted.delete(u);
     };
-  }, [unit, responsive]);
+  }, [unit, responsive, duplicate]);
 
   // Lazy: start loading when the slot is within ~300px of the viewport.
   useEffect(() => {

@@ -11,7 +11,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test --trace off",
     "build:test": "NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=on npm run build",
-    "build:integrated": "node scripts/build-ad-frame.mjs && node scripts/build-admin.mjs && NEXT_PUBLIC_ADS=off NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
+    "build:integrated": "node scripts/build-ad-frame.mjs && node scripts/build-admin.mjs && NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
     "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated --project=integrated-mobile"
   },
   "dependencies": {

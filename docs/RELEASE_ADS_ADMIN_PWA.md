@@ -158,3 +158,22 @@ Use the staging runbook and `/admin/ads/` → Copy report.
 | Install: card after ~12 s → native prompt (Chrome/Edge) or guide (iOS); "Not now" remembered; nothing once installed | | | | |
 | Offline: visited pages open in airplane mode | | | | |
 | With an ad blocker: no errors, tools work, no empty boxes | | | | |
+
+
+## 9. Update 12 Nov 2026: staging results, ad spacing, download panel
+
+**Staging (real phone, Android Chrome, temporary trycloudflare addresses):**
+- **Adsterra:** all four units (320×50, 300×250, 728×90, native) showed **real creatives** through the isolated ad origin. The report showed `top=blocked`, so the ad code couldn't reach the page, and screenshots confirm the images.
+- **Monetag** In-Page Push and Vignette: the scripts loaded with no errors, but **no creative**. The zones are registered for yonixtools.com, so the next test is on `ads.yonixtools.com`.
+
+**Ad spacing (owner rule): never two ads in a row.**
+- The native unit is wide-screen only. On phones it stacks its 4 tiles into one ~1,100 px column of ads.
+- Listing pages show one slot per screen size: native on wide screens, In-Page Push on phones.
+- On tool pages, In-Page Push sits between "How to use" and "Features".
+- `ad-spacing.spec.ts` checks every page type on phone and desktop: at least 80 characters of real content between any two visible ads, and no more than 3 ads on a phone.
+
+**Download panel (owner request; replaces the earlier "no ad on Download" rule).**
+- **When it appears:** after choosing a quality, a non-blocking panel shows the real preparation progress and one labelled 300×250 ad from the isolated origin.
+- **Controls:** **Cancel download** stops it, so no file is started. **Hide** keeps it going. After the download starts, the panel stays with **Close**.
+- **No waiting:** nothing waits for the ad. A test with a hanging ad script still downloads immediately.
+- **Without ads:** if no ad origin is configured, the panel shows only the progress.

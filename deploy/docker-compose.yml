@@ -16,8 +16,10 @@ services:
         NEXT_PUBLIC_ADS: ${ADS:-on}
         # Ads are served only from a separate ad origin. Empty (default) = no ads at all.
         # Set AD_ORIGIN=https://ads.yonixtools.com once its DNS record + edge config are approved
-        # and in place (docs/ADS_ISOLATION_PROPOSAL.md). Monetag stays off in production builds.
+        # and in place (docs/ADS_ISOLATION_PROPOSAL.md).
         NEXT_PUBLIC_AD_ORIGIN: ${AD_ORIGIN:-}
+        # Monetag In-Page Push (in the isolated ad frame, utility pages only). Off unless MONETAG=on.
+        NEXT_PUBLIC_MONETAG: ${MONETAG:-off}
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:

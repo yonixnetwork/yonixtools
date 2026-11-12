@@ -1,7 +1,7 @@
 import type { Job } from "./client";
 
 /** What one clicked quality is doing, as shown next to it. */
-export type Phase = "queued" | "downloading" | "processing" | "starting" | "started" | "requested" | "failed";
+export type Phase = "queued" | "downloading" | "processing" | "starting" | "started" | "requested" | "failed" | "cancelled";
 export const ACTIVE_PHASES: readonly Phase[] = ["queued", "downloading", "processing", "starting"];
 
 export function phaseText(t: { phase: Phase; progress?: number }): string {
@@ -18,6 +18,8 @@ export function phaseText(t: { phase: Phase; progress?: number }): string {
       return "Download started";
     case "requested":
       return "Download requested";
+    case "cancelled":
+      return "Cancelled";
     default:
       return "Failed";
   }
