@@ -1,5 +1,7 @@
 # Staging runbook: `staging/ads-monetag` (final)
 
+> **Order and gates.** Run **only section 1** first and send me its output: it is read-only. Continue to section 2 only after I've confirmed there is enough safe space. The previous login banner showed `/` at 96.9% (about 2.7 GB free), which is below the 6 GB the build and a rollback need. `staging-web.sh` refuses to start below that. No cleanup is run by any script.
+
 **What it stages:**
 - Adsterra on a separate ad-frame origin;
 - Monetag In-Page Push on utility pages only, in the same isolated ad-origin frames (Vignette disabled);
@@ -48,13 +50,17 @@ bash /tmp/disk-report.sh
 
 **Never** run `docker volume prune`, `docker system prune -a` or `docker image prune -a` (they could remove YonixAlpha's images or data), and never delete files under `/var/lib/docker` or `/opt` by hand.
 
-## 2. Separate staging folder
+## 2. Separate staging folder, exact commit
 
 ```bash
+cd /opt/yonixtools && git fetch origin staging/ads-monetag
 git worktree add /opt/yonixtools-staging origin/staging/ads-monetag
 cd /opt/yonixtools-staging
+git rev-parse --short HEAD      # must equal the commit in Claude's report
+git status --porcelain          # must print nothing
 ```
-Creates a second checkout. Production keeps running from `/opt/yonixtools` as it is.
+- Creates a second checkout. Production keeps running from `/opt/yonixtools` unchanged.
+- If `/opt/yonixtools-staging` already exists, use `cd /opt/yonixtools-staging && git fetch origin && git checkout --detach origin/staging/ads-monetag` instead.
 
 ## 3. Preflight (read-only)
 
@@ -84,8 +90,9 @@ Starts two small containers, `yonixtools-stg-tunnel-site` and `yonixtools-stg-tu
 ## 5. Build and start
 
 ```bash
-MONETAG=on bash deploy/scripts/staging-web.sh up
+EXPECT_COMMIT=<commit from Claude's report> MONETAG=on bash deploy/scripts/staging-web.sh up
 ```
+Refuses to build if the checkout has changes or isn't exactly that commit.
 
 **1. Generates a password.** Random, 24 characters, saved in `.staging/auth` (mode 600); only its hash goes to the proxy.
 
@@ -117,7 +124,12 @@ MONETAG=on bash deploy/scripts/staging-web.sh up
   - noindex header on every response, and `robots.txt` = `Disallow: /`.
 - **ad-frame origin (8093):** serves `/ad-frame.html` and nothing else (404).
 
-**7. Verifies the setup.**
+**7. Verifies the setup and fails loudly** (exit 1, "SOME CHECKS FAILED") if anything below is wrong.
+- **Isolation, proven on the server:**
+  - no staging container is on production's `yonixtools_stack` network;
+  - the staging backend is on the internal (no-internet) network only, with nothing mounted except the test worker (no volumes, no production `.env`);
+  - a sample extraction returns the simulated "Test clip", so the downloader answers from the staging backend;
+  - production's web and downloader containers have the same IDs, start times and restart counts before and after.
 - **Gatekeeper checks:** 401 without the password, 200 with it, diagnostics and API locked, the ad origin serving only the frame, the noindex header.
 - **Full smoke test through the password**, using the staging rules:
   - `robots.txt` must block everything;
