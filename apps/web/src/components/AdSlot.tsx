@@ -1,13 +1,14 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
-import { AD_ISOLATION, AD_ORIGIN, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, NATIVE_RESERVE_PX, SANDBOX, type AdDiag, type AdIsolation, type AdUnitId } from "@/lib/ads/config";
+import { AD_ORIGIN, AD_SANDBOX, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, type AdUnitId } from "@/lib/ads/config";
 
 /**
  * One advertising placement.
  *
  * - `unit` picks a fixed unit; `responsive="leaderboard"` picks 728×90 on wide
  *   screens and 320×50 on phones (never a stretched banner).
- * - Loads only when the slot comes near the viewport, inside its own iframe.
+ * - Loads only when the slot comes near the viewport, inside its own iframe on the
+ *   separate ad origin (see lib/ads/config.ts). Renders nothing if no ad origin is set.
  *   Banners reserve their exact size; native reserves a small strip and grows
  *   to the creative's height. The "Advertisement" label appears only once a
  *   real creative has rendered.
@@ -19,11 +20,6 @@ type Props = {
   unit?: AdUnitId;
   responsive?: "leaderboard";
   className?: string;
-  isolation?: AdIsolation;
-  /** Diagnostics page only: show unit/state, never collapse, allow the same unit twice. */
-  debug?: boolean;
-  /** Diagnostics page only: receives each state/diagnostic report from the frame. */
-  onReport?: (r: { unit: AdUnitId; isolation: AdIsolation; state: string; height?: number; diag?: AdDiag }) => void;
 };
 
 const mounted = new Set<AdUnitId>(); // unit ids currently on the page
@@ -34,7 +30,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
   return null;
 }
 
-export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, debug, onReport }: Props) {
+export function AdSlot({ unit, responsive, className }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -49,14 +45,13 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
     if (!ADS_ENABLED) return;
     const u = pick(unit, responsive);
     if (!u) return setDropped(true);
-    if (debug) return setChosen(u);
     if (mounted.has(u)) return setDropped(true); // already shown on this page: never duplicate a unit
     mounted.add(u);
     setChosen(u);
     return () => {
       mounted.delete(u);
     };
-  }, [unit, responsive, debug]);
+  }, [unit, responsive]);
 
   // Lazy: start loading when the slot is within ~300px of the viewport.
   useEffect(() => {
@@ -67,20 +62,17 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
     return () => io.disconnect();
   }, [chosen]);
 
-  // Messages from this slot's own frame only (checked by window and origin).
-  const report = useRef(onReport);
-  report.current = onReport;
+  // Messages from this slot's own frame only: the sending window must be this slot's
+  // iframe AND the origin must be the configured ad origin. Only state and height are used.
   useEffect(() => {
     if (!near || !chosen) return;
     setState("loading");
-    const expected = isolation === "sandboxed" ? "null" : AD_ORIGIN || location.origin;
     const onMsg = (e: MessageEvent) => {
-      const d = e.data as { ytxAd?: string; state?: string; height?: number; diag?: AdDiag };
-      if (!d || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow || e.origin !== expected) return;
-      report.current?.({ unit: chosen, isolation, state: d.state ?? "", height: d.height, diag: d.diag });
+      const d = e.data as { ytxAd?: unknown; state?: unknown; height?: unknown };
+      if (!d || typeof d !== "object" || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow || e.origin !== AD_ORIGIN) return;
       if (d.state === "filled") {
         setState("filled");
-        if (chosen === "native" && typeof d.height === "number" && d.height > 0) setHeight(Math.min(Math.max(d.height, 60), 1200));
+        if (AD_UNITS[chosen].fluid && typeof d.height === "number" && d.height > 0) setHeight(Math.min(Math.max(Math.round(d.height), 40), 1200));
       } else if (d.state === "empty") setState((s) => (s === "filled" ? s : "empty"));
     };
     window.addEventListener("message", onMsg);
@@ -90,14 +82,14 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
       window.removeEventListener("message", onMsg);
       window.clearTimeout(t);
     };
-  }, [near, slotId, chosen, isolation]);
+  }, [near, slotId, chosen]);
 
   // An empty slot collapses without moving what the visitor is looking at: right away when
   // it's off screen, otherwise once it scrolls out of view or on the next tap/key press
   // (layout changes right after input don't count as layout shift). Until then it's blank, unlabeled.
   const [gone, setGone] = useState(false);
   useEffect(() => {
-    if (state !== "empty" || debug || !ref.current) return;
+    if (state !== "empty" || !ref.current) return;
     const el = ref.current;
     const collapse = () => setGone(true);
     const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.every((e) => !e.isIntersecting) && collapse()) : null;
@@ -111,7 +103,7 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
       window.removeEventListener("pointerdown", collapse, opts);
       window.removeEventListener("keydown", collapse, opts);
     };
-  }, [state, debug]);
+  }, [state]);
 
   if (!ADS_ENABLED || dropped || gone) return null;
   if (!chosen) {
@@ -120,25 +112,25 @@ export function AdSlot({ unit, responsive, className, isolation = AD_ISOLATION, 
     return (
       <aside ref={ref} className={`ad-slot ad-reserve${responsive ? " ad-leaderboard" : ""}${unit ? ` ad-${unit}` : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
         <span className="ad-label">Advertisement</span>
-        <div className="ad-box" style={fixed ? { width: unit === "native" ? "100%" : fixed.width, maxWidth: "100%", height: unit === "native" ? NATIVE_RESERVE_PX : fixed.height } : undefined} />
+        <div className="ad-box" style={fixed ? { width: fixed.fluid ? "100%" : fixed.width, maxWidth: "100%", height: fixed.height } : undefined} />
       </aside>
     );
   }
   const u = AD_UNITS[chosen];
-  const isNative = chosen === "native";
-  const h = isNative ? (height ?? NATIVE_RESERVE_PX) : u.height;
+  const fluid = u.fluid;
+  const h = fluid ? (height ?? u.height) : u.height;
   return (
-    <aside ref={ref} className={`ad-slot ad-${chosen}${debug ? " ad-debug" : ""}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state}>
-      <span className="ad-label">{debug ? `${u.label} · ${isolation} · ${state}` : "Advertisement"}</span>
-      <div className="ad-box" style={{ width: isNative ? "100%" : u.width, maxWidth: "100%", height: h }}>
+    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state}>
+      <span className="ad-label">Advertisement</span>
+      <div className="ad-box" style={{ width: fluid ? "100%" : u.width, maxWidth: "100%", height: h }}>
         {near && (
           <iframe
             ref={frame}
             title="Advertisement"
             className="ad-frame"
-            width={isNative ? "100%" : u.width}
+            width={fluid ? "100%" : u.width}
             height={h}
-            sandbox={SANDBOX[isolation]}
+            sandbox={AD_SANDBOX}
             referrerPolicy="strict-origin-when-cross-origin"
             loading="lazy"
             scrolling="no"

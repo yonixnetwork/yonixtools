@@ -177,5 +177,8 @@ test("blocked platforms say so on their own page; help page exists", async ({ pa
   await expect(page.getByTestId("platform-status")).toHaveCount(0);
   await page.goto("/about/");
   await expect(page.locator("h1")).toHaveText("Help & About");
-  await expect(page.getByText("Files are kept for at most 15 minutes")).toBeVisible();
+  // Retention is disclosed on the Privacy page (where it legally belongs), not as a server notice elsewhere.
+  await expect(page.getByText("Files are kept for at most 15 minutes")).toHaveCount(0);
+  await page.goto("/privacy/");
+  await expect(page.getByText(/deleted automatically at most 15 minutes/)).toBeVisible();
 });

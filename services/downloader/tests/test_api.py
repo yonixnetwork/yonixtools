@@ -11,7 +11,19 @@ YT = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 def test_health(client):
     assert client.get("/healthz").json() == {"status": "ok"}
     r = client.get("/readyz")
-    assert r.status_code == 200 and r.json()["checks"] == {"tempWritable": True, "ffmpeg": True, "extractor": True}
+    # Visitors (anything not on the server itself) get the status only, no internal checks.
+    assert r.status_code == 200 and r.json() == {"status": "ok"}
+
+
+def test_readyz_details_only_for_the_server_itself(make_client, settings):
+    from fastapi.testclient import TestClient
+    from app.main import create_app
+    with TestClient(create_app(settings), client=("127.0.0.1", 50000)) as local:
+        assert local.get("/readyz").json()["checks"] == {"tempWritable": True, "ffmpeg": True, "extractor": True}
+        # The same request through the reverse proxy (it always sets X-Real-IP) gets no details.
+        assert "checks" not in local.get("/readyz", headers={"X-Real-IP": "203.0.113.9"}).json()
+        assert local.get("/internal/stats", headers={"X-Real-IP": "203.0.113.9"}).status_code == 404
+        assert local.get("/internal/stats").status_code == 200
 
 
 def test_extract_returns_public_shape(client):

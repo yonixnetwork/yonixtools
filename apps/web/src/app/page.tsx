@@ -8,7 +8,7 @@ import { JsonLd } from "@/components/JsonLd";
 import { Recommended } from "@/components/Recommended";
 import { ToolCard } from "@/components/ToolCard";
 import { PLATFORMS } from "@/lib/downloader/detect";
-import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
+import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
 import { categories, editorsPicks, getTool, popularSlugs, recentlyAdded, tools, toolsInCategory } from "@/lib/registry";
 import { toCard } from "@/lib/registry/cards";
 import { faqLd, websiteLd } from "@/lib/seo";
@@ -78,7 +78,7 @@ export default function Home() {
           <div className="section-head">
             <div>
               <h2 id="platforms-h">Supported platforms</h2>
-              <p>Checked {VERIFIED_ON} with real downloads from a cloud server. Only public content, never private posts or DRM.</p>
+              <p>Only public content, never private posts or DRM.</p>
             </div>
           </div>
           <ul className="platform-status" role="list">

@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { readFileSync } from "node:fs";
 import { isAdTraffic } from "./helpers";
 
 // The four publisher codes exactly as supplied (whitespace included).
@@ -48,12 +49,17 @@ async function slots(page: Page) {
   return page.locator("aside.ad-slot").evaluateAll((els) => els.map((e) => ({ unit: e.getAttribute("data-ad-unit"), label: e.querySelector(".ad-label")?.textContent, visible: (e as HTMLElement).offsetParent !== null })));
 }
 
-test("the ad frame serves the four publisher codes byte for byte", async ({ request }) => {
-  const html = await (await request.get("/ad-frame.html")).text();
+test("the ad frame serves the four publisher codes byte for byte (and the two Monetag zones)", async ({ request }) => {
+  const res = await request.get("http://localhost:4175/ad-frame.html");
+  const html = await res.text();
   const units = JSON.parse(html.match(/var UNITS = (\{.*\});\n\s*var q/s)![1]);
-  expect(units).toEqual(EXACT);
+  const { monetagPush, monetagVignette, ...adsterra } = units;
+  expect(adsterra).toEqual(EXACT);
+  const monetag = JSON.parse(readFileSync(new URL("../../src/lib/ads/monetag.json", import.meta.url), "utf8"));
+  expect(monetagPush).toBe(monetag.inPagePush.snippet);
+  expect(monetagVignette).toBe(monetag.vignette.snippet);
   expect(html).toContain("document.write(UNITS[unit])");
-  expect(html).not.toMatch(/popunder|smartlink|socialbar|social-bar/i); // disabled formats never loaded
+  expect(html).not.toMatch(/popunder|smartlink|socialbar|social-bar|multitag/i); // disabled formats never loaded
 });
 
 test.describe("desktop placements", () => {
@@ -68,7 +74,7 @@ test.describe("desktop placements", () => {
     for (const path of ["/image-compressor/", "/pdf-merger/", "/qr-code-generator/", "/json-formatter/", "/loan-calculator/", "/color-converter/", "/video-info/", "/random-number-generator/", "/meta-tag-generator/", "/word-counter/"]) {
       await page.goto(path);
       const s = await slots(page);
-      expect(s.map((x) => x.unit), path).toEqual(["banner300x250", "native", "banner728x90"]);
+      expect(s.map((x) => x.unit), path).toEqual(["banner300x250", "native", "banner728x90", "monetagPush"]);
       expect(new Set(s.map((x) => x.unit)).size, path).toBe(s.length); // never the same unit twice
       expect(s.every((x) => x.label === "Advertisement"), path).toBe(true);
       // The first ad comes after the tool surface, never inside it.
@@ -98,7 +104,7 @@ test.describe("phone placements", () => {
     expect((await slots(page)).map((s) => s.unit)).toEqual(["banner320x50", "native"]);
     await page.goto("/image-compressor/");
     const s = (await slots(page)).filter((x) => x.visible);
-    expect(s.map((x) => x.unit)).toEqual(["banner300x250", "native"]); // leaderboard is desktop-only on tool pages
+    expect(s.map((x) => x.unit)).toEqual(["banner300x250", "native"]); // leaderboard and In-Page Push are desktop-only on tool pages
     await page.goto("/tiktok-downloader/");
     expect((await slots(page)).map((s) => s.unit)).toEqual(["banner320x50", "native", "banner300x250"]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -109,15 +115,15 @@ test.describe("phone placements", () => {
 const CREATIVE_300 = `data:image/svg+xml,${encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="300" height="250"><rect width="300" height="250" fill="#ccc"/></svg>')}`;
 const stub = (body: string) => ({ contentType: "application/javascript", body });
 
-test("frames: same-origin sandbox without top navigation, banner size reserved, label hidden until an ad renders, lazy", async ({ page }) => {
+test("frames: loaded from the separate ad origin, no top navigation, banner size reserved, label hidden until an ad renders, lazy", async ({ page }) => {
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/image-compressor/");
   const ad = page.locator('aside[data-ad-unit="banner300x250"]');
   await ad.scrollIntoViewIfNeeded();
   const frame = ad.locator("iframe");
-  // Adsterra's code throws in an opaque-origin sandbox (measured on the live site), so frames keep the site's origin, still without allow-top-navigation.
+  // The frame keeps ITS OWN (ad) origin, which Adsterra's code needs; never allow-top-navigation.
   await expect(frame).toHaveAttribute("sandbox", "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox");
-  await expect(frame).toHaveAttribute("src", /^(https?:\/\/[^/]+)?\/ad-frame\.html\?u=banner300x250&s=/);
+  await expect(frame).toHaveAttribute("src", /^http:\/\/localhost:4175\/ad-frame\.html\?u=banner300x250&s=/);
   const box = await ad.locator(".ad-box").boundingBox();
   expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([300, 250]);
   await expect(ad).toHaveAttribute("data-ad-state", "loading");
@@ -193,15 +199,34 @@ test("plumbing (simulated): a native creative grows its slot to the creative's h
   await expect.poll(async () => Math.round((await ad.locator(".ad-box").boundingBox())!.height)).toBe(240);
 });
 
-test("/ads-check/ produces a copyable report that tells blocked scripts apart from no fill", async ({ page }) => {
-  await page.route("https://bellnewyork.org/22/**", (r) => r.abort("blockedbyclient"));
-  await page.route("https://bellnewyork.org/21/**", (r) => r.fulfill(stub("")));
+// Isolation of the separate ad origin, with a hostile stand-in for an ad script
+// (nothing contacts an ad network). The page is on :4173, the ad origin on :4175.
+test("a hostile creative can't read the pasted URL or the page, run code in it, or redirect it", async ({ page }) => {
+  const hostile = `var r = {}, P = parent;
+    function t(k, f) { try { r[k] = String(f()); } catch (e) { r[k] = "BLOCKED"; } }
+    setTimeout(function () {
+      t("url", function () { return P.document.getElementById("dl-url").value; });
+      t("dom", function () { return P.document.title; });
+      t("top", function () { return top.location.href; });
+      t("inject", function () { var s = P.document.createElement("script"); s.textContent = "location.href='https://example.org/hijack'"; P.document.body.appendChild(s); return "ran"; });
+      t("nav", function () { top.location.href = "https://example.org/topnav"; return "attempted"; });
+      t("pageStorage", function () { return localStorage.getItem("site_secret"); });
+      P.postMessage({ ytxAd: "x", state: "filled", height: 900 }, "*");
+      window.__r = r;
+    }, 1500);`;
+  await page.route("https://example.org/**", (r) => r.fulfill({ contentType: "text/html", body: "other site" }));
+  await page.route("https://bellnewyork.org/22/087c1ea1a028c67071c19090b33ca01b", (r) => r.fulfill(stub(hostile)));
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/ads-check/");
-  for (const a of await page.locator("aside.ad-slot").all()) await a.scrollIntoViewIfNeeded();
-  const report = page.getByTestId("ads-report");
-  await expect(report).toContainText("Site mode: same-origin");
-  await expect(report).toContainText("banner300x250: EMPTY: ad script blocked or unreachable", { timeout: 15_000 });
-  await expect(report).toContainText("native: EMPTY: script loaded and ran without errors, no creative returned", { timeout: 15_000 });
-  await expect(report).toContainText("cookies=ok storage=ok");
+  await page.goto("/instagram-downloader/");
+  await page.evaluate(() => { localStorage.setItem("site_secret", "s"); document.cookie = "site_cookie=c; path=/"; });
+  await page.locator("#dl-url").fill("https://www.instagram.com/p/PRIVATE-TEST/");
+  const slot = page.locator('aside[data-ad-unit="banner728x90"]');
+  await slot.scrollIntoViewIfNeeded();
+  await page.waitForTimeout(3000);
+  const frame = page.frames().find((f) => f.url().includes("u=banner728x90"))!;
+  expect(new URL(frame.url()).origin).toBe("http://localhost:4175");
+  const r = await frame.evaluate(() => (window as unknown as { __r: Record<string, string> }).__r);
+  expect(r).toEqual({ url: "BLOCKED", dom: "BLOCKED", top: "BLOCKED", inject: "BLOCKED", nav: "BLOCKED", pageStorage: "null" });
+  expect(page.url()).toBe("http://localhost:4173/instagram-downloader/");
+  await expect(page.locator("#dl-url")).toHaveValue("https://www.instagram.com/p/PRIVATE-TEST/");
 });

@@ -7,14 +7,12 @@ COPY . .
 ARG NEXT_PUBLIC_SITE_URL=https://yonixtools.com
 ARG NEXT_PUBLIC_DOWNLOADER_API_URL=/api
 ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION=
-# Advertising: ADS=off disables every ad; AD_ISOLATION=sandboxed only for comparison (Adsterra fails in it).
+# Advertising: ads render only from a separate ad origin (NEXT_PUBLIC_AD_ORIGIN); ADS=off disables every ad.
 ARG NEXT_PUBLIC_ADS=on
-ARG NEXT_PUBLIC_AD_ISOLATION=same-origin
 ARG NEXT_PUBLIC_AD_ORIGIN=
 ARG NEXT_PUBLIC_MONETAG=off
 ENV NEXT_TELEMETRY_DISABLED=1 \
     NEXT_PUBLIC_ADS=$NEXT_PUBLIC_ADS \
-    NEXT_PUBLIC_AD_ISOLATION=$NEXT_PUBLIC_AD_ISOLATION \
     NEXT_PUBLIC_AD_ORIGIN=$NEXT_PUBLIC_AD_ORIGIN \
     NEXT_PUBLIC_MONETAG=$NEXT_PUBLIC_MONETAG \
     NEXT_PUBLIC_SITE_URL=$NEXT_PUBLIC_SITE_URL \
@@ -30,9 +28,8 @@ COPY --from=deploy security-headers.conf /etc/nginx/snippets/security-headers.co
 ARG NEXT_PUBLIC_SITE_URL=https://yonixtools.com
 ARG NEXT_PUBLIC_AD_ORIGIN=
 ARG AD_FRAME_PARENT=
-ARG NEXT_PUBLIC_MONETAG=off
 COPY --from=deploy apply-build-options.sh /tmp/apply-build-options.sh
-RUN SITE_URL="$NEXT_PUBLIC_SITE_URL" AD_ORIGIN="$NEXT_PUBLIC_AD_ORIGIN" AD_FRAME_PARENT="$AD_FRAME_PARENT" MONETAG="$NEXT_PUBLIC_MONETAG" \
+RUN SITE_URL="$NEXT_PUBLIC_SITE_URL" AD_ORIGIN="$NEXT_PUBLIC_AD_ORIGIN" AD_FRAME_PARENT="$AD_FRAME_PARENT" \
     sh /tmp/apply-build-options.sh /etc/nginx/snippets/security-headers.conf /etc/nginx/conf.d/yonixtools.conf && rm /tmp/apply-build-options.sh
 COPY --from=build /app/out /usr/share/nginx/html
 EXPOSE 80

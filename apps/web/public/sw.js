@@ -67,6 +67,7 @@ self.addEventListener("fetch", (event) => {
   if (url.origin !== self.location.origin) return; // ads and other sites: untouched
   if (url.pathname.startsWith("/api/")) return; // live extraction and downloads: never cached
   if (url.pathname === "/ad-frame.html") return; // advertising: always straight from the network
+  if (url.pathname.startsWith("/admin/")) return; // admin pages: never cached (they need a password)
   if (req.mode === "navigate") return event.respondWith(page(req));
   if (url.pathname.startsWith("/_next/static/") || url.pathname.startsWith("/icons/") || url.pathname === "/favicon.svg") return event.respondWith(asset(req));
 });

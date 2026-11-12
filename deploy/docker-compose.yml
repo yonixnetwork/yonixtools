@@ -14,9 +14,10 @@ services:
         NEXT_PUBLIC_DOWNLOADER_API_URL: /api
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
         NEXT_PUBLIC_ADS: ${ADS:-on}
-        NEXT_PUBLIC_AD_ISOLATION: ${AD_ISOLATION:-same-origin}
-        # Not passed here on purpose: NEXT_PUBLIC_AD_ORIGIN and NEXT_PUBLIC_MONETAG stay off in production
-        # (staging only, via deploy/scripts/staging-web.sh) until the owner approves them.
+        # Ads are served only from a separate ad origin. Empty (default) = no ads at all.
+        # Set AD_ORIGIN=https://ads.yonixtools.com once its DNS record + edge config are approved
+        # and in place (docs/ADS_ISOLATION_PROPOSAL.md). Monetag stays off in production builds.
+        NEXT_PUBLIC_AD_ORIGIN: ${AD_ORIGIN:-}
     image: yonixtools-web:latest
     restart: unless-stopped
     depends_on:
@@ -24,6 +25,9 @@ services:
         condition: service_healthy
     ports:
       - "127.0.0.1:${WEB_PORT:-8090}:80"
+    volumes:
+      # Admin password hash for /admin/ (deploy/scripts/admin-password.sh). Missing = admin area locked.
+      - ./admin-auth:/etc/nginx/admin:ro
     read_only: true
     tmpfs:
       - /var/cache/nginx:size=64m

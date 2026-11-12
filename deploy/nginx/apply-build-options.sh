@@ -7,8 +7,8 @@
 #                     -> page CSP: frame-src 'self' <AD_ORIGIN>   (exactly one origin)
 #                     -> ad frame CSP: frame-ancestors 'self' <AD_FRAME_PARENT>
 #   AD_FRAME_PARENT   the site that embeds the ad frame (default: SITE_URL)
-#   MONETAG=on        stage-1 Monetag CSP, approved for STAGING ONLY on 8 Nov 2026:
-#                     script-src and connect-src gain exactly https://n6wxm.com https://nap5k.com
+# Monetag needs NO page-CSP change: its zones run inside the ad-origin frame, whose own
+# policy lives in web.conf (location = /ad-frame.html).
 set -eu
 page="$1"; frame="$2"
 origin_re='^https?://[A-Za-z0-9.-]+(:[0-9]{1,5})?$'
@@ -26,15 +26,8 @@ if [ -n "${AD_ORIGIN:-}" ]; then
   echo "apply-build-options: ad frame origin $AD_ORIGIN, embeddable by $parent"
 fi
 
-if [ "${MONETAG:-off}" = "on" ]; then
-  must "$page" "'wasm-unsafe-eval'; style-src"
-  sed -i "s#'wasm-unsafe-eval'; style-src#'wasm-unsafe-eval' https://n6wxm.com https://nap5k.com; style-src#" "$page"
-  sed -i "s#connect-src 'self' data: blob:;#connect-src 'self' data: blob: https://n6wxm.com https://nap5k.com;#" "$page"
-  must "$page" "'wasm-unsafe-eval' https://n6wxm.com https://nap5k.com; style-src"; must "$page" "connect-src 'self' data: blob: https://n6wxm.com https://nap5k.com;"
-  echo "apply-build-options: Monetag stage-1 CSP (staging only)"
-fi
-
-# Guard rails, whatever the options: never a blanket frame/script permission or eval.
-if grep -Eq "frame-src[^;]* https:( |;)|script-src[^;]* https:( |;)|'unsafe-eval'|script-src[^;]*\*" "$page"; then
+# Guard rails, whatever the options: never a blanket frame/script permission, eval, or any
+# third-party script host in the page policy.
+if grep -Eq "frame-src[^;]* https:( |;)|script-src[^;]* https:|'unsafe-eval'|script-src[^;]*\*" "$page"; then
   echo "apply-build-options: refusing a broad CSP permission" >&2; exit 1
 fi

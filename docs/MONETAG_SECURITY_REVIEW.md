@@ -1,5 +1,8 @@
 # Monetag security review (zones 12218952 Vignette, 12218944 In-Page Push)
 
+> **Update 12 Nov 2026:** current design and results are in `RELEASE_ADS_ADMIN_PWA.md` (separate ad origin `ads.yonixtools.com` only; no sandboxed or main-origin frames; Monetag in-frame; admin-only `/admin/ads/`; page CSP has no ad hosts).
+
+
 Status:
 - **Stage 1 approved for staging only** (8 Nov 2026). It's applied at image build time only when `MONETAG=on`, by `deploy/nginx/apply-build-options.sh`.
 - Production `docker-compose.yml` doesn't pass `MONETAG`, so production can't enable it.

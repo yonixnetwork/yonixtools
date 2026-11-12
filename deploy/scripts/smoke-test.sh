@@ -14,6 +14,7 @@ args=(-s --max-time 20 --noproxy '*')
 pass=0; fail=0
 ok()  { echo "  PASS  $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL  $1"; fail=$((fail+1)); }
+note() { echo "  NOTE  $1"; }
 code() { curl "${args[@]}" -o /dev/null -w '%{http_code}' "$@"; }
 check() { local want="$1" label="$2"; shift 2; local got; got="$(code "$@")"; [ "$got" = "$want" ] && ok "$label ($got)" || bad "$label (expected $want, got $got)"; }
 
@@ -36,9 +37,16 @@ curl "${args[@]}" -D - -o /dev/null -H 'Accept-Encoding: gzip' "$BASE$asset" | g
 
 # Pages keep the strict policy: scripts only from this site, never eval or blanket https/wildcard permissions.
 csp="$(echo "$hdr" | grep -i "^content-security-policy:")"
-if echo "$csp" | grep -Eq "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval'( https://n6wxm.com https://nap5k.com)?;" && ! echo "$csp" | grep -Eq "'unsafe-eval'|script-src[^;]* https:( |;)|frame-src[^;]* https:( |;)|\*"; then ok "pages keep the strict CSP"; else bad "page CSP changed or broadened"; fi
-# Monetag's stage-1 hosts are approved for staging only (STAGING=1 is set by staging-web.sh).
-if echo "$csp" | grep -q "n6wxm.com"; then [ "${STAGING:-0}" = "1" ] && echo "  NOTE  staging build: page CSP includes the Monetag stage-1 hosts" || bad "Monetag CSP present in a production build"; fi
+if echo "$csp" | grep -q "script-src 'self' 'unsafe-inline' 'wasm-unsafe-eval';" && ! echo "$csp" | grep -Eq "'unsafe-eval'|script-src[^;]* https:|frame-src[^;]* https:( |;)|\*"; then ok "pages keep the strict CSP (scripts from this site only)"; else bad "page CSP changed or broadened"; fi
+# Ads run only in the separate ad origin: the page may frame exactly that one origin (when configured).
+fsrc="$(echo "$csp" | grep -o "frame-src [^;]*" || true)"; [ -z "$fsrc" ] && note "page CSP: no ad origin configured (ads off)" || { echo "$fsrc" | grep -Eq "^frame-src 'self' https?://[A-Za-z0-9.:-]+$" && ok "page CSP frames exactly one ad origin" || bad "page frame-src: $fsrc"; }
+
+echo "Admin area and removed pages"
+noauth=(-s --max-time 20 --noproxy '*'); [ -n "${RESOLVE:-}" ] && for r in $RESOLVE; do noauth+=(--resolve "$r"); done; [ "${INSECURE:-0}" = "1" ] && noauth+=(-k)
+adm="$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/admin/ads/")"
+case "$adm" in 401) ok "admin page requires a password (401)";; 500) note "admin area locked: no password file yet (run deploy/scripts/admin-password.sh)";; *) bad "admin page reachable without password ($adm)";; esac
+[ "$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/ads-check/")" = 404 ] && ok "old public ads test page is gone (404)" || bad "public /ads-check/ still served"
+[ "$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/api/internal/stats")" = 404 ] && ok "internal API not exposed" || bad "internal API exposed"
 
 echo "Advertising frame and PWA"
 check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"

@@ -3,7 +3,7 @@ import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FaqList } from "@/components/Faq";
 import { JsonLd } from "@/components/JsonLd";
 import { PLATFORMS } from "@/lib/downloader/detect";
-import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
+import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
 import { faqLd } from "@/lib/seo";
 
 export const metadata: Metadata = {
@@ -36,7 +36,7 @@ export default function About() {
         </p>
         <section>
           <h2>Platform status</h2>
-          <p>Checked {VERIFIED_ON} with real downloads from a cloud server, like the one YoniXTools runs on.</p>
+          <p>What each platform supports today.</p>
           <ul>
             {PLATFORM_STATUS.map((p) => (
               <li key={p.id}>
@@ -62,8 +62,7 @@ export default function About() {
         <section>
           <h2>Privacy</h2>
           <p>
-            Links you paste into the downloader are sent to our server so it can fetch the public media. Files are kept for at most 15 minutes and then deleted. Server
-            logs keep only the platform and a short anonymous fingerprint of the link, never the full link. Browser tools never upload your files. The site shows
+            Links you paste into the downloader are used only to fetch that public media for you. Browser tools never upload your files. The site shows
             labelled third-party ads from Adsterra in separate frames, outside the tools. See the{" "}
             <a href="/privacy/">privacy page</a>.
           </p>

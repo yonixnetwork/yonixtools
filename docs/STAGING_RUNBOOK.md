@@ -2,7 +2,8 @@
 
 **What it stages:**
 - Adsterra on a separate ad-frame origin;
-- Monetag on utility pages only, with the stage-1 CSP;
+- Monetag In-Page Push on utility pages only, in the same isolated ad-origin frames (Vignette disabled);
+- the admin-only ad test page `/admin/ads/`;
 - everything else as in production.
 
 **What it never touches:**
@@ -95,7 +96,6 @@ MONETAG=on bash deploy/scripts/staging-web.sh up
 **3. Builds `yonixtools-web:staging`.** Production's image tag isn't touched. The build-time security config is:
 - page CSP `frame-src 'self' <ad tunnel>`;
 - ad frame `frame-ancestors 'self' <site tunnel>`;
-- `script-src`/`connect-src` gain `https://n6wxm.com https://nap5k.com`;
 - nothing else.
 
 **4. Starts the staging backend** `yonixtools-stg-downloader` from the existing production image, in **test-data mode**:
@@ -110,7 +110,7 @@ MONETAG=on bash deploy/scripts/staging-web.sh up
 
 **6. Starts the gatekeeper** `yonixtools-stg-proxy` (`deploy/staging/proxy.conf`) on `127.0.0.1` only:
 - **site (8092):**
-  - HTTP basic auth on everything, including `/ads-check/` and `/api/healthz`;
+  - HTTP basic auth on everything, including `/admin/ads/` and `/api/healthz`;
   - only the PWA manifest and icons are open, because browsers fetch them without credentials (static, public files);
   - limits: 120 page requests/min and 12 API requests/min per visitor, 30 API requests/min in total;
   - the password is stripped before forwarding;
@@ -121,17 +121,18 @@ MONETAG=on bash deploy/scripts/staging-web.sh up
 - **Gatekeeper checks:** 401 without the password, 200 with it, diagnostics and API locked, the ad origin serving only the frame, the noindex header.
 - **Full smoke test through the password**, using the staging rules:
   - `robots.txt` must block everything;
-  - Monetag hosts are allowed in the CSP;
+  - the page CSP allows no ad host at all, only the one ad-origin frame;
+  - `/admin/ads/` needs the login, and `/ads-check/` is gone (404);
   - the CSP must not be broadened beyond that.
 
-**8. Prints the site URL, the `/ads-check/` URL and the login.**
+**8. Prints the site URL, the admin ad test URL (`/admin/ads/`) and the login.** In staging, the staging login is also the admin login.
 
 ## 6. Test
 
 Use the checklist in `STAGING_TEST_REPORT.md` §C on Android Chrome, iPhone Safari and desktop Chrome, with and without an ad blocker. Don't click ads.
 - **Log in** with the printed user and password. The browser asks once per site.
 - **Downloader:** test-data mode returns a test clip for any link from a supported platform. URLs containing `private` or `blocked` show the matching error messages.
-- **`/ads-check/` → Copy report:** send it to me. Its "blocked by this site's security policy" line lists any extra Monetag hosts. I'll turn them into an exact stage-2 diff for your approval.
+- **`/admin/ads/` → Copy report** (admin only): each of the six formats reports AD RENDERED or EMPTY with the reason. Send me the report from each device.
 
 ```bash
 bash deploy/scripts/staging-web.sh status

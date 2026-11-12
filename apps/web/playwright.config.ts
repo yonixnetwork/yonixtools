@@ -10,7 +10,10 @@ const live = process.env.E2E_LIVE === "1"; // real platforms + real worker (CI l
 // artificial impressions). Chromium resolves every hostname except localhost to "not found";
 // stubbed routes (page.route) still answer first. The live-platform suite is the only exception
 // and its build has ads off (build:integrated), like the WebKit project, which can't take this flag.
-const offline = { launchOptions: { args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1"] } };
+// Two locks, so it holds in every environment: DNS for anything but localhost fails, and all
+// non-local traffic is sent to a dead proxy port (a configured HTTP proxy would otherwise do the
+// DNS lookup itself and bypass the first lock). Loopback is never proxied.
+const offline = { launchOptions: { args: ["--host-resolver-rules=MAP * ~NOTFOUND, EXCLUDE localhost, EXCLUDE 127.0.0.1", "--proxy-server=http://127.0.0.1:9", "--proxy-bypass-list=localhost;127.0.0.1"] } };
 
 export default defineConfig({
   testDir: "tests/e2e",
@@ -20,7 +23,10 @@ export default defineConfig({
   reporter: [["list"]],
   use: { baseURL: "http://localhost:4173", trace: "off" },
   webServer: [
-    { command: "node scripts/serve-static.mjs out", port: 4173, reuseExistingServer: !process.env.CI },
+    // Site on :4173 and the separate ad origin on :4175 (npm run build:test bakes it in).
+    // With REAL_NGINX=1 both ports are already served by the real nginx config (scripts/nginx-local.sh).
+    { command: "node scripts/serve-static.mjs out", port: 4173, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
+    { command: "PORT=4175 node scripts/serve-static.mjs out", port: 4175, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
     ...(integrated
       ? [
           { command: "PORT=4174 API_PROXY=http://127.0.0.1:8788 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },

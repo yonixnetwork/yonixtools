@@ -450,7 +450,7 @@ function TransferStatus({ t }: { t: Transfer }) {
           .
         </span>
       )}
-      {t.phase === "started" && <span className="dl-note">Check your browser&apos;s downloads. The file is deleted from our server shortly.</span>}
+      {t.phase === "started" && <span className="dl-note">Check your browser&apos;s downloads.</span>}
     </>
   );
 }

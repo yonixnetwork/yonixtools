@@ -124,6 +124,43 @@ test("Android/desktop Chromium: install invitation uses the browser prompt, and 
   await expect(page.getByTestId("install-card")).toHaveCount(0);
 });
 
+test("declining the browser's own install dialog is remembered too", async ({ page }) => {
+  await page.goto("/?installDelay=0");
+  await page.locator("html[data-pwa-ready]").waitFor({ state: "attached" });
+  const fire = () => page.evaluate(() => {
+    const e = new Event("beforeinstallprompt") as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+    e.prompt = async () => {};
+    e.userChoice = Promise.resolve({ outcome: "dismissed" });
+    window.dispatchEvent(e);
+  });
+  await fire();
+  await page.getByTestId("install-card").getByRole("button", { name: "Install" }).click(); // native dialog -> "Cancel"
+  await expect(page.getByTestId("install-card")).toHaveCount(0);
+  expect(Number(await page.evaluate(() => localStorage.getItem("ytx-install-dismissed")))).toBeGreaterThan(0);
+  await page.reload();
+  await page.locator("html[data-pwa-ready]").waitFor({ state: "attached" });
+  await fire();
+  await page.waitForTimeout(300);
+  await expect(page.getByTestId("install-card")).toHaveCount(0);
+});
+
+test("accepted installation: invitation and drawer entry disappear for good", async ({ page }) => {
+  await page.goto("/?installDelay=0");
+  await page.locator("html[data-pwa-ready]").waitFor({ state: "attached" });
+  await page.evaluate(() => {
+    const e = new Event("beforeinstallprompt") as Event & { prompt: () => Promise<void>; userChoice: Promise<{ outcome: string }> };
+    e.prompt = async () => {};
+    e.userChoice = Promise.resolve({ outcome: "accepted" });
+    window.dispatchEvent(e);
+  });
+  await page.getByTestId("install-card").getByRole("button", { name: "Install" }).click();
+  await page.evaluate(() => window.dispatchEvent(new Event("appinstalled")));
+  await expect(page.getByTestId("install-card")).toHaveCount(0);
+  await page.reload();
+  await page.getByRole("button", { name: /Explore tools/ }).click();
+  await expect(page.getByRole("button", { name: "Install the app" })).toHaveCount(0);
+});
+
 test("browsers without install support get no install button", async ({ page }) => {
   await page.goto("/?installDelay=0");
   await page.waitForTimeout(500);

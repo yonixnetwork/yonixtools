@@ -21,16 +21,35 @@ export function isStandalone(): boolean {
   return window.matchMedia?.("(display-mode: standalone)").matches || (navigator as unknown as { standalone?: boolean }).standalone === true;
 }
 
-/** iPhone/iPad Safari (iPadOS reports itself as a Mac with touch). Other iOS browsers can't add to the home screen the same way. */
-export function isIosSafari(ua = typeof navigator === "undefined" ? "" : navigator.userAgent, touch = typeof navigator === "undefined" ? 0 : navigator.maxTouchPoints): boolean {
-  const ios = /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1);
-  return ios && /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
+const nav = () => (typeof navigator === "undefined" ? { userAgent: "", maxTouchPoints: 0 } : navigator);
+
+/** iPhone or iPad, any browser (iPadOS reports itself as a Mac with touch). */
+export function isIos(ua = nav().userAgent, touch = nav().maxTouchPoints): boolean {
+  return /iPhone|iPad|iPod/.test(ua) || (/Macintosh/.test(ua) && touch > 1);
+}
+
+/** iPhone/iPad Safari. */
+export function isIosSafari(ua = nav().userAgent, touch = nav().maxTouchPoints): boolean {
+  return isIos(ua, touch) && /Safari\//.test(ua) && !/CriOS|FxiOS|EdgiOS|OPiOS|GSA\//.test(ua);
+}
+
+/**
+ * Which "Add to Home Screen" instructions fit this iOS browser. Safari has it in the Share
+ * sheet; since iOS 16.4 Chrome, Edge and Firefox offer it in their own Share menu too.
+ * The website can't install itself on iOS, so we only ever show instructions.
+ */
+export type IosBrowser = "safari" | "chrome" | "edge" | "firefox" | "other";
+export function iosBrowser(ua = nav().userAgent): IosBrowser {
+  if (/CriOS/.test(ua)) return "chrome";
+  if (/EdgiOS/.test(ua)) return "edge";
+  if (/FxiOS/.test(ua)) return "firefox";
+  return isIosSafari(ua, 5) ? "safari" : "other";
 }
 
 export function installMode(): InstallMode {
   if (isStandalone() || readFlag("ytx-installed")) return "installed";
-  if (deferred) return "prompt";
-  if (isIosSafari()) return "ios";
+  if (deferred) return "prompt"; // Chromium: Android Chrome/Edge/Samsung Internet, desktop Chrome/Edge
+  if (isIos()) return "ios";
   return "unsupported";
 }
 
@@ -46,6 +65,7 @@ export async function promptInstall(): Promise<"accepted" | "dismissed" | "unava
   await e.prompt();
   const { outcome } = await e.userChoice;
   if (outcome === "accepted") writeFlag("ytx-installed");
+  else rememberDismissal(); // declined in the browser's own dialog: don't ask again for 30 days
   emit();
   return outcome;
 }
@@ -98,6 +118,8 @@ export function startPwa(version: string) {
     writeFlag("ytx-installed");
     emit();
   });
+  // Opened as the installed app (or switched into it): stop offering installation.
+  window.matchMedia?.("(display-mode: standalone)").addEventListener?.("change", (m) => m.matches && (writeFlag("ytx-installed"), emit()));
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
     const register = () => navigator.serviceWorker.register(`/sw.js?v=${encodeURIComponent(version)}`, { scope: "/" }).catch(() => {});
     if (document.readyState === "complete") register();

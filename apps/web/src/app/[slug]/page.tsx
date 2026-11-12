@@ -6,7 +6,7 @@ import { AdSlot } from "@/components/AdSlot";
 import { MonetagZones } from "@/components/MonetagZones";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
-import { PLATFORM_STATUS, STATE_LABEL, VERIFIED_ON } from "@/lib/downloader/platform-status";
+import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
 import { FaqList } from "@/components/Faq";
 import { ToolIcon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
@@ -56,11 +56,11 @@ export default async function ToolPage({ params }: Props) {
             <div className="row">
               {!isAvailable(tool) ? (
                 <span className="badge badge-pending">
-                  <Clock aria-hidden /> Link detection works · downloading launches with the backend
+                  <Clock aria-hidden /> Coming soon
                 </span>
               ) : tool.runsIn === "server" ? (
                 <span className="badge badge-live">
-                  <Server aria-hidden /> Processed on our server · files deleted after 15 minutes
+                  <Server aria-hidden /> Public posts only · no account needed
                 </span>
               ) : (
                 <span className="badge badge-live">
@@ -85,7 +85,7 @@ export default async function ToolPage({ params }: Props) {
             <div className={`notice ${status.state === "blocked" ? "notice-error" : "notice-warn"}`} role="status" data-testid="platform-status">
               <div>
                 <strong>
-                  {PLATFORMS[status.id].name}: {STATE_LABEL[status.state].toLowerCase()} (checked {VERIFIED_ON})
+                  {PLATFORMS[status.id].name}: {STATE_LABEL[status.state].toLowerCase()}
                 </strong>
                 {status.note}
               </div>
@@ -143,7 +143,7 @@ export default async function ToolPage({ params }: Props) {
           </aside>
         </div>
         {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
-        {ads && <MonetagZones page={{ kind: "tool", tool }} />}
+        {ads && <MonetagZones page={{ kind: "tool", tool }} desktopOnly />}
       </div>
     </>
   );

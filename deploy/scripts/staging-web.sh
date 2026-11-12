@@ -102,17 +102,19 @@ case "${1:-}" in
       ( umask 077; printf 'staging:%s\n' "$pw" > "$ST/auth" )
       printf 'staging:%s\n' "$(openssl passwd -apr1 "$pw")" > "$ST/htpasswd"; chmod 644 "$ST/htpasswd"   # hash only; nginx worker must read it
     fi
+    mkdir -p "$ST/admin"; chmod 755 "$ST/admin"; cp "$ST/htpasswd" "$ST/admin/htpasswd"   # staging admin login = staging login
     docker network inspect "$NET_PUB" >/dev/null 2>&1 || docker network create --subnet "$SUB_PUB" "$NET_PUB" >/dev/null
     docker network inspect "$NET_INT" >/dev/null 2>&1 || docker network create --internal --subnet "$SUB_INT" "$NET_INT" >/dev/null
     docker build -t yonixtools-web:staging --build-context deploy=deploy/nginx \
       --build-arg NEXT_PUBLIC_SITE_URL="https://yonixtools.com" --build-arg NEXT_PUBLIC_DOWNLOADER_API_URL=/api \
-      --build-arg NEXT_PUBLIC_ADS=on --build-arg NEXT_PUBLIC_AD_ISOLATION=same-origin \
+      --build-arg NEXT_PUBLIC_ADS=on \
       --build-arg NEXT_PUBLIC_AD_ORIGIN="$ADS" --build-arg AD_FRAME_PARENT="$SITE" \
       --build-arg NEXT_PUBLIC_MONETAG="${MONETAG:-off}" apps/web
     docker rm -f "$P-downloader" "$P-web" "$P-proxy" >/dev/null 2>&1 || true
     start_backend
     docker run -d --name "$P-web" --network "$NET_PUB" --restart no --read-only \
       --tmpfs /var/cache/nginx:size=64m --tmpfs /var/run:size=1m --tmpfs /tmp:size=16m \
+      -v "$PWD/$ST/admin:/etc/nginx/admin:ro" \
       --security-opt no-new-privileges:true --memory 128m --cpus 0.5 yonixtools-web:staging >/dev/null
     docker network connect "$NET_INT" "$P-web"
     docker run -d --name "$P-proxy" --network "$NET_PUB" --restart no --read-only \
@@ -126,7 +128,8 @@ case "${1:-}" in
     code() { curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$@"; }
     [ "$(code "http://127.0.0.1:$SITE_PORT/")" = 401 ] && ok "site requires the password" || bad "site reachable without password"
     [ "$(code -u "$(cat "$ST/auth")" "http://127.0.0.1:$SITE_PORT/")" = 200 ] && ok "site works with the password" || bad "site with password"
-    [ "$(code "http://127.0.0.1:$SITE_PORT/ads-check/")" = 401 ] && ok "diagnostics need the password" || bad "diagnostics exposed"
+    [ "$(code "http://127.0.0.1:$SITE_PORT/admin/ads/")" = 401 ] && ok "admin test page needs the password" || bad "admin page exposed"
+    [ "$(code -u "$(cat "$ST/auth")" "http://127.0.0.1:$SITE_PORT/admin/ads/")" = 200 ] && ok "admin test page works with the login" || bad "admin page with login"
     [ "$(code "http://127.0.0.1:$SITE_PORT/api/healthz")" = 401 ] && ok "API needs the password" || bad "API exposed"
     [ "$(code "http://127.0.0.1:$ADS_PORT/")" = 404 ] && ok "ad-frame origin serves nothing else" || bad "ad-frame origin exposes the site"
     [ "$(code "http://127.0.0.1:$ADS_PORT/ad-frame.html")" = 200 ] && ok "ad frame served" || bad "ad frame"
@@ -135,7 +138,7 @@ case "${1:-}" in
     echo
     echo "Staging ready ($(git rev-parse --short HEAD); backend $BACKEND; Monetag ${MONETAG:-off})"
     echo "  Site:      $SITE/"
-    echo "  Ads check: $SITE/ads-check/"
+    echo "  Ad test (admin): $SITE/admin/ads/"
     echo "  Login:     $(cat "$ST/auth")   (also in $PWD/$ST/auth)"
     echo "Production untouched."
     ;;

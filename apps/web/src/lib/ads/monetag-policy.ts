@@ -7,16 +7,16 @@ import { MONETAG_ENABLED } from "./monetag";
  * process media URLs: the homepage (it embeds the downloader), every downloader page
  * (category "social", results included) and the downloader category page. Allowed:
  * ordinary utility pages (PDF, image, SEO, developer, other tools), All tools, other
- * category pages, and the /ads-check/ diagnostics page.
- * Enforced three times: here (MonetagZones renders nothing otherwise), at runtime in the
- * loader (path deny-list + downloader DOM marker), and by tests over every built page.
+ * category pages. (The admin ad test page is a separate, password-protected document.)
+ * Enforced here (MonetagZones renders nothing otherwise) and by tests over every built page.
+ * (The zone itself runs in an isolated frame on the ad origin, so even a misplacement
+ * couldn't read the page.)
  */
-export type MonetagPage = { kind: "home" } | { kind: "tool"; tool: Tool } | { kind: "category"; id: CategoryId } | { kind: "tools" } | { kind: "diagnostics" };
+export type MonetagPage = { kind: "home" } | { kind: "tool"; tool: Tool } | { kind: "category"; id: CategoryId } | { kind: "tools" };
 
 const MEDIA_URL_CATEGORY: CategoryId = "social";
 /** Every path where media URLs are pasted or processed (built from the registry, so new downloaders are covered). */
 export const MONETAG_DENIED_PATHS: string[] = ["/", categoryPath(getCategory(MEDIA_URL_CATEGORY).slug), ...allTools.filter((t) => t.category === MEDIA_URL_CATEGORY).map((t) => toolPath(t.slug))];
-/** The downloader (URL box and results) carries data-ytx-media-input; the loader refuses any page that has it. */
 
 export function monetagAllowed(page: MonetagPage): boolean {
   if (!MONETAG_ENABLED) return false;
@@ -28,7 +28,6 @@ export function monetagAllowed(page: MonetagPage): boolean {
     case "category":
       return page.id !== MEDIA_URL_CATEGORY;
     case "tools":
-    case "diagnostics":
       return true;
   }
 }

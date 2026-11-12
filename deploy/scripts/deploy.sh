@@ -14,6 +14,7 @@ echo "==> Building images for $rev (one at a time, to spare a small server)"
 "${COMPOSE[@]}" build downloader
 "${COMPOSE[@]}" build web
 echo "==> Starting"
+mkdir -p deploy/admin-auth   # admin password hash (deploy/scripts/admin-password.sh); empty = /admin/ locked
 "${COMPOSE[@]}" up -d --remove-orphans
 echo "==> Egress firewall (blocks the stack from reaching private/internal addresses)"
 bash deploy/scripts/egress-firewall.sh

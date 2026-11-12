@@ -1,5 +1,8 @@
 # Adsterra frame isolation: review, evidence and proposal
 
+> **Update 12 Nov 2026:** current design and results are in `RELEASE_ADS_ADMIN_PWA.md` (separate ad origin `ads.yonixtools.com` only; no sandboxed or main-origin frames; Monetag in-frame; admin-only `/admin/ads/`; page CSP has no ad hosts).
+
+
 Status: **approved for staging tests only** (8 Nov 2026). Not for production until you approve it.
 
 ## 1. How the ad origin is isolated

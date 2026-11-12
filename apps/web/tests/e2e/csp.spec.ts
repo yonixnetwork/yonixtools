@@ -12,7 +12,7 @@ const pages: string[] = [];
 const walk = (d: string, base: string) => {
   for (const f of readdirSync(d)) {
     const p = join(d, f);
-    if (statSync(p).isDirectory()) { if (f !== "_next") walk(p, `${base}${f}/`); }
+    if (statSync(p).isDirectory()) { if (f !== "_next" && f !== "admin") walk(p, `${base}${f}/`); } // admin: password-protected, tested in admin.spec.ts
     else if (f === "index.html") pages.push(base);
   }
 };

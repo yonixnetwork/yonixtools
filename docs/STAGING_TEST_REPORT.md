@@ -1,5 +1,7 @@
 # Staging test report: `staging/ads-monetag`
 
+> **Superseded in part (12 Nov 2026):** ads now run only from the separate ad origin, Monetag In-Page Push runs inside it, Vignette is disabled, and the diagnostics moved to the admin-only `/admin/ads/`. Current results and the device checklist: `RELEASE_ADS_ADMIN_PWA.md`.
+
 Production is not deployed and not changed.
 
 ## A. Automated results (this branch, run locally, exit codes checked)
@@ -32,7 +34,7 @@ What they **don't** prove:
 
 | Check | Result |
 |---|---|
-| Gatekeeper (`deploy/staging/proxy.conf`) | 401 without or with a wrong password. `/ads-check/` and `/api/*` locked. Ad-frame origin serves only `/ad-frame.html` (404 elsewhere). `robots.txt` = `Disallow: /`. `X-Robots-Tag: noindex` on every response incl. 401. API limit returns 429 after the burst |
+| Gatekeeper (`deploy/staging/proxy.conf`) | 401 without or with a wrong password. `/admin/ads/` and `/api/*` locked. Ad-frame origin serves only `/ad-frame.html` (404 elsewhere). `robots.txt` = `Disallow: /`. `X-Robots-Tag: noindex` on every response incl. 401. API limit returns 429 after the burst |
 | Full topology in Chromium | site through the password proxy, ad frame from the proxy's ad port. Stub ad filled. PWA installability errors: **none**. Service worker active. Monetag on the utility page, **not** on the downloader. **0 CSP violations** |
 | Test-data backend through the proxy (phone viewport) | Instagram link → formats → **Download started**, MP4 saved (30 KB test clip) |
 | `staging-web.sh` dry run (logging stand-in for docker) | preflight/tunnels/up/down run cleanly. Password file 600, hash 644, state folder 700. `down` removes every staging resource and the state folder |
@@ -62,21 +64,21 @@ What they **don't** prove:
 | `jhnwr.com` | `/400/12218944?oo=1&sw_version=…&oaid=…` | In-Page Push |
 | `ldrws.com` | `/401/12218952?oo=1&sw_version=…&oaid=…` | Vignette |
 
-These are **candidates for stage 2. Not added.** The request type, and so the CSP directive, is unknown, and the hosts may rotate. Staging's `/ads-check/` report shows exactly which directive blocked which host. The stage-2 diff will be built from that, for your approval.
+These are **candidates for stage 2. Not added.** The request type, and so the CSP directive, is unknown, and the hosts may rotate. Staging's `/admin/ads/` report shows exactly which directive blocked which host. The stage-2 diff will be built from that, for your approval.
 
 ## B. Real-device evidence so far
 
-- **8 Nov 2026, your phone, live `/ads-check/`:** in same-origin frames, all four Adsterra units rendered real creatives (image banners 320×50, 300×250, 728×90; native tiles). Sandboxed frames: banners empty, native nothing.
+- **8 Nov 2026, your phone, live `/admin/ads/`:** in same-origin frames, all four Adsterra units rendered real creatives (image banners 320×50, 300×250, 728×90; native tiles). Sandboxed frames: banners empty, native nothing.
 - Staging: **not yet run.** Fill in this table.
 
 ## C. Real-device checklist (staging)
 
-Use `<site>` from `staging-web.sh up`. Don't click ads. Run each device in a clean session, then with an ad blocker. On each run, open `<site>/ads-check/`, wait about 15 s, tap **Copy report** and send it to me.
+Use `<site>` from `staging-web.sh up`. Don't click ads. Run each device in a clean session, then with an ad blocker. On each run, open `<site>/admin/ads/` (admin login), wait about 15 s, tap **Copy report** and send it to me.
 
 | # | Check | Android Chrome | iPhone Safari | Desktop Chrome |
 |---|---|---|---|---|
-| 1 | `/ads-check/`: Adsterra 4 units "AD RENDERED"? "Ad frame origin" shows the second tunnel | | | |
-| 2 | `/ads-check/`: Monetag both zones "script loaded"; list "blocked by this site's security policy" | | | |
+| 1 | `/admin/ads/`: Adsterra 4 units "AD RENDERED"? "Ad frame origin" shows the second tunnel | | | |
+| 2 | `/admin/ads/`: Monetag both zones "script loaded"; list "blocked by this site's security policy" | | | |
 | 3 | Utility page (e.g. `/pdf-merger/`): In-Page Push visible? Does it cover controls? | | | |
 | 4 | Browse 3–4 utility pages: does a Vignette appear, and does its own close work? How often? | | | |
 | 5 | `/` and `/instagram-downloader/`: **no** Monetag; Adsterra only | | | |

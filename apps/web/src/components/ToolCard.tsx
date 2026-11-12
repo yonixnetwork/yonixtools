@@ -7,8 +7,8 @@ import { isAvailable } from "@/lib/registry/availability";
 export function StatusBadge({ tool }: { tool: Pick<ToolCardData, "status"> }) {
   if (!isAvailable(tool))
     return (
-      <span className="badge badge-pending" title="Interface and link detection work; downloading goes live when the backend is deployed.">
-        <Clock aria-hidden /> Backend coming soon
+      <span className="badge badge-pending">
+        <Clock aria-hidden /> Coming soon
       </span>
     );
   return null;

@@ -1,5 +1,8 @@
 # Advertising (Adsterra) and PWA installation
 
+> **Update 12 Nov 2026:** current design and results are in `RELEASE_ADS_ADMIN_PWA.md` (separate ad origin `ads.yonixtools.com` only; no sandboxed or main-origin frames; Monetag in-frame; admin-only `/admin/ads/`; page CSP has no ad hosts).
+
+
 ## Advertising
 
 ### Units (verbatim publisher code)

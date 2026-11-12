@@ -131,7 +131,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         return {"status": "ok"}
 
     @app.get("/readyz")
-    async def readyz():
+    async def readyz(request: Request):
         checks = {
             "tempWritable": settings.temp_root.is_dir() and shutil.disk_usage(settings.temp_root).free > settings.min_free_disk_mb * 1024 * 1024,
             "ffmpeg": shutil.which("ffmpeg") is not None,
@@ -142,7 +142,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         except ImportError:
             checks["extractor"] = False
         ok = all(checks.values())
-        return JSONResponse({"status": "ok" if ok else "degraded", "checks": checks}, status_code=200 if ok else 503)
+        body: dict = {"status": "ok" if ok else "degraded"}
+        if _from_host_itself(request):  # internal details only for the server itself, never through the proxy
+            body["checks"] = checks
+        return JSONResponse(body, status_code=200 if ok else 503)
 
     @app.post("/v1/extract")
     async def extract(request: Request):
@@ -187,11 +190,16 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     @app.get("/internal/stats")
     async def stats(request: Request):
         # Only from the host itself, never through the reverse proxy.
-        if (request.client and request.client.host not in ("127.0.0.1", "::1")) or request.headers.get("x-real-ip") or request.headers.get("x-forwarded-for"):
+        if not _from_host_itself(request):
             raise ApiError("not_found")
         return service.snapshot()
 
     return app
+
+
+def _from_host_itself(request: Request) -> bool:
+    """True only for requests made on the server itself (not via any proxy)."""
+    return bool(request.client and request.client.host in ("127.0.0.1", "::1")) and not request.headers.get("x-real-ip") and not request.headers.get("x-forwarded-for")
 
 
 def _error(e: ApiError) -> JSONResponse:

@@ -1,9 +1,17 @@
 "use client";
 import { Download, Share, SquarePlus, X } from "lucide-react";
 import { useEffect, useState } from "react";
-import { dismissedRecently, installMode, promptInstall, rememberDismissal, startPwa, subscribe, type InstallMode } from "@/lib/pwa";
+import { dismissedRecently, installMode, iosBrowser, promptInstall, rememberDismissal, startPwa, subscribe, type InstallMode, type IosBrowser } from "@/lib/pwa";
 
 const SHOW_AFTER_MS = 12_000; // never on arrival: only once the visitor has been here a moment
+
+const SHARE_WHERE: Record<IosBrowser, string> = {
+  safari: "in Safari's toolbar",
+  chrome: "in Chrome's address bar",
+  edge: "in Edge's menu",
+  firefox: "in Firefox's menu",
+  other: "in your browser's menu",
+};
 
 export function useInstallMode(): InstallMode | null {
   const [mode, setMode] = useState<InstallMode | null>(null);
@@ -20,6 +28,8 @@ export function InstallPrompt({ version }: { version: string }) {
   const mode = useInstallMode();
   const [visible, setVisible] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [browser, setBrowser] = useState<IosBrowser>("safari");
+  useEffect(() => setBrowser(iosBrowser()), []);
 
   useEffect(() => startPwa(version), [version]);
 
@@ -46,10 +56,11 @@ export function InstallPrompt({ version }: { version: string }) {
         <button type="button" className="icon-button install-close" aria-label="Close" onClick={() => setGuide(false)}><X aria-hidden /></button>
         <strong>Add YoniXTools to your Home Screen</strong>
         <ol className="install-steps">
-          <li>Tap <Share aria-label="Share" className="inline-icon" /> <b>Share</b> in Safari&apos;s toolbar.</li>
+          <li>Tap <Share aria-label="Share" className="inline-icon" /> <b>Share</b> {SHARE_WHERE[browser]}.</li>
           <li>Scroll and tap <SquarePlus aria-hidden className="inline-icon" /> <b>Add to Home Screen</b>.</li>
           <li>Tap <b>Add</b>. YoniXTools opens full screen from its icon.</li>
         </ol>
+        {browser === "other" && <p className="muted install-note">If you don&apos;t see it, open this page in Safari and follow the same steps.</p>}
       </div>
     );
 

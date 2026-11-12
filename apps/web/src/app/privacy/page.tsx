@@ -24,16 +24,16 @@ export default function Privacy() {
         <section>
           <h2>Advertising</h2>
           <p>
-            YoniXTools is free because it shows advertising from <strong>Adsterra</strong>, a third-party ad network. Ads are loaded in separate frames, below or beside the
-            tools, never inside them. Those frames can&apos;t redirect the page, but they run Adsterra&apos;s own code on this site, as ads on most websites do, so
-            we can&apos;t fully control what that code does. Adsterra and its advertisers may use cookies, device identifiers and similar technologies in those
-            frames to show, measure and limit ads, and they receive technical data such as your IP address, browser and the page you are on. See{" "}
+            YoniXTools is free because it shows advertising from <strong>Adsterra</strong>, a third-party ad network. Ads are loaded in separate frames from a
+            separate advertising address (ads.yonixtools.com), below or beside the tools, never inside them. Your browser keeps those frames apart from this site: the
+            ad code can&apos;t see the links you paste, your files, your results or this site&apos;s cookies, and it can&apos;t redirect the page. Adsterra and its
+            advertisers may use cookies, device identifiers and similar technologies in those frames to show, measure and limit ads, and they receive technical data such as your IP address, browser and the page you are on. See{" "}
             <a href="https://adsterra.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Adsterra&apos;s privacy policy</a> for how they use it and your
             choices. You can block or delete these cookies in your browser settings, or use an ad blocker; the tools keep working either way.
           </p>
           <p>
-            We may also show ads from <strong>Monetag</strong>: a small in-page banner and, occasionally, a full-screen ad between pages that you can close. These run
-            Monetag&apos;s code directly on the page. Monetag and its advertisers may use cookies, device identifiers and similar technologies, and receive technical
+            We may also show a small banner from <strong>Monetag</strong> on some tool pages (never on the downloader), loaded the same way in a separate frame.
+            Monetag and its advertisers may use cookies, device identifiers and similar technologies, and receive technical
             data such as your IP address, browser and the page you are on. See{" "}
             <a href="https://monetag.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Monetag&apos;s privacy policy</a>. We don&apos;t use push
             notification ads, and nothing subscribes you to notifications.

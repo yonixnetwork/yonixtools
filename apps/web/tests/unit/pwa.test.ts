@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { dismissedRecently, isIosSafari, rememberDismissal } from "@/lib/pwa";
+import { dismissedRecently, iosBrowser, isIos, isIosSafari, rememberDismissal } from "@/lib/pwa";
 
 const UA = {
   iphoneSafari: "Mozilla/5.0 (iPhone; CPU iPhone OS 18_1 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.1 Mobile/15E148 Safari/604.1",
@@ -16,6 +16,22 @@ describe("iOS Safari detection (Add to Home Screen guide)", () => {
     expect(isIosSafari(UA.iphoneChrome, 5)).toBe(false);
     expect(isIosSafari(UA.macSafari, 0)).toBe(false); // desktop Safari: no guide
     expect(isIosSafari(UA.android, 5)).toBe(false);
+  });
+});
+
+describe("iOS browsers (all can Add to Home Screen; only instructions are shown)", () => {
+  it("detects iPhone and iPad in any browser, never desktop or Android", () => {
+    expect(isIos(UA.iphoneSafari, 5)).toBe(true);
+    expect(isIos(UA.ipadOs, 5)).toBe(true);
+    expect(isIos(UA.iphoneChrome, 5)).toBe(true);
+    expect(isIos(UA.macSafari, 0)).toBe(false);
+    expect(isIos(UA.android, 5)).toBe(false);
+  });
+  it("picks the right Share location", () => {
+    expect(iosBrowser(UA.iphoneSafari)).toBe("safari");
+    expect(iosBrowser(UA.iphoneChrome)).toBe("chrome");
+    expect(iosBrowser(UA.iphoneSafari.replace("Safari/", "EdgiOS/120 Safari/"))).toBe("edge");
+    expect(iosBrowser(UA.iphoneSafari.replace("Safari/", "FxiOS/120 Safari/"))).toBe("firefox");
   });
 });
 

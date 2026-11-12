@@ -6,17 +6,28 @@
 //    two consecutive checks;
 //  - "empty" as soon as every network script failed (ad blocker, network), or
 //    when nothing rendered within the fill window.
-// It also reports diagnostics (script load/error, errors, CSP violations, DOM
-// inventory) that /ads-check/ shows; normal pages ignore them.
+// Served ONLY from the separate ad origin (e.g. https://ads.yonixtools.com): the
+// ad code runs there, isolated from the site by the browser's same-origin policy.
+// Units: the four Adsterra units (units.json) and the two Monetag zones (monetag.json).
+// Diagnostics (script load/error, errors, CSP violations, DOM inventory, access) are
+// sent only to the password-protected admin test page (slot ids starting "admin-").
 import { readFileSync, writeFileSync } from "node:fs";
 
-const units = JSON.parse(readFileSync(new URL("../src/lib/ads/units.json", import.meta.url), "utf8"));
+const adsterra = JSON.parse(readFileSync(new URL("../src/lib/ads/units.json", import.meta.url), "utf8"));
+const monetag = JSON.parse(readFileSync(new URL("../src/lib/ads/monetag.json", import.meta.url), "utf8"));
+const units = {
+  ...adsterra,
+  monetagPush: { snippet: monetag.inPagePush.snippet, width: 728, height: 120 },
+  monetagVignette: { snippet: monetag.vignette.snippet, width: 0, height: 0 },
+};
 const FILL_TIMEOUT_MS = 8000;
+const MONETAG_TIMEOUT_MS = 14000; // In-Page Push can appear after a short delay
 const NATIVE_CONTAINER = "container-cdabddda1b7a8e769299c93b91d77822";
 const SIZES = Object.fromEntries(Object.entries(units).map(([k, v]) => [k, [v.width, v.height]]));
 
 const html = `<!doctype html>
 <html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex">
+<meta name="monetag" content="d69414fd01256df4752b5cfc142c85c0">
 <base target="_blank"><title>Advertisement</title>
 <style>html,body{margin:0;padding:0;background:transparent;overflow:hidden;font-family:system-ui,sans-serif}body{text-align:center}#${NATIVE_CONTAINER}{text-align:left}</style>
 </head><body>
@@ -46,7 +57,8 @@ const html = `<!doctype html>
 (function () {
   var slot = window.__ytxSlot, d = window.__ytxDiag;
   if (slot === undefined || !d || parent === window) return;
-  var SIZE = ${JSON.stringify(SIZES)}[d.unit], native = d.unit === "native";
+  var SIZE = ${JSON.stringify(SIZES)}[d.unit], native = d.unit === "native", mt = d.unit.indexOf("monetag") === 0, admin = slot.indexOf("admin-") === 0;
+  var SKIP = { HTML: 1, HEAD: 1, BODY: 1, SCRIPT: 1, STYLE: 1, META: 1, LINK: 1, TITLE: 1, BASE: 1, NOSCRIPT: 1 };
   var sent = "", seen = 0, done = "", loaded = typeof WeakSet === "function" ? new WeakSet() : null;
   function track(f) { if (loaded && !f.__ytx) { f.__ytx = 1; f.addEventListener("load", function () { loaded.add(f); }); } }
   function box(el) { var r = el.getBoundingClientRect(), cs = getComputedStyle(el); return cs.display !== "none" && cs.visibility !== "hidden" && +cs.opacity > 0 ? r : { width: 0, height: 0 }; }
@@ -55,7 +67,21 @@ const html = `<!doctype html>
     var s = f.getAttribute("src") || "";
     return /^https?:|^\\/\\//.test(s) && (!loaded || loaded.has(f));
   }
+  function monetagRendered() { // anything visible the zone added (its own elements or frames), not just its script
+    var all = document.querySelectorAll("*"), bottom = 0, ok = false;
+    for (var i = 0; i < all.length; i++) {
+      var el = all[i]; if (SKIP[el.tagName]) continue;
+      var r = box(el); if (r.width * r.height < 3000) continue;
+      if (el.tagName === "IFRAME") { track(el); if (!frameHasContent(el)) continue; }
+      if (el.tagName === "IMG" && !(el.complete && el.naturalWidth > 0)) continue;
+      if (el.tagName !== "IFRAME" && el.tagName !== "IMG" && !el.querySelector("img,iframe,video,canvas") && el.textContent.trim().length < 10 && getComputedStyle(el).backgroundImage === "none") continue;
+      ok = true; bottom = Math.max(bottom, r.bottom);
+    }
+    monetagBottom = bottom; return ok;
+  }
+  var monetagBottom = 0;
   function rendered() {
+    if (mt) return monetagRendered();
     var root = native ? document.getElementById(${JSON.stringify(NATIVE_CONTAINER)}) : document.body;
     if (!root) return false;
     var minW = native ? 60 : SIZE[0] * 0.5, minH = native ? 40 : SIZE[1] * 0.5;
@@ -84,11 +110,13 @@ const html = `<!doctype html>
     return { origin: String(self.origin), cookies: t(function () { void document.cookie; }), storage: t(function () { void localStorage.length; }), top: t(function () { void top.location.href; }) };
   }
   function post(state) {
-    var h = Math.ceil(native ? (document.getElementById(${JSON.stringify(NATIVE_CONTAINER)}) || document.body).getBoundingClientRect().bottom : document.documentElement.scrollHeight);
+    var h = Math.ceil(native ? (document.getElementById(${JSON.stringify(NATIVE_CONTAINER)}) || document.body).getBoundingClientRect().bottom : mt ? Math.min(Math.max(monetagBottom, 60), 600) : document.documentElement.scrollHeight);
     var key = state + ":" + h + ":" + d.errors.length + ":" + JSON.stringify(d.scripts);
     if (key === sent) return;
     sent = key;
-    parent.postMessage({ ytxAd: slot, state: state, height: h, diag: { scripts: d.scripts, errors: d.errors, nodes: inventory(), access: access(), ms: Date.now() - d.start } }, "*");
+    var msg = { ytxAd: slot, state: state, height: h };
+    if (admin) msg.diag = { scripts: d.scripts, errors: d.errors, nodes: inventory(), access: access(), ms: Date.now() - d.start };
+    parent.postMessage(msg, "*");
   }
   function check() {
     if (done === "empty") return;
@@ -96,7 +124,7 @@ const html = `<!doctype html>
     if (rendered()) { if (++seen >= 2) { done = "filled"; return post("filled"); } } else seen = 0;
     var list = [].slice.call(document.scripts).filter(function (s) { return s.src; });
     var allFailed = list.length > 0 && list.every(function (s) { return d.scripts[s.src] && d.scripts[s.src].state === "failed"; });
-    if (allFailed || Date.now() - d.start > ${FILL_TIMEOUT_MS}) { done = "empty"; clearInterval(timer); return post("empty"); }
+    if (allFailed || Date.now() - d.start > (mt ? ${MONETAG_TIMEOUT_MS} : ${FILL_TIMEOUT_MS})) { done = "empty"; clearInterval(timer); return post("empty"); }
     post("loading");
   }
   var timer = setInterval(check, 500);

@@ -144,7 +144,7 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
                   <span className="s-text">
                     <span className="s-name">{o.tool.name}</span>
                     <span className="s-tag" style={{ display: "block" }}>
-                      {!isAvailable(o.tool) ? "Backend coming soon · " : ""}
+                      {!isAvailable(o.tool) ? "Coming soon · " : ""}
                       {o.tool.tagline}
                     </span>
                   </span>

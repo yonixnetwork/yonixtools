@@ -42,11 +42,17 @@ jobs:
           npm test
           npm audit --omit=dev --audit-level=high
           npm run build:integrated
-          npm run build
+          npm run build:test
           npx playwright install --with-deps chromium webkit
           npm run test:e2e
           npm run test:e2e:integrated
           E2E_INTEGRATED=1 npx playwright test --trace off --project=integrated-iphone
+          # The real nginx config: admin password protection, removed pages, CSP on every page.
+          sudo apt-get install -y -qq nginx >/dev/null
+          printf 'ci-admin:%s\n' "$(openssl passwd -apr1 ci-admin-password)" > /tmp/ci-admin.htpasswd
+          ADMIN_HTPASSWD=/tmp/ci-admin.htpasswd AD_ORIGIN=http://localhost:4175 AD_FRAME_PARENT=http://localhost:4173 scripts/nginx-local.sh start out 4173 4175
+          REAL_NGINX=1 ADMIN_USER=ci-admin ADMIN_PASS=ci-admin-password npx playwright test --trace off --project=desktop tests/e2e/csp.spec.ts tests/e2e/admin.spec.ts
+          scripts/nginx-local.sh stop
         env: { CI: "true" }
 
   docker:

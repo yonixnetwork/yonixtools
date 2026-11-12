@@ -1,5 +1,8 @@
 # Adsterra "ads not displaying": investigation, fix and test report
 
+> **Update 12 Nov 2026:** current design and results are in `RELEASE_ADS_ADMIN_PWA.md` (separate ad origin `ads.yonixtools.com` only; no sandboxed or main-origin frames; Monetag in-frame; admin-only `/admin/ads/`; page CSP has no ad hosts).
+
+
 Branch `feature/ads-fix`. **Not deployed.** Real ad delivery has **not** been observed yet. Automated browsers on datacenter IPs can't establish it, so it must be confirmed on real devices (see the end of this report).
 
 ## 1. Investigation of the live site
