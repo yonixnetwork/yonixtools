@@ -16,6 +16,10 @@ ok()  { echo "  PASS  $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL  $1"; fail=$((fail+1)); }
 note() { echo "  NOTE  $1"; }
 code() { curl "${args[@]}" -o /dev/null -w '%{http_code}' "$@"; }
+# has [-i] PATTERN CURL_ARGS...: fetch the whole response, then match it without a pipe.
+# ("curl | grep -q" fails under pipefail when grep exits early and curl gets SIGPIPE:
+# a false FAIL that depends on response size and timing.)
+has() { local flags=-q; [ "$1" = "-i" ] && { flags=-qi; shift; }; local pat="$1"; shift; local out; out="$(curl "${args[@]}" "$@")"; grep "$flags" -- "$pat" <<<"$out"; }
 check() { local want="$1" label="$2"; shift 2; local got; got="$(code "$@")"; [ "$got" = "$want" ] && ok "$label ($got)" || bad "$label (expected $want, got $got)"; }
 
 echo "Smoke test: $BASE"
@@ -23,9 +27,9 @@ echo "Pages"
 for p in / /tools/ /instagram-downloader/ /youtube-downloader/ /pdf-merger/ /qr-code-generator/ /category/pdf-tools/ /privacy/; do check 200 "GET $p" "$BASE$p"; done
 check 404 "unknown page is 404" "$BASE/definitely-not-a-page/"
 check 301 "missing trailing slash redirects" "$BASE/pdf-merger"
-sm="$(curl "${args[@]}" "$BASE/sitemap.xml")"; echo "$sm" | grep -q "<loc>https://$HOST/pdf-merger/</loc>" && ok "sitemap lists tool pages" || bad "sitemap"
-if [ "${STAGING:-0}" = "1" ]; then curl "${args[@]}" "$BASE/robots.txt" | grep -q "^Disallow: /$" && ok "staging robots.txt blocks all crawlers" || bad "staging robots.txt"
-else curl "${args[@]}" "$BASE/robots.txt" | grep -q "Sitemap: https://$HOST/sitemap.xml" && ok "robots.txt points to sitemap" || bad "robots.txt"; fi
+has "<loc>https://$HOST/pdf-merger/</loc>" "$BASE/sitemap.xml" && ok "sitemap lists tool pages" || bad "sitemap"
+if [ "${STAGING:-0}" = "1" ]; then has "^Disallow: /$" "$BASE/robots.txt" && ok "staging robots.txt blocks all crawlers" || bad "staging robots.txt"
+else has "Sitemap: https://$HOST/sitemap.xml" "$BASE/robots.txt" && ok "robots.txt points to sitemap" || bad "robots.txt"; fi
 
 echo "Headers"
 hdr="$(curl "${args[@]}" -D - -o /dev/null "$BASE/")"
@@ -33,7 +37,7 @@ for h in content-security-policy x-content-type-options x-frame-options referrer
 [[ "$BASE" == https://* ]] && { echo "$hdr" | grep -qi "^strict-transport-security:" && ok "HSTS" || bad "HSTS missing"; }
 echo "$hdr" | grep -qiE "^server: .*[0-9]" && bad "server version exposed" || ok "no server version"
 asset="$(curl "${args[@]}" "$BASE/" | grep -o '/_next/static/[^"]*\.js' | head -1)"
-curl "${args[@]}" -D - -o /dev/null -H 'Accept-Encoding: gzip' "$BASE$asset" | grep -qi "immutable" && ok "static assets cached immutably" || bad "static asset caching"
+has -i "immutable" -D - -o /dev/null -H 'Accept-Encoding: gzip' "$BASE$asset" && ok "static assets cached immutably" || bad "static asset caching"
 
 # Pages keep the strict policy: scripts only from this site, never eval or blanket https/wildcard permissions.
 csp="$(echo "$hdr" | grep -i "^content-security-policy:")"
@@ -52,10 +56,10 @@ echo "Advertising frame and PWA"
 check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"
 afh="$(curl "${args[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
 echo "$afh" | grep -i "^content-security-policy:" | grep -Eq "frame-ancestors 'self'( https?://[A-Za-z0-9.:-]+)?;" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
-curl "${args[@]}" "$BASE/ad-frame.html" | grep -q "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" && ok "ad frame contains the publisher units" || bad "ad frame units"
+has "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" "$BASE/ad-frame.html" && ok "ad frame contains the publisher units" || bad "ad frame units"
 check 200 "GET /manifest.webmanifest" "$BASE/manifest.webmanifest"
-curl "${args[@]}" -D - -o /dev/null "$BASE/manifest.webmanifest" | grep -qi "^content-type: application/manifest+json" && ok "manifest content type" || bad "manifest content type"
-curl "${args[@]}" -D - -o /dev/null "$BASE/sw.js" | grep -qi "^cache-control: no-cache" && ok "service worker is always revalidated" || bad "sw.js caching"
+has -i "^content-type: application/manifest+json" -D - -o /dev/null "$BASE/manifest.webmanifest" && ok "manifest content type" || bad "manifest content type"
+has -i "^cache-control: no-cache" -D - -o /dev/null "$BASE/sw.js" && ok "service worker is always revalidated" || bad "sw.js caching"
 check 200 "GET /icons/icon-512.png" "$BASE/icons/icon-512.png"
 check 200 "GET /offline/" "$BASE/offline/"
 
