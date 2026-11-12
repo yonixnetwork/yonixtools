@@ -19,6 +19,15 @@ if [ -n "${AD_FRAME_PARENT:-}" ] && [ "$AD_FRAME_PARENT" != "https://yonixtools.
 bash deploy/scripts/preflight.sh || { echo "Fix preflight problems first."; exit 1; }
 if [ "${DEPLOY_PULL:-0}" = "1" ]; then git fetch origin && git merge --ff-only "origin/$(git rev-parse --abbrev-ref HEAD)"; fi
 rev="$(git rev-parse --short HEAD)"
+# Rollback readiness: keep the images that are running now as :previous (a tagged image survives
+# "docker image prune"), together with the commit they came from. deploy/scripts/rollback.sh
+# switches back to them in seconds, without rebuilding.
+mkdir -p deploy/state
+for img in yonixtools-web yonixtools-downloader; do
+  if docker image inspect "$img:latest" >/dev/null 2>&1; then docker tag "$img:latest" "$img:previous"; fi
+done
+[ -f deploy/state/deployed-rev ] && cp deploy/state/deployed-rev deploy/state/previous-rev
+echo "==> Kept the current images as :previous for rollback ($(cat deploy/state/previous-rev 2>/dev/null || echo 'commit unknown'))"
 echo "==> Building images for $rev (one at a time, to spare a small server)"
 "${COMPOSE[@]}" build downloader
 "${COMPOSE[@]}" build web
@@ -53,6 +62,7 @@ for _ in $(seq 1 60); do
 done
 [ "$web" = healthy ] && [ "$dl" = healthy ] || { echo "Not healthy (web=$web downloader=$dl). Logs:"; "${COMPOSE[@]}" logs --tail 50; exit 1; }
 echo "==> Local smoke test (through the stack's own Nginx on 127.0.0.1:${WEB_PORT:-8090})"
-AD_HOST="${AD_ORIGIN:+${AD_ORIGIN#*://}}" SITE_HOST="${SITE_HOST:-yonixtools.com}" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:${WEB_PORT:-8090}" || { echo "Smoke test failed. The previous images are still available for rollback (docs/DEPLOYMENT.md)."; exit 1; }
-docker image prune -f >/dev/null
+AD_HOST="${AD_ORIGIN:+${AD_ORIGIN#*://}}" SITE_HOST="${SITE_HOST:-yonixtools.com}" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:${WEB_PORT:-8090}" || { echo "Smoke test failed. Roll back with: bash deploy/scripts/rollback.sh"; exit 1; }
+echo "$rev" > deploy/state/deployed-rev
+docker image prune -f >/dev/null   # dangling images only; :latest and :previous are kept
 echo "==> Deploy complete: $rev"

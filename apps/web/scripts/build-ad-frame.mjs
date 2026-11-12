@@ -22,14 +22,20 @@ import { readFileSync, writeFileSync } from "node:fs";
 
 const adsterra = JSON.parse(readFileSync(new URL("../src/lib/ads/units.json", import.meta.url), "utf8"));
 const monetag = JSON.parse(readFileSync(new URL("../src/lib/ads/monetag.json", import.meta.url), "utf8"));
-const units = {
-  ...adsterra,
+// Administrator setting MONETAG (build env NEXT_PUBLIC_MONETAG; deploy: MONETAG=on), default OFF.
+// OFF: the PUBLIC frame contains no Monetag code at all, so nothing on the site can load it.
+// The admin-only test document keeps both zones, clearly marked disabled, and runs them only
+// when the administrator explicitly opens their test.
+const MONETAG_ON = process.env.NEXT_PUBLIC_MONETAG === "on";
+const monetagUnits = {
   monetagPush: { snippet: monetag.inPagePush.snippet, width: 728, height: 120 },
   monetagVignette: { snippet: monetag.vignette.snippet, width: 0, height: 0 },
 };
+const units = { ...adsterra, ...monetagUnits }; // everything the admin test knows
+const publicUnits = MONETAG_ON ? units : { ...adsterra }; // what the public frame can run
+const snippetsOf = (u) => JSON.stringify(Object.fromEntries(Object.entries(u).map(([k, v]) => [k, v.snippet]))).replace(/</g, "\\u003c");
 const NATIVE_CONTAINER = "container-cdabddda1b7a8e769299c93b91d77822";
 const SIZES = Object.fromEntries(Object.entries(units).map(([k, v]) => [k, [v.width, v.height]]));
-const SNIPPETS = JSON.stringify(Object.fromEntries(Object.entries(units).map(([k, v]) => [k, v.snippet]))).replace(/</g, "\\u003c");
 
 // Runs first in both documents. Strips Domain= from cookies set via document.cookie and the Cookie
 // Store API, in this document and in same-origin child frames the ad code creates.
@@ -55,7 +61,7 @@ const COOKIE_GUARD = `(function () {
 // Runs the publisher snippet. Records script load/failure (needed for "blocked") and, in the
 // test document only, errors, CSP violations and the network requests.
 const runner = (diag) => `(function () {
-  var UNITS = ${SNIPPETS};
+  var UNITS = ${snippetsOf(diag ? units : publicUnits)};
   var q = new URLSearchParams(location.search), unit = q.get("u"), slot = q.get("s") || "";
   if (!Object.prototype.hasOwnProperty.call(UNITS, unit)) return;
   var d = (window.__ytx = { unit: unit, slot: slot, start: Date.now(), scripts: {}${diag ? ", errors: [], blocked: []" : ""} });
@@ -188,7 +194,8 @@ ${detect(true)}
 </script>
 <script>
 (function () {
-  var LABELS = ${JSON.stringify(LABELS)}, SIZES = ${JSON.stringify(SIZES)}, SANDBOX = ${JSON.stringify(SANDBOX)};
+  var LABELS = ${JSON.stringify(LABELS)}, SIZES = ${JSON.stringify(SIZES)}, SANDBOX = ${JSON.stringify(SANDBOX)}, MONETAG_ON = ${MONETAG_ON};
+  function off(u) { return !MONETAG_ON && u.indexOf("monetag") === 0; }
   var q = new URLSearchParams(location.search), d = window.__ytx, embed = q.get("embed") === "1";
 
   function requests() { // Resource Timing: what this document fetched. Cross-origin status codes are hidden unless the server allows it.
@@ -203,7 +210,7 @@ ${detect(true)}
     return out;
   }
   function snapshot(state) {
-    return { unit: d.unit, state: state, ms: Date.now() - d.start, scripts: d.scripts, errors: d.errors, blocked: d.blocked, requests: requests(),
+    return { unit: d.unit, state: state, ms: state === "filled" && d.filledMs ? d.filledMs : Date.now() - d.start, scripts: d.scripts, errors: d.errors, blocked: d.blocked, requests: requests(),
       top: (function () { try { void top.location.href; return "same origin"; } catch (e) { return "cross-origin (blocked)"; } })(), framed: parent !== window };
   }
   // The six outcomes, strictly. "Rendered" only from the creative check, never from a loaded script.
@@ -239,11 +246,11 @@ ${detect(true)}
     }
     var tick = function () {
       if (state === "loading") {
-        if (window.__ytxCheck().rendered) { if (++seen >= 2) state = "filled"; } else seen = 0;
+        if (window.__ytxCheck().rendered) { if (++seen >= 2) { state = "filled"; d.filledMs = Date.now() - d.start; } } else seen = 0;
         if (state === "loading" && (window.__ytxAllFailed() || Date.now() - d.start > (mt ? ${TEST_TIMEOUT_MS.monetag} : ${TEST_TIMEOUT_MS.adsterra}))) state = "empty";
       }
       var r = snapshot(state);
-      if (panel) panel.textContent = "ADMIN TEST · " + window.__ytxReport(d.unit, r) + "\\n\\nDon't click the ad.";
+      if (panel) panel.textContent = (off(d.unit) ? "MONETAG IS DISABLED ON THE SITE (MONETAG=off). This is an administrator-only test run.\\n\\n" : "") + "ADMIN TEST · " + window.__ytxReport(d.unit, r) + "\\n\\nDon't click the ad.";
       else parent.postMessage({ ytxTest: d.unit, report: r }, location.origin);
     };
     setInterval(tick, 1000); window.addEventListener("load", tick);
@@ -262,6 +269,12 @@ ${detect(true)}
     sec.innerHTML = "<div><b></b> · <a target='_blank' rel='noopener'>open top-level</a></div><div class='st' style='font-weight:700;margin:4px 0'>watching…</div><div class='box' style='overflow:auto;border:1px dashed #ccc'></div>";
     sec.querySelector("b").textContent = l[1];
     sec.querySelector("a").href = location.pathname + "?u=" + l[0];
+    if (off(l[0])) { // disabled: not run automatically, only on the administrator's explicit request
+      sec.querySelector(".st").textContent = "DISABLED on the site (MONETAG=off): not loaded. Use \u201copen top-level\u201d for an administrator-only test.";
+      sec.querySelector(".st").style.color = "#555"; sec.querySelector(".box").remove();
+      document.getElementById("units").appendChild(sec);
+      return;
+    }
     var f = document.createElement("iframe"), sz = SIZES[l[0]];
     f.setAttribute("sandbox", SANDBOX); f.scrolling = "no"; f.style.cssText = "display:block;border:0;max-width:100%";
     f.width = sz[0] ? String(sz[0]) : "100%"; f.height = String(sz[1] || 300);
@@ -283,4 +296,4 @@ ${detect(true)}
 
 writeFileSync(new URL("../public/ad-frame.html", import.meta.url), frame);
 writeFileSync(new URL("../public/ad-test.html", import.meta.url), test);
-console.log("public/ad-frame.html and public/ad-test.html written");
+console.log("public/ad-frame.html and public/ad-test.html written (Monetag " + (MONETAG_ON ? "ON" : "OFF: not in the public frame") + ")");

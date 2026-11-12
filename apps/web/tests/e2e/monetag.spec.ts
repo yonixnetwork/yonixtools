@@ -19,8 +19,10 @@ const EXACT = {
 </script>`,
 };
 
-const OFF = process.env.NEXT_PUBLIC_MONETAG === "off";
-test.beforeEach(({}, info) => test.skip(OFF && !info.title.startsWith("[off]"), "Monetag disabled in this build"));
+// Administrator setting MONETAG, default OFF (the production release). Tests marked "[on]" need a
+// MONETAG=on build (npm run build:test:monetag, then NEXT_PUBLIC_MONETAG=on npx playwright test).
+const OFF = process.env.NEXT_PUBLIC_MONETAG !== "on";
+test.beforeEach(({}, info) => test.skip(OFF && info.title.startsWith("[on]"), "Monetag disabled in this build (the default)"));
 
 type Req = { url: string; inPage: boolean };
 const requests: Req[] = [];
@@ -44,7 +46,7 @@ test("the Monetag codes are stored byte for byte", () => {
 test.describe("desktop", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("allowed utility pages: In-Page Push loads once, inside the ad-origin frame, never in the page", async ({ page }) => {
+  test("[on] allowed utility pages: In-Page Push loads once, inside the ad-origin frame, never in the page", async ({ page }) => {
     const allowed = ["/image-compressor/", "/pdf-merger/", "/json-formatter/"]; // listing pages show it on phones only (tested below)
     for (const path of allowed) {
       await page.goto(path);
@@ -71,15 +73,14 @@ test.describe("desktop", () => {
   test("never on the homepage, any downloader page (with results) or the downloader category", async ({ page }) => {
     for (const path of ["/", "/social-media-downloader/", "/instagram-downloader/", "/tiktok-downloader/", "/facebook-downloader/", "/category/social-media-downloaders/"]) {
       await page.goto(path);
-      for (const a of await page.locator("aside.ad-slot").all()) await a.scrollIntoViewIfNeeded().catch(() => {});
-      await page.waitForTimeout(1200);
+      for (const y of [0.33, 0.66, 1]) { await page.evaluate((f) => window.scrollTo(0, document.body.scrollHeight * f), y); await page.waitForTimeout(300); }
       await expect(pushSlot(page), path).toHaveCount(0);
       expect(await pageZoneScripts(page), path).toBe(0);
     }
     expect(requests).toEqual([]);
   });
 
-  test("a creative from the zone grows the slot; an empty zone collapses it", async ({ page }) => {
+  test("[on] a creative from the zone grows the slot; an empty zone collapses it", async ({ page }) => {
     stubBody.value = "var d=document.createElement('div');d.style.cssText='width:320px;height:90px;background:#ccc';d.textContent='Sponsored message from a test';document.body.appendChild(d);";
     await page.goto("/pdf-merger/");
     const slot = pushSlot(page);
@@ -106,24 +107,35 @@ test.describe("desktop", () => {
   });
 });
 
-test("phones: no In-Page Push on tool pages (at most two ads), but on listing pages", async ({ page }) => {
+test("[on] phones: no In-Page Push on tool or listing pages (desktop tool pages only)", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
-  await page.goto("/image-compressor/");
-  await page.waitForTimeout(800);
-  expect(await pushSlot(page).evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).length)).toBe(0);
-  await page.goto("/tools/");
-  await expect(pushSlot(page)).toHaveCount(1);
+  for (const path of ["/image-compressor/", "/tools/"]) {
+    await page.goto(path);
+    await page.waitForTimeout(800);
+    expect(await pushSlot(page).evaluateAll((els) => els.filter((e) => (e as HTMLElement).offsetParent !== null).length), path).toBe(0);
+  }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   expect(overflow).toBeLessThanOrEqual(0);
 });
 
-test("[off] a MONETAG=off build has no Monetag slot anywhere", async ({ page }) => {
+test("[off] the default build (MONETAG off) never loads Monetag: no slot, no frame code, no request, on any page", async ({ page, request }) => {
   test.skip(!OFF, "only for MONETAG=off builds");
-  for (const path of ["/pdf-merger/", "/image-compressor/", "/tools/", "/category/pdf-tools/"]) {
+  const seen: string[] = [];
+  page.on("request", (r) => /nap5k\.com|n6wxm\.com|rtmark\.net|jhnwr\.com|ldrws\.com/.test(r.url()) && seen.push(r.url()));
+  for (const path of ["/", "/pdf-merger/", "/image-compressor/", "/json-formatter/", "/tools/", "/category/pdf-tools/", "/category/developer-tools/", "/instagram-downloader/", "/tiktok-downloader/"]) {
     await page.goto(path);
-    await page.waitForTimeout(800);
+    for (const y of [0.33, 0.66, 1]) { await page.evaluate((f) => window.scrollTo(0, document.body.scrollHeight * f), y); await page.waitForTimeout(400); }
     await expect(pushSlot(page), path).toHaveCount(0);
+    expect(await pageZoneScripts(page), path).toBe(0);
   }
+  expect(seen).toEqual([]);
+  expect(requests).toEqual([]);
+  const frame = await (await request.get(AD + "/ad-frame.html")).text();
+  expect(frame).not.toMatch(/nap5k|n6wxm|12218944|12218952/);
+  // Even asking the public frame for a Monetag unit runs nothing.
+  await page.goto(AD + "/ad-frame.html?u=monetagPush&s=x");
+  await page.goto(AD + "/ad-frame.html?u=monetagVignette&s=x");
+  await page.waitForTimeout(1000);
   expect(requests).toEqual([]);
 });
 
@@ -142,6 +154,7 @@ test("ad test: Monetag In-Page Push as a separate top-level document; rendered o
   await expect(p).toContainText("separate top-level document on http://localhost:4175");
   await expect(p).toContainText("nap5k.com/tag.min.js loaded");
   await expect(p).toContainText("network requests:");
+  if (OFF) await expect(p).toContainText("MONETAG IS DISABLED ON THE SITE (MONETAG=off). This is an administrator-only test run.");
   expect(requests.some((r) => r.url.includes("tag.min.js"))).toBe(true);
 });
 
@@ -171,13 +184,19 @@ test("ad test: an Adsterra zone that returns nothing ends as NO CREATIVE RETURNE
   await expect(panelOf(page)).toContainText("NO CREATIVE RETURNED", { timeout: 30_000 });
 });
 
-test("ad test index: every format framed on the ad origin, with a top-level link each", async ({ page }) => {
+test("ad test index: every enabled format framed on the ad origin, Monetag marked disabled and not loaded", async ({ page }) => {
   await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
   await page.goto(AD + "/ad-test.html");
-  await expect(page.locator("section iframe")).toHaveCount(6);
+  await expect(page.locator("section iframe")).toHaveCount(OFF ? 4 : 6);
+  if (OFF) {
+    await expect(page.locator("section", { hasText: "Monetag In-Page Push" })).toContainText("DISABLED on the site (MONETAG=off): not loaded");
+    await expect(page.locator("section", { hasText: "Monetag Vignette" })).toContainText("DISABLED on the site");
+    await page.waitForTimeout(1500);
+    expect(requests).toEqual([]); // nothing Monetag is loaded unless the administrator opens its test
+  }
   await expect(page.locator('a[href="/ad-test.html?u=monetagPush"]')).toHaveCount(1);
   await expect(page.locator('a[href="/ad-test.html?u=monetagVignette"]')).toHaveCount(1);
-  await expect(page.locator("#report")).toContainText("Monetag In-Page Push (zone 12218944)", { timeout: 10_000 });
+  await expect(page.locator("#report")).toContainText(OFF ? "Adsterra banner 300 × 250" : "Monetag In-Page Push (zone 12218944)", { timeout: 10_000 });
   await expect(page.locator("#report")).toContainText("context: inside a frame");
 });
 

@@ -49,15 +49,20 @@ async function slots(page: Page) {
   return page.locator("aside.ad-slot").evaluateAll((els) => els.map((e) => ({ unit: e.getAttribute("data-ad-unit"), label: e.querySelector(".ad-label")?.textContent, visible: (e as HTMLElement).offsetParent !== null })));
 }
 
-test("the ad frame serves the four publisher codes byte for byte (and the two Monetag zones)", async ({ request }) => {
+test("the public ad frame serves the four Adsterra codes byte for byte (Monetag only when the administrator enables it)", async ({ request }) => {
   const res = await request.get("http://localhost:4175/ad-frame.html");
   const html = await res.text();
   const units = JSON.parse(html.match(/var UNITS = (\{.*\});\n\s*var q/s)![1]);
   const { monetagPush, monetagVignette, ...adsterra } = units;
   expect(adsterra).toEqual(EXACT);
   const monetag = JSON.parse(readFileSync(new URL("../../src/lib/ads/monetag.json", import.meta.url), "utf8"));
-  expect(monetagPush).toBe(monetag.inPagePush.snippet);
-  expect(monetagVignette).toBe(monetag.vignette.snippet);
+  if (process.env.NEXT_PUBLIC_MONETAG === "on") {
+    expect(monetagPush).toBe(monetag.inPagePush.snippet);
+    expect(monetagVignette).toBe(monetag.vignette.snippet);
+  } else {
+    expect([monetagPush, monetagVignette]).toEqual([undefined, undefined]);
+    expect(html).not.toMatch(/nap5k\.com|n6wxm\.com|12218944|12218952/); // no Monetag code at all in the public frame
+  }
   expect(html).toContain("document.write(UNITS[unit])");
   expect(html).not.toMatch(/popunder|smartlink|socialbar|social-bar|multitag/i); // disabled formats never loaded
 });
@@ -65,17 +70,17 @@ test("the ad frame serves the four publisher codes byte for byte (and the two Mo
 test.describe("desktop placements", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("homepage: leaderboard below the downloader, 300×250 between sections, native lower down", async ({ page }) => {
+  test("homepage: leaderboard below the downloader, 300×250 between sections (two ads)", async ({ page }) => {
     await page.goto("/");
-    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "banner300x250", "native"]);
+    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "banner300x250"]);
     expect(await page.locator(".hero aside.ad-slot, #downloader aside.ad-slot").count()).toBe(0);
   });
 
-  test("tool page: leaderboard before the tool, 300×250 after it, In-Page Push and native in the content", async ({ page }) => {
+  test("tool page: leaderboard below the introduction, 300×250 below the tool (two ads)", async ({ page }) => {
     for (const path of ["/image-compressor/", "/pdf-merger/", "/qr-code-generator/", "/json-formatter/", "/loan-calculator/", "/color-converter/", "/video-info/", "/random-number-generator/", "/meta-tag-generator/", "/word-counter/"]) {
       await page.goto(path);
       const s = await slots(page);
-      expect(s.map((x) => x.unit), path).toEqual(["banner728x90", "banner300x250", "monetagPush", "native"]);
+      expect(s.map((x) => x.unit), path).toEqual(["banner728x90", "banner300x250"]);
       expect(new Set(s.map((x) => x.unit)).size, path).toBe(s.length); // never the same unit twice
       expect(s.every((x) => x.label === "Advertisement"), path).toBe(true);
       // Ads sit before and after the tool surface, never inside it.
@@ -83,9 +88,9 @@ test.describe("desktop placements", () => {
     }
   });
 
-  test("downloader page: leaderboard below the downloader, native between sections, 300×250 after the FAQ", async ({ page }) => {
+  test("downloader page: leaderboard below the downloader and results, 300×250 between content sections (two ads)", async ({ page }) => {
     await page.goto("/instagram-downloader/");
-    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "native", "banner300x250"]);
+    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "banner300x250"]);
     expect(await page.locator("#downloader aside.ad-slot").count()).toBe(0);
   });
 
@@ -105,7 +110,7 @@ test.describe("phone placements", () => {
     await page.goto("/");
     expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     await page.goto("/image-compressor/");
-    expect(await visible()).toEqual(["banner320x50", "banner300x250"]); // native and In-Page Push are wide-screen only on tool pages
+    expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     await page.goto("/tiktok-downloader/");
     expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -129,14 +134,14 @@ test("frames: loaded from the separate ad origin, no top navigation, banner size
   expect([Math.round(box!.width), Math.round(box!.height)]).toEqual([300, 250]);
   await expect(ad).toHaveAttribute("data-ad-state", "loading");
   await expect(ad.locator(".ad-label")).toBeHidden(); // no "Advertisement" over empty space
-  // Native reserves a small strip only, not a tall empty box.
-  const native = page.locator('aside[data-ad-unit="native"] .ad-box');
-  expect(Math.round((await native.boundingBox())!.height)).toBeLessThanOrEqual(100);
-  // Lazy: a slot more than ~300px below the viewport hasn't loaded its frame yet.
-  const far = page.locator('aside[data-ad-unit="native"]');
-  const dist = await far.evaluate((e) => e.getBoundingClientRect().top - innerHeight);
-  if (dist > 400) await expect(far.locator("iframe")).toHaveCount(0);
-  else expect(dist, "native slot should be far below the fold in this layout").toBeGreaterThan(400);
+  // Native (All tools, after the list) reserves a small strip only, not a tall empty box; and it's lazy:
+  // far below the viewport, its frame hasn't loaded yet.
+  await page.goto("/tools/");
+  const native = page.locator('aside.ad-native');
+  expect(Math.round((await native.locator(".ad-box").boundingBox())!.height)).toBeLessThanOrEqual(100);
+  expect(await native.evaluate((e) => e.getBoundingClientRect().top - innerHeight)).toBeGreaterThan(400);
+  await page.waitForTimeout(800);
+  await expect(native.locator("iframe")).toHaveCount(0);
 });
 
 test("when the ad network is unreachable (or blocked), slots collapse within seconds and the page has no errors", async ({ page }) => {
@@ -156,12 +161,9 @@ test("when the ad network is unreachable (or blocked), slots collapse within sec
   await expect(ad.locator(".ad-label")).toBeHidden();
   await page.keyboard.press("Shift");
   await expect(ad).toHaveCount(0);
-  // Off screen: slots collapse by themselves.
+  // Off screen: slots collapse by themselves (the leaderboard above the tool, once scrolled away).
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  const native = page.locator('aside[data-ad-unit="native"]');
-  await expect.poll(async () => (await native.count()) === 0 || (await native.getAttribute("data-ad-state")) === "empty", { timeout: 4_000 }).toBe(true);
-  await page.evaluate(() => window.scrollTo(0, 0)); // now off screen
-  await expect(native).toHaveCount(0, { timeout: 4_000 });
+  await expect(page.locator('aside[data-ad-unit="banner728x90"]')).toHaveCount(0, { timeout: 4_000 });
   // The tool is unaffected.
   await page.locator("textarea").first().fill("one two three");
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
@@ -200,7 +202,7 @@ test("plumbing (simulated): a native creative grows its slot to the creative's h
   await page.route("https://bellnewyork.org/21/cdabddda1b7a8e769299c93b91d77822", (r) =>
     r.fulfill(stub("var c=document.getElementById('container-cdabddda1b7a8e769299c93b91d77822');c.innerHTML='<div style=\"height:240px;background:#ddd\">Sponsored story headline text</div>';")));
   await page.setViewportSize({ width: 1280, height: 900 });
-  await page.goto("/image-converter/");
+  await page.goto("/tools/");
   const ad = page.locator('aside[data-ad-unit="native"]');
   await ad.scrollIntoViewIfNeeded();
   await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
@@ -264,4 +266,25 @@ test("ad code can't set cookies for the parent domain through document.cookie, c
   const toss = jar.filter((c) => c.name.startsWith("toss"));
   expect(toss.length).toBeGreaterThanOrEqual(2);
   for (const c of toss) expect(c.domain, c.name).toBe("ads.ytx-test.example"); // never ".ytx-test.example"
+});
+
+// Downloads in browser tools: ads on the page, a creative that tries to open windows, and still no
+// popup, new tab or navigation when the visitor clicks a download button.
+test("download buttons never open a popup or new tab, even with an ad on the page trying to", async ({ page, context }) => {
+  const opened: string[] = [];
+  context.on("page", (p) => opened.push(p.url()));
+  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "document.addEventListener('click',function(){window.open('https://example.com/ad','_blank')},true);try{top.addEventListener('click',function(){window.open('https://example.com/top')},true)}catch(e){}" }));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/qr-code-generator/");
+  for (const a of await page.locator("aside.ad-slot").all()) await a.scrollIntoViewIfNeeded().catch(() => {});
+  await page.waitForTimeout(800);
+  await page.evaluate(() => scrollTo(0, 0));
+  await page.locator("#qr-text").fill("https://example.com");
+  for (const name of ["PNG", "SVG"]) {
+    const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name, exact: true }).click()]);
+    expect(dl.suggestedFilename()).toMatch(new RegExp(`\\.${name.toLowerCase()}$`));
+  }
+  await page.waitForTimeout(800);
+  expect(opened).toEqual([]);
+  expect(new URL(page.url()).pathname).toBe("/qr-code-generator/");
 });

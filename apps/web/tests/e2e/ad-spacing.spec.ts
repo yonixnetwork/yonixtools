@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 // Owner rule (12 Nov 2026): ads must never appear back to back. Between any two visible ad
-// slots there must be real page content, and phones never get more than 3 ads on a page.
+// slots there must be real page content, and no page shows more than two ads (initial release).
 const PAGES = ["/", "/image-compressor/", "/pdf-merger/", "/json-formatter/", "/word-counter/", "/instagram-downloader/", "/tiktok-downloader/", "/tools/", "/category/pdf-tools/", "/category/developer-tools/", "/category/social-media-downloaders/"];
 
 test.beforeEach(async ({ page }) => {
@@ -26,8 +26,7 @@ for (const [name, viewport] of [["phone", { width: 390, height: 844 }], ["deskto
         return { count: slots.length, units: slots.map((s) => s.getAttribute("data-ad-unit") || s.className), gaps };
       });
       for (const g of r.gaps) expect(g, `${path}: content between ads (${r.units.join(", ")})`).toBeGreaterThanOrEqual(80);
-      if (name === "phone") expect(r.count, `${path}: ads on a phone page (${r.units.join(", ")})`).toBeLessThanOrEqual(3);
-      expect(r.count, `${path}: ads on a desktop page`).toBeLessThanOrEqual(4);
+      expect(r.count, `${path}: ads on the page (${r.units.join(", ")})`).toBeLessThanOrEqual(2); // owner rule: at most two
       expect(new Set(r.units).size, `${path}: the same zone twice (${r.units.join(", ")})`).toBe(r.units.length);
       expect(r.units.filter((u) => u === "native").length, `${path}: native snippets`).toBeLessThanOrEqual(1);
     }

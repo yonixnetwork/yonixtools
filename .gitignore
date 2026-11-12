@@ -24,3 +24,6 @@ downloads/
 .DS_Store
 .staging/
 deploy/admin-auth/
+
+# Server-side deploy state (deployed commit, rollback commit)
+deploy/state/

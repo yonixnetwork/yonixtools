@@ -20,7 +20,8 @@ describe("central ad placements", () => {
         const u = units(page, d);
         expect(new Set(u).size, u.join(", ")).toBe(u.length);
         expect(u.filter((x) => x === "native").length).toBeLessThanOrEqual(LIMITS.nativePerPage);
-        expect(u.length).toBeLessThanOrEqual(LIMITS.perPage[d]);
+        const adsterra = on.filter((p) => p.page === page && p.devices.includes(d) && p.network === "adsterra");
+        expect(adsterra.length, adsterra.map((p) => p.id).join(", ")).toBeLessThanOrEqual(LIMITS.adsterraPerPage);
       });
 
   it("never Monetag on the homepage or downloader pages, and the download panel has no ad", () => {

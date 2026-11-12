@@ -92,6 +92,14 @@ jobs:
           done
           probe 1.1.1.1 443 && echo "public internet OK (1.1.1.1:443)"
           curl -fsS http://127.0.0.1:8090/api/healthz && echo " (stack still serves through the edge port)"
+      - name: Rollback script restores the previous images and the stack stays healthy
+        run: |
+          for i in yonixtools-web yonixtools-downloader; do docker tag $i:latest $i:previous; done
+          echo ci-previous > /tmp/prev && mkdir -p deploy/state && cp /tmp/prev deploy/state/previous-rev
+          bash deploy/scripts/rollback.sh
+          for i in yonixtools-web yonixtools-downloader; do docker image inspect $i:failed >/dev/null; done
+          [ "$(cat deploy/state/deployed-rev)" = ci-previous ]
+          curl -fsS http://127.0.0.1:8090/api/healthz && curl -fsS -o /dev/null http://127.0.0.1:8090/ && echo " site and API up after rollback"
       - name: Container logs
         if: always()
         run: docker compose -f deploy/docker-compose.yml logs --tail 80

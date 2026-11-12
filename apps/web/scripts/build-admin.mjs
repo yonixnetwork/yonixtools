@@ -13,13 +13,14 @@ import { mkdirSync, writeFileSync } from "node:fs";
 const raw = (process.env.NEXT_PUBLIC_AD_ORIGIN || "").replace(/\/$/, "");
 const AD_ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(raw) || /^http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?$/i.test(raw) ? raw : "";
 const SANDBOX = "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox";
+const MONETAG_ON = process.env.NEXT_PUBLIC_MONETAG === "on"; // administrator setting, default OFF
 const UNITS = [
   ["banner320x50", "Adsterra banner 320 × 50", 320, 50],
   ["banner300x250", "Adsterra banner 300 × 250", 300, 250],
   ["banner728x90", "Adsterra banner 728 × 90", 728, 90],
   ["native", "Adsterra native banner", 0, 300],
-  ["monetagPush", "Monetag In-Page Push", 0, 160],
-  ["monetagVignette", "Monetag Vignette (test frame only: disabled on the site)", 0, 420],
+  ["monetagPush", "Monetag In-Page Push (zone 12218944)", 0, 160],
+  ["monetagVignette", "Monetag Vignette (zone 12218952)", 0, 420],
 ];
 
 const html = `<!doctype html>
@@ -47,7 +48,7 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
 <div id="stats" class="box" style="border:0"></div></section>
 <script>
 (function () {
-  var ORIGIN = ${JSON.stringify(AD_ORIGIN)}, SANDBOX = ${JSON.stringify(SANDBOX)}, UNITS = ${JSON.stringify(UNITS)};
+  var MONETAG_ON = ${MONETAG_ON}, ORIGIN = ${JSON.stringify(AD_ORIGIN)}, SANDBOX = ${JSON.stringify(SANDBOX)}, UNITS = ${JSON.stringify(UNITS)};
   document.getElementById("origin").textContent = ORIGIN || "not configured: the site shows no ads";
   if (ORIGIN) document.getElementById("adtest").href = ORIGIN + "/ad-test.html";
   var rows = {}, frames = {}, t0 = Date.now();
@@ -60,7 +61,7 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
   function render() {
     var lines = ["YoniXTools admin ad test " + new Date().toISOString(), "Browser: " + navigator.userAgent, "Ad origin: " + (ORIGIN || "none"), ""];
     UNITS.forEach(function (u) {
-      var r = rows[u[0]], v = verdict(r), el = document.getElementById("st-" + u[0]);
+      var r = rows[u[0]], v = !MONETAG_ON && u[0].indexOf("monetag") === 0 ? ["DISABLED (MONETAG=off): not loaded anywhere on the site", "m"] : verdict(r), el = document.getElementById("st-" + u[0]);
       if (el) { el.textContent = v[0]; el.className = "st " + v[1]; }
       lines.push(u[1] + ": " + v[0]);
     });
@@ -72,6 +73,7 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
       var sec = document.createElement("section");
       sec.innerHTML = "<div><b></b> · <span class='st wait' id='st-" + u[0] + "'>loading…</span></div><div class='box'></div>";
       sec.querySelector("b").textContent = u[1];
+      if (!MONETAG_ON && u[0].indexOf("monetag") === 0) { sec.querySelector(".box").remove(); host.appendChild(sec); return; } // disabled: never loaded
       var f = document.createElement("iframe");
       f.title = u[1]; f.setAttribute("sandbox", SANDBOX); f.setAttribute("referrerpolicy", "strict-origin-when-cross-origin"); f.scrolling = "no";
       f.width = u[2] ? String(u[2]) : "100%"; f.height = String(u[3]); if (!u[2]) f.style.width = "100%";

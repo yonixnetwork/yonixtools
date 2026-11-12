@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { MONETAG_ENABLED } from "@/lib/ads/monetag";
 
 export const metadata: Metadata = {
   title: "Privacy",
@@ -31,13 +32,15 @@ export default function Privacy() {
             <a href="https://adsterra.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Adsterra&apos;s privacy policy</a> for how they use it and your
             choices. You can block or delete these cookies in your browser settings, or use an ad blocker; the tools keep working either way.
           </p>
-          <p>
-            We may also show a small banner from <strong>Monetag</strong> on some tool pages (never on the downloader), loaded the same way in a separate frame.
-            Monetag and its advertisers may use cookies, device identifiers and similar technologies, and receive technical
-            data such as your IP address, browser and the page you are on. See{" "}
-            <a href="https://monetag.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Monetag&apos;s privacy policy</a>. We don&apos;t use push
-            notification ads, and nothing subscribes you to notifications.
-          </p>
+          {MONETAG_ENABLED && (
+            <p>
+              We may also show a small banner from <strong>Monetag</strong> on some tool pages (never on the downloader), loaded the same way in a separate frame.
+              Monetag and its advertisers may use cookies, device identifiers and similar technologies, and receive technical
+              data such as your IP address, browser and the page you are on. See{" "}
+              <a href="https://monetag.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Monetag&apos;s privacy policy</a>. We don&apos;t use push
+              notification ads, and nothing subscribes you to notifications.
+            </p>
+          )}
           <p>
             To place ads sensibly, each ad space reports to our own server only whether an ad appeared, came back empty or was blocked, with the ad position and
             whether the screen is phone- or desktop-sized. These are anonymous counts: no address, link, cookie or identifier is sent or kept.

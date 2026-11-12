@@ -9,7 +9,8 @@
  * tests/unit/placements.test.ts):
  *  - never two ads next to each other: there is always page content between placements;
  *  - each zone at most once per page (no repeated units), at most one native unit;
- *  - at most LIMITS.perPage ads per page per device;
+ *  - at most LIMITS.adsterraPerPage (2) Adsterra ads per page per device;
+ *  - Monetag (In-Page Push, Vignette) OFF unless the administrator builds with MONETAG=on;
  *  - Monetag only where monetag-policy allows it (never on pages with the downloader);
  *  - no ads inside tools, over inputs, previews, quality choices or Download buttons.
  *
@@ -41,30 +42,32 @@ export interface Placement {
 export const GRID_AD_AFTER = 6;
 export const GRID_AD_MIN = 9;
 
-export const LIMITS = { perPage: { mobile: 3, desktop: 4 }, nativePerPage: 1 } as const;
+/** Owner rule for the initial release (12 Nov 2026): at most TWO Adsterra placements per page. */
+export const LIMITS = { adsterraPerPage: 2, nativePerPage: 1 } as const;
 
 export const PLACEMENTS: Placement[] = [
-  // Home: the downloader stays the focus; ads follow the hero and sit between content sections.
+  // Home: one after the introduction (the downloader hero), one between content sections.
   { id: "home.after-hero", page: "home", position: "after-hero", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "below the downloader hero, never over the URL box" },
   { id: "home.mid-content", page: "home", position: "mid-content", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "between Popular tools and Browse by category" },
-  { id: "home.lower-native", page: "home", position: "lower-native", network: "adsterra", format: "native", devices: ["desktop"], enabled: true, note: "lower on the page, between Recently added and Why use" },
 
-  // Utility tools (PDF, image, video, developer, ...): one before the tool, one after it, more in the article.
+  // Utility tools (PDF, image, video, developer, ...): one below the introduction, one below the tool and its result.
   { id: "tool.before-tool", page: "tool", position: "before-tool", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "between the tool heading and the tool, with space; never inside the tool" },
-  { id: "tool.after-tool", page: "tool", position: "after-tool", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "below the tool and its result" },
-  { id: "tool.content-monetag", page: "tool", position: "content-1", network: "monetag", format: "monetagPush", devices: ["desktop"], enabled: true, note: "between How to use and Features (isolated frame)" },
-  { id: "tool.content-native", page: "tool", position: "content-2", network: "adsterra", format: "native", devices: ["desktop"], enabled: true, note: "after Features, before the FAQ" },
+  { id: "tool.after-tool", page: "tool", position: "after-tool", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "below the tool and its result, before the article" },
 
-  // Downloader pages: nothing over the URL box, previews or quality choices; no Monetag.
+  // Downloader pages: nothing over the URL box, preview, status or Download buttons; never Monetag.
   { id: "downloader.after-result", page: "downloader", position: "after-result", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "below the downloader and its completed results" },
-  { id: "downloader.content-native", page: "downloader", position: "content-1", network: "adsterra", format: "native", devices: ["desktop"], enabled: true, note: "between How to use and Features" },
-  { id: "downloader.after-faq", page: "downloader", position: "after-faq", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "end of the page" },
-  { id: "downloader.panel", page: "downloader", position: "download-panel", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: false, note: "OFF (owner, 12 Nov): no ads when Download is clicked or during processing" },
+  { id: "downloader.content", page: "downloader", position: "content-1", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "natural content position: between How to use and Features" },
+  { id: "downloader.panel", page: "downloader", position: "download-panel", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: false, note: "OFF (owner): no ads when Download is clicked or during processing" },
 
-  // All tools and category pages: a clearly separated break inside long grids, native after the list.
+  // All tools and category pages: a clearly separated break between groups of tools (long lists), one after the list.
   { id: "listing.in-grid", page: "listing", position: "in-grid", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "full-width break after the first 6 tools (lists of 9+: All tools, Developer, SEO)" },
-  { id: "listing.after-list-native", page: "listing", position: "after-list", network: "adsterra", format: "native", devices: ["desktop"], enabled: true, note: "after the tool list" },
-  { id: "listing.after-list-monetag", page: "listing", position: "after-list", network: "monetag", format: "monetagPush", devices: ["mobile"], enabled: true, note: "after the tool list on phones (isolated frame)" },
+  { id: "listing.after-list-native", page: "listing", position: "after-list", network: "adsterra", format: "native", devices: ["desktop"], enabled: true, note: "after the tool list (wide screens: one row of tiles)" },
+  { id: "listing.after-list", page: "listing", position: "after-list", network: "adsterra", format: "banner300x250", devices: ["mobile"], enabled: true, note: "after the tool list on phones" },
+
+  // Monetag: OFF for the initial release. This row only renders when the administrator builds with
+  // MONETAG=on (default off), and never on the homepage or downloader pages. If Monetag is re-enabled,
+  // remove one Adsterra row on tool pages to stay within two ads.
+  { id: "tool.content-monetag", page: "tool", position: "content-1", network: "monetag", format: "monetagPush", devices: ["desktop"], enabled: true, note: "only with MONETAG=on: between How to use and Features (isolated frame)" },
 ];
 
 export function placementsFor(page: PageType, position: string): Placement[] {

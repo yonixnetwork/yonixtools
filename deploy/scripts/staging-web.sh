@@ -4,7 +4,7 @@
 #
 #   bash deploy/scripts/staging-web.sh preflight       # read-only checks (disk, memory, ports, names)
 #   bash deploy/scripts/staging-web.sh tunnels         # two temporary public HTTPS URLs (no open port)
-#   MONETAG=on bash deploy/scripts/staging-web.sh up   # build + start staging (test-data backend)
+#   bash deploy/scripts/staging-web.sh up              # build + start staging (test-data backend; Monetag off = production; MONETAG=on to test it)
 #   bash deploy/scripts/staging-web.sh status
 #   bash deploy/scripts/staging-web.sh down            # remove everything staging created
 #
@@ -95,7 +95,7 @@ case "${1:-}" in
     printf 'SITE=%s\nADS=%s\n' "$site" "$ads" > "$ST/urls"
     echo "Site (password-protected): $site"
     echo "Ad-frame origin (serves /ad-frame.html only): $ads"
-    echo "Nothing is served until 'up' finishes. Next: MONETAG=on bash deploy/scripts/staging-web.sh up"
+    echo "Nothing is served until 'up' finishes. Next: EXPECT_COMMIT=<commit> bash deploy/scripts/staging-web.sh up"
     ;;
   up)
     preflight || { echo "Preflight failed: nothing started."; exit 1; }

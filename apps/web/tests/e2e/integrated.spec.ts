@@ -162,7 +162,9 @@ test("Reddit and Vimeo links are refused with the reason, without calling the AP
 
 // ── Download panel: progress while the file is prepared, Cancel / Hide. Owner rule (12 Nov
 //    2026, latest): no ads when Download is clicked or while it is processed. ──────────────
-test("download panel: progress while preparing, no ad, then 'Download started' until closed", async ({ page }) => {
+test("download panel: progress while preparing, no ad, then 'Download started' until closed", async ({ page, context }) => {
+  const opened: string[] = [];
+  context.on("page", (p) => opened.push(p.url())); // a popup or new tab would show up here
   const adFrames: string[] = [];
   page.on("request", (r) => r.url().includes("/ad-frame.html") && adFrames.push(r.url()));
   await page.goto("/tiktok-downloader/");
@@ -182,6 +184,8 @@ test("download panel: progress while preparing, no ad, then 'Download started' u
   await expect(panel).toContainText("Download started");
   await expect(panel.locator("aside.ad-slot, iframe")).toHaveCount(0);
   expect(adFrames.slice(before), "clicking Download opens no ad").toEqual([]);
+  expect(opened, "clicking Download opens no popup or new tab").toEqual([]);
+  expect(new URL(page.url()).pathname).toBe("/tiktok-downloader/"); // and never navigates away
   await page.waitForTimeout(1500);
   await expect(panel).toBeVisible(); // stays until the visitor closes it
   await panel.getByRole("button", { name: "Close", exact: true }).click();

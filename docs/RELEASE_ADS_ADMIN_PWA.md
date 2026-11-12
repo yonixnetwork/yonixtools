@@ -260,3 +260,25 @@ Use the staging runbook and `/admin/ads/` → Copy report.
   5. **Unchanged:** the main site's CSP; the frame isolation for DOM, URLs, localStorage and service worker (different origins); the sandbox without top navigation.
 - **Not claimed:** complete cookie isolation. Both hosts share the registrable domain yonixtools.com.
 - **For complete cookie isolation, a separate advertising domain is required** (for example `yonixtools-ads.com`, a different registrable domain). Cookies can't cross registrable domains at all, and the browser also treats such frames as third-party. That needs a domain purchase, DNS, a certificate, and the ad networks' approval of the new domain. It's your decision; nothing has been started.
+
+## 12. Final configuration for the first production release (owner, 12 Nov 2026)
+
+The release configuration is in `docs/PRODUCTION_RELEASE.md`. In short:
+- **Adsterra only:** at most two placements per page.
+- **Monetag off:** the `MONETAG` setting defaults to off, so the public frame contains no Monetag code. Admin pages show both zones as DISABLED.
+- **Deploy tooling:**
+  - a hostname guard in `deploy.sh`;
+  - `:previous` images kept, with `rollback.sh`;
+  - a read-only `release-check.sh`.
+
+**Staging finding (Android Chrome):**
+- **Adsterra:** all four units rendered real creatives.
+- **Monetag** was in fact delivering inside the frame. Its zone requests (`jhnwr.com/400|500/12218944`) returned 200 and creative images loaded. The owner saw its notification-style ads.
+- **Why the test said "no creative":** the strict check didn't recognise Monetag's rendering. A likely cause is that the zone draws its banner in a way the check can't see. That doesn't matter while Monetag is off; fix the check before re-enabling.
+- **Timing display:** the ad test now reports the time to the first creative, not the time elapsed when the report is copied.
+
+**Intermittent ZIP test failure, cause found:**
+- The test backend refused the ZIP job: 429 "You already have downloads in progress". That's the production limit of 2 active downloads per address.
+- All tests share one address, and other tests' jobs were still running. The Cancel test's job, for one, keeps running on the server.
+- The test backend now allows 20 active jobs (`e2e-backend.sh`); production keeps 2. Ten consecutive runs passed afterwards.
+- **For real visitors:** Cancel stops a download only in the browser, so a visitor who cancels and quickly retries can see that message until the earlier job finishes. Recorded as a known issue.

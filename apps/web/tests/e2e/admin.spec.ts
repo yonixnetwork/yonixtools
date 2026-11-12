@@ -39,7 +39,7 @@ test("admin page in a browser: each format reports its real state", async ({ bro
   const report = page.locator("#report");
   await expect(report).toContainText("Adsterra banner 300 × 250: AD RENDERED", { timeout: 15_000 });
   await expect(report).toContainText("Adsterra banner 320 × 50: EMPTY: no creative returned", { timeout: 15_000 });
-  await expect(report).toContainText("Monetag In-Page Push: BLOCKED", { timeout: 20_000 });
+  await expect(report).toContainText(process.env.NEXT_PUBLIC_MONETAG === "on" ? "Monetag In-Page Push (zone 12218944): BLOCKED" : "Monetag In-Page Push (zone 12218944): DISABLED (MONETAG=off)", { timeout: 20_000 });
   await expect(report).not.toContainText("scripts:"); // the public frame sends no diagnostics
   await expect(page.locator("#adtest")).toHaveAttribute("href", "http://localhost:4175/ad-test.html");
   await ctx.close();

@@ -90,7 +90,7 @@ Starts two small containers, `yonixtools-stg-tunnel-site` and `yonixtools-stg-tu
 ## 5. Build and start
 
 ```bash
-EXPECT_COMMIT=<commit from Claude's report> MONETAG=on bash deploy/scripts/staging-web.sh up
+EXPECT_COMMIT=<commit from Claude's report> bash deploy/scripts/staging-web.sh up   # Monetag off, like production
 ```
 Refuses to build if the checkout has changes or isn't exactly that commit.
 
