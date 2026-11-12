@@ -377,3 +377,13 @@ def test_ad_events_count_only_valid_enums_and_stats_need_the_admin_header(client
 def test_ad_events_are_rate_limited(client):
     codes = [client.post("/v1/ad-events", json={"events": []}).status_code for _ in range(40)]
     assert 429 in codes
+
+
+def test_download_cookie_uses_the_host_prefix_over_https(client):
+    # "__Host-": the browser refuses this name with a Domain attribute, so no sibling host
+    # (such as the ad origin) can set or overwrite it.
+    client.base_url = "https://testserver"
+    job = client.post("/v1/jobs", json={"url": YT, "itemIndex": 0, "formatId": "v:best"}).json()
+    done = wait_job(client, job["id"])
+    c = client.get(done["downloadUrl"] + "?dl=abc123def456").headers["set-cookie"]
+    assert c.startswith("__Host-ytx_dl_abc123def456=1") and "Secure" in c and "Path=/" in c and "Domain" not in c

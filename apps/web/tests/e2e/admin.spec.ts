@@ -38,9 +38,10 @@ test("admin page in a browser: each format reports its real state", async ({ bro
   await page.goto("/admin/ads/");
   const report = page.locator("#report");
   await expect(report).toContainText("Adsterra banner 300 × 250: AD RENDERED", { timeout: 15_000 });
-  await expect(report).toContainText("Adsterra banner 320 × 50: EMPTY: script ran without errors, no creative returned", { timeout: 15_000 });
-  await expect(report).toContainText("Monetag In-Page Push: EMPTY: ad script blocked or unreachable", { timeout: 20_000 });
-  await expect(report).toContainText("frame: origin=http://localhost:4175");
+  await expect(report).toContainText("Adsterra banner 320 × 50: EMPTY: no creative returned", { timeout: 15_000 });
+  await expect(report).toContainText("Monetag In-Page Push: BLOCKED", { timeout: 20_000 });
+  await expect(report).not.toContainText("scripts:"); // the public frame sends no diagnostics
+  await expect(page.locator("#adtest")).toHaveAttribute("href", "http://localhost:4175/ad-test.html");
   await ctx.close();
 });
 
@@ -74,4 +75,53 @@ test.describe("admin delivery counts", () => {
     expect(r.status()).toBe(200);
     expect(await r.json()).toEqual({ path: "/v1/ad-stats", admin: "nginx-admin-auth" });
   });
+});
+
+// ── The ad documents only on the ad origin (Gap 1) and the protected ad test (Gap 2), through the
+//    REAL nginx config: :4173 is the site, :4175 the ad origin (Host header localhost:4175). ──
+const SITE = "http://localhost:4173", AD = "http://localhost:4175";
+
+test("the site origin never serves the ad documents, under any spelling, query or login", async ({ request }) => {
+  for (const p of ["/ad-frame.html", "/ad-test.html", "/ad-frame.html?u=native&s=x", "/ad-test.html?u=monetagPush", "/ad-frame.html/", "/ad-test", "/ad-frame"]) {
+    expect((await request.get(SITE + p)).status(), p).toBe(404);
+    if (USER) expect((await request.get(SITE + p, { headers: basic(USER, PASS) })).status(), p + " with login").toBe(404);
+  }
+});
+
+test("the ad origin serves the public frame and the protected test, and nothing else", async ({ request }) => {
+  const f = await request.get(AD + "/ad-frame.html");
+  expect(f.status()).toBe(200);
+  const body = await f.text();
+  expect(body).toContain("bellnewyork.org/22/620b3190e30ed523091b51770aea0b40");
+  expect(body).not.toMatch(/data-ytx-ui|__ytxReport|admin-top|ytxTest|performance\.getEntries/); // no diagnostics in the public frame
+  for (const p of ["/", "/tools/", "/admin/ads/", "/api/healthz", "/sw.js", "/manifest.webmanifest", "/ad-frame", "/ad-test.html/x"]) expect((await request.get(AD + p)).status(), p).toBe(404);
+  for (const p of ["/ad-test.html", "/ad-test.html?u=monetagPush", "/ad-test.html?u=monetagPush&embed=1"]) {
+    const r = await request.get(AD + p);
+    expect(r.status(), p).toBe(401);
+    expect(await r.text(), p).not.toContain("__ytxReport");
+  }
+  expect((await request.get(AD + "/ad-test.html", { headers: basic(USER || "admin", "wrong-password") })).status()).toBe(401);
+});
+
+test("with the admin login: the ad test is served, never cached or indexed", async ({ request }) => {
+  test.skip(!USER || !PASS, "ADMIN_USER/ADMIN_PASS not set");
+  const r = await request.get(AD + "/ad-test.html", { headers: basic(USER, PASS) });
+  expect(r.status()).toBe(200);
+  expect(await r.text()).toContain("__ytxReport");
+  expect(r.headers()["cache-control"]).toBe("no-store");
+  expect(r.headers()["x-robots-tag"]).toContain("noindex");
+  expect(r.headers()["content-security-policy"]).toContain("frame-ancestors 'self';");
+});
+
+test("ad test in a browser: Monetag In-Page Push as a separate top-level document on the ad origin", async ({ browser }) => {
+  test.skip(!USER || !PASS, "ADMIN_USER/ADMIN_PASS not set");
+  const ctx = await browser.newContext({ httpCredentials: { username: USER, password: PASS } });
+  const page = await ctx.newPage();
+  await page.route("https://nap5k.com/**", (r) => r.fulfill({ contentType: "application/javascript", body: "var d=document.createElement('div');d.style.cssText='width:320px;height:90px;background:#ccc';d.textContent='Sponsored message from a test';document.body.appendChild(d);" }));
+  await page.goto(AD + "/ad-test.html?u=monetagPush");
+  const panel = page.locator("pre[data-ytx-ui]");
+  await expect(panel).toContainText("CREATIVE RENDERED", { timeout: 10_000 });
+  await expect(panel).toContainText("separate top-level document on http://localhost:4175");
+  await expect(panel).toContainText("nap5k.com/tag.min.js loaded");
+  await ctx.close();
 });

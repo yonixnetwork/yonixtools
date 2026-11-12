@@ -238,3 +238,30 @@ test("a hostile creative can't read the pasted URL or the page, run code in it, 
   expect(page.url()).toBe("http://localhost:4173/instagram-downloader/");
   await expect(page.locator("#dl-url")).toHaveValue("https://www.instagram.com/p/PRIVATE-TEST/");
 });
+
+// Parent-domain cookies: ad code on the ad origin tries to set cookies for the whole domain (as
+// code on ads.yonixtools.com could for yonixtools.com). The frame's guard strips the Domain attribute,
+// so they stay host-only on the ad host. Modelled with fulfilled https hosts under one test domain
+// (nothing leaves the machine). Best effort: see RELEASE_ADS_ADMIN_PWA.md section 11.
+test("ad code can't set cookies for the parent domain through document.cookie, child frames or the Cookie Store API", async ({ page, context, request }) => {
+  const frameHtml = await (await request.get("http://localhost:4175/ad-frame.html")).text();
+  const TOSS = `
+    document.cookie = "tossA=1; Domain=ytx-test.example; Path=/";
+    var f = document.createElement("iframe"); document.body.appendChild(f); f.contentDocument.cookie = "tossB=1; domain=.ytx-test.example; path=/";
+    if (window.cookieStore) cookieStore.set({ name: "tossC", value: "1", domain: "ytx-test.example", path: "/" }).catch(function () {});
+    document.cookie = "plain=1; Path=/";`;
+  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: TOSS }));
+  await page.route("https://ads.ytx-test.example/**", (r) => r.fulfill({ contentType: "text/html", body: frameHtml }));
+  await page.route("https://unguarded.ytx-test.example/**", (r) => r.fulfill({ contentType: "text/html", body: "<!doctype html><body><script>" + TOSS.replace(/toss/g, "ctl").replace("plain", "ctlplain") + "</script>" }));
+  // Control: an unguarded document on a sibling host CAN set cookies for the whole domain.
+  await page.goto("https://unguarded.ytx-test.example/");
+  await expect.poll(async () => (await context.cookies()).find((c) => c.name === "ctlA")?.domain).toBe(".ytx-test.example");
+  // The ad frame document: the same attempts stay host-only.
+  await page.goto("https://ads.ytx-test.example/ad-frame.html?u=banner300x250&s=x");
+  await expect.poll(async () => (await context.cookies()).some((c) => c.name === "plain")).toBe(true);
+  await page.waitForTimeout(500);
+  const jar = await context.cookies();
+  const toss = jar.filter((c) => c.name.startsWith("toss"));
+  expect(toss.length).toBeGreaterThanOrEqual(2);
+  for (const c of toss) expect(c.domain, c.name).toBe("ads.ytx-test.example"); // never ".ytx-test.example"
+});

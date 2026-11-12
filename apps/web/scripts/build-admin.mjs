@@ -3,9 +3,11 @@
 // protects with a password (deploy/nginx/web.conf). Nothing here is linked from the
 // public site, and its code and diagnostics are not part of any public bundle.
 //
-// For each format it loads the unit from the separate ad origin in a test frame and
-// shows what really happened: AD RENDERED only when a visible creative exists (the
-// ad-origin document's strict check), otherwise EMPTY with the reason.
+// For each format it loads the PUBLIC ad frame from the separate ad origin, exactly as a
+// real slot does, and shows the outcome the frame reports: AD RENDERED only when a visible
+// creative exists, otherwise EMPTY (no fill) or BLOCKED. The public frame carries no
+// diagnostics; full diagnostics (scripts, network requests, errors, framed vs top-level)
+// are on the ad origin's own password-protected /ad-test.html, linked from here.
 import { mkdirSync, writeFileSync } from "node:fs";
 
 const raw = (process.env.NEXT_PUBLIC_AD_ORIGIN || "").replace(/\/$/, "");
@@ -33,13 +35,12 @@ pre{white-space:pre-wrap;font-size:12px;background:rgba(127,127,127,.12);padding
 button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b);cursor:pointer}
 </style></head><body>
 <h1>Ad delivery test (admin only)</h1>
-<p class="m">Each format loads from the ad origin in its own test frame. <b>AD RENDERED</b> means a visible creative exists; an existing frame or a loaded script alone never counts. Monetag is watched for up to 90 seconds. Don't click the ads.</p>
+<p class="m">Each format loads the public ad frame from the ad origin, exactly like a real ad slot. <b>AD RENDERED</b> means a visible creative exists; a loaded script alone never counts. Don't click the ads.</p>
 <p>Ad origin: <code id="origin"></code></p>
+<p><b>Full diagnostics</b> (script loaded, network requests, blocked, script errors, and each format as a separate top-level document): <a id="adtest" target="_blank" rel="noopener">open the ad-origin test page</a>. It asks for the admin login again, because it is on the ad origin.</p>
 <p><button id="copy" type="button">Copy report</button> <span id="copied" class="m"></span></p>
 <div id="units"></div>
-<section id="toplevel"><b>Monetag outside a frame</b>
-<p class="m">If Monetag stays EMPTY above, open these. Each loads the same zone code as a normal page on the ad origin (not inside a frame) and shows its own status at the bottom. Rendered there but not in the frame: the zone refuses frames. Empty in both: no fill, or the domain/zone isn't approved in the Monetag dashboard.</p>
-<p id="toplinks"></p></section>
+
 <pre id="report"></pre>
 <section><b>Delivery counts on the live pages</b> <button id="stats-load" type="button">Refresh</button>
 <p class="m">How ad slots on real pages ended, per placement and device, since the server last started: requested, AD RENDERED (filled), empty (no fill) and blocked (ad blocker or network). Anonymous counts only. These are <b>not</b> impressions, clicks or revenue: use the Adsterra and Monetag dashboards for those.</p>
@@ -48,16 +49,13 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
 (function () {
   var ORIGIN = ${JSON.stringify(AD_ORIGIN)}, SANDBOX = ${JSON.stringify(SANDBOX)}, UNITS = ${JSON.stringify(UNITS)};
   document.getElementById("origin").textContent = ORIGIN || "not configured: the site shows no ads";
+  if (ORIGIN) document.getElementById("adtest").href = ORIGIN + "/ad-test.html";
   var rows = {}, frames = {}, t0 = Date.now();
   function verdict(r) {
-    if (!r) return ["loading…", "wait"];
-    var s = r.diag ? Object.values(r.diag.scripts) : [];
-    if (r.state === "filled") return ["AD RENDERED (after " + (r.firstMs || "?") + " ms)", "ok"];
-    if (r.state === "loading") return ["loading…", "wait"];
-    if (s.length && s.every(function (x) { return x.state === "failed"; })) return ["EMPTY: ad script blocked or unreachable (ad blocker, network)", "bad"];
-    if (r.diag && r.diag.errors.length) return ["EMPTY: script ran but threw errors (integration problem)", "bad"];
-    if (s.some(function (x) { return x.state === "loaded"; })) return ["EMPTY: script ran without errors, no creative returned (no fill / not approved)", "bad"];
-    return ["EMPTY: no script activity", "bad"];
+    if (!r || r.state === "loading") return ["loading…", "wait"];
+    if (r.state === "filled") return ["AD RENDERED (after " + r.ms + " ms)", "ok"];
+    if (r.reason === "blocked") return ["BLOCKED: the ad script couldn't be loaded (ad blocker, network)", "bad"];
+    return ["EMPTY: no creative returned (no fill, not approved, or refused in a frame): see the ad-origin test page", "bad"];
   }
   function render() {
     var lines = ["YoniXTools admin ad test " + new Date().toISOString(), "Browser: " + navigator.userAgent, "Ad origin: " + (ORIGIN || "none"), ""];
@@ -65,14 +63,6 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
       var r = rows[u[0]], v = verdict(r), el = document.getElementById("st-" + u[0]);
       if (el) { el.textContent = v[0]; el.className = "st " + v[1]; }
       lines.push(u[1] + ": " + v[0]);
-      if (r && r.diag) {
-        var d = r.diag;
-        lines.push("  scripts: " + (Object.keys(d.scripts).map(function (k) { return k.replace(/^https?:\\/\\//, "") + " " + d.scripts[k].state + " @" + d.scripts[k].ms + "ms"; }).join("; ") || "none"));
-        lines.push("  frame: origin=" + d.access.origin + " cookies=" + d.access.cookies + " storage=" + d.access.storage + " top=" + d.access.top);
-        lines.push("  errors: " + (d.errors.join(" | ") || "none"));
-        lines.push("  dom: " + (d.nodes.join(", ") || "empty"));
-        if (d.requests) lines.push("  requests: " + (d.requests.join("; ") || "none"));
-      }
     });
     document.getElementById("report").textContent = lines.join("\\n");
   }
@@ -88,18 +78,14 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
       f.src = ORIGIN + "/ad-frame.html?u=" + encodeURIComponent(u[0]) + "&s=admin-" + u[0];
       sec.querySelector(".box").appendChild(f); host.appendChild(sec); frames[u[0]] = f;
     });
-    [["monetagPush", "In-Page Push"], ["monetagVignette", "Vignette"]].forEach(function (z) {
-      var a = document.createElement("a");
-      a.href = ORIGIN + "/ad-frame.html?u=" + z[0] + "&s=admin-top"; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Open " + z[1] + " top-level";
-      var t = document.getElementById("toplinks"); t.appendChild(a); t.appendChild(document.createTextNode("  "));
-    });
     window.addEventListener("message", function (e) {
       var d = e.data;
       if (e.origin !== ORIGIN || !d || typeof d.ytxAd !== "string" || d.ytxAd.indexOf("admin-") !== 0) return;
       var u = d.ytxAd.slice(6), f = frames[u];
       if (!f || e.source !== f.contentWindow) return;
       var old = rows[u] || {};
-      rows[u] = { state: old.state === "filled" ? "filled" : d.state, diag: d.diag || old.diag, firstMs: old.firstMs || (d.state === "filled" && d.diag ? d.diag.ms : undefined) };
+      if (old.state === "filled" || old.state === "empty") { if (d.state === "filled" && typeof d.height === "number" && !UNITS.filter(function (x) { return x[0] === u; })[0][2]) f.height = String(Math.min(Math.max(d.height, 60), 1200)); return; }
+      rows[u] = { state: d.state, reason: d.reason, ms: Date.now() - t0 };
       if (d.state === "filled" && typeof d.height === "number" && !UNITS.filter(function (x) { return x[0] === u; })[0][2]) f.height = String(Math.min(Math.max(d.height, 60), 1200));
       render();
     });

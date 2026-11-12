@@ -204,7 +204,7 @@ Use the staging runbook and `/admin/ads/` → Copy report.
 
 **Monetag diagnostics, admin only:**
 - **Requests:** each test frame now lists the network requests it made (from Resource Timing; hosts and paths only).
-- **Top-level check:** `/admin/ads/` links to "Open In-Page Push / Vignette top-level". These load the same zone code as a normal page on the ad origin, not framed, and show their own status.
+- **Top-level check** (*replaced in §11: it now lives only in the password-protected `/ad-test.html`*): `/admin/ads/` links to "Open In-Page Push / Vignette top-level". These load the same zone code as a normal page on the ad origin, not framed, and show their own status.
   - Rendered top-level but not framed means the zone refuses frames.
   - Empty in both means no fill, or the domain or zone isn't approved.
 
@@ -213,3 +213,50 @@ Use the staging runbook and `/admin/ads/` → Copy report.
 - **What is kept:** counts only, in memory, reset on restart.
 - **Where to see them:** on `/admin/ads/` via `/admin/api/ad-stats`, behind the admin password. nginx strips the admin header from all public `/api/` requests.
 - **Not measured:** these are not impressions, clicks or revenue. Use the Adsterra and Monetag dashboards for those.
+
+## 11. Security fixes before deploying (12 Nov 2026, owner-approved): ad documents and cookies
+
+**Gap 1: the main site never serves the ad documents.**
+- **Where it's enforced:** in the web container's own nginx (`deploy/nginx/web.conf`), not only at the edge.
+  - A map on the Host header recognises the ad origin. Its host[:port] is written in at image build from `AD_ORIGIN` (`apply-build-options.sh`).
+  - `/ad-frame.html` and `/ad-test.html`, under any spelling or query (`/ad-frame…`, `/ad-test…`), answer **404** on every other host, including `yonixtools.com`.
+  - The ad host answers 404 for every path except those two documents.
+  - With no ad origin configured, neither document is served at all.
+- **The edge** needs no change on the main site. The commented suggestion in `edge-ads-origin.conf` is gone.
+- **Host header:** the container trusts the Host header the edge sends, which the edge takes from the real hostname. Sending `Host: ads.yonixtools.com` reaches the ad server block, which is the ad origin as far as browsers are concerned. It can't put ad code under the yonixtools.com origin.
+- **Tests:**
+  - real-nginx e2e (`admin.spec.ts`);
+  - the static test server applies the same rule (`ORIGIN_ROLE`);
+  - `smoke-test.sh` checks the main origin returns 404 for both documents. With `AD_HOST` set, as `deploy.sh` does from `AD_ORIGIN`, it also checks the ad origin;
+  - CI's Docker job builds with the production ad origin and runs both sets of checks.
+
+**Gap 2: diagnostics only behind a server-side password.**
+- **`/ad-frame.html` (public)** has no diagnostics left:
+  - no script, error, request or DOM reporting, and no panel;
+  - it ignores any query and does nothing when opened outside a frame;
+  - it tells its slot only `{state, height, reason}`, which the slot needs to collapse and to count.
+- **`/ad-test.html` (new, ad origin only):**
+  - nginx HTTP basic auth with the admin password file; it fails closed (401 for visitors, 403 when no password file exists);
+  - rate-limited, `Cache-Control: no-store`, `X-Robots-Tag: noindex`;
+  - CSP `frame-ancestors 'self'`, so only its own framed runs can embed it;
+  - the same exact publisher snippets.
+- **What it shows:**
+  - every format framed, plus "open top-level" (a separate top-level document on the ad origin, never on the site);
+  - outcomes, kept apart strictly: CREATIVE RENDERED, script loaded, the network requests made (Resource Timing, which hides other sites' status codes), REQUEST BLOCKED (script couldn't load), SCRIPT FAILED (loaded but threw errors) and NO CREATIVE RETURNED. A loaded script alone is never "rendered".
+- **`/admin/ads/` (main site, password):** now frames only the public ad frame, like a real slot, and links to `/ad-test.html`.
+- **Staging:** the gatekeeper protects `/ad-test.html` with the staging password, and the app checks the admin login again.
+- **Production:** `edge-ads-origin.conf` in the repo has the matching `location = /ad-test.html`. **It isn't installed.** Until it is, production answers 404 for `/ad-test.html` (safe). Installing it is a production edge change that needs your approval.
+
+**Parent-domain cookie risk (point 4).**
+- **Can ads.yonixtools.com set cookies with `Domain=yonixtools.com`?** **Yes.** Browsers let any host set cookies for its parent domain unless that domain is a public suffix, and yonixtools.com isn't one. A cookie set that way is sent to yonixtools.com and every subdomain. This was confirmed by the control in the new test: an unguarded page on a sibling host does set a domain-wide cookie.
+- **What we do about it:**
+  1. **Cookie guard in both ad documents**, installed before the publisher code. It strips `Domain=` from cookies set through `document.cookie` and the Cookie Store API, in the document itself and in same-origin child frames the ad code creates. The test fails when the guard is removed.
+     - **Best effort, not a guarantee:** ad code that finds another fresh JavaScript context (e.g. via `window.frames[0]` before touching the frame element) could still set a domain cookie.
+  2. **The site's own cookie is now `__Host-ytx_dl_<token>`** on HTTPS. The browser refuses any cookie of that name that carries a Domain attribute, so the ad origin can't set or overwrite it.
+  3. **What a stray domain cookie could and couldn't do:**
+     - the site doesn't use cookies for login (admin uses HTTP authentication), so it can't hijack anything;
+     - the worst case is a "cookie bomb": enough junk cookies that yonixtools.com rejects that one browser's requests until the cookies expire or are cleared.
+  4. **Responses from the ad origin itself** can't set cookies: the edge strips `Set-Cookie`.
+  5. **Unchanged:** the main site's CSP; the frame isolation for DOM, URLs, localStorage and service worker (different origins); the sandbox without top navigation.
+- **Not claimed:** complete cookie isolation. Both hosts share the registrable domain yonixtools.com.
+- **For complete cookie isolation, a separate advertising domain is required** (for example `yonixtools-ads.com`, a different registrable domain). Cookies can't cross registrable domains at all, and the browser also treats such frames as third-party. That needs a domain purchase, DNS, a certificate, and the ad networks' approval of the new domain. It's your decision; nothing has been started.

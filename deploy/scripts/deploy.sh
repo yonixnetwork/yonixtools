@@ -44,6 +44,6 @@ for _ in $(seq 1 60); do
 done
 [ "$web" = healthy ] && [ "$dl" = healthy ] || { echo "Not healthy (web=$web downloader=$dl). Logs:"; "${COMPOSE[@]}" logs --tail 50; exit 1; }
 echo "==> Local smoke test (through the stack's own Nginx on 127.0.0.1:${WEB_PORT:-8090})"
-SITE_HOST="${SITE_HOST:-yonixtools.com}" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:${WEB_PORT:-8090}" || { echo "Smoke test failed. The previous images are still available for rollback (docs/DEPLOYMENT.md)."; exit 1; }
+AD_HOST="${AD_ORIGIN:+${AD_ORIGIN#*://}}" SITE_HOST="${SITE_HOST:-yonixtools.com}" bash deploy/scripts/smoke-test.sh "http://127.0.0.1:${WEB_PORT:-8090}" || { echo "Smoke test failed. The previous images are still available for rollback (docs/DEPLOYMENT.md)."; exit 1; }
 docker image prune -f >/dev/null
 echo "==> Deploy complete: $rev"

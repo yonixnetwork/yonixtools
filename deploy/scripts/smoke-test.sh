@@ -2,7 +2,8 @@
 # Post-deploy smoke test. Read-only except for one tiny downloader job.
 #   deploy/scripts/smoke-test.sh https://yonixtools.com
 # Options (env): SITE_HOST=yonixtools.com (when BASE is an IP), RESOLVE="yonixtools.com:443:1.2.3.4" (test before DNS switch),
-#                INSECURE=1 (self-signed certs), SAMPLE_URL=<public post to download>.
+#                INSECURE=1 (self-signed certs), SAMPLE_URL=<public post to download>,
+#                AD_HOST=ads.yonixtools.com (check the ad origin through the same address, by Host header).
 set -uo pipefail
 BASE="${1:-https://yonixtools.com}"
 # Hostname that canonical URLs use (differs when testing via 127.0.0.1).
@@ -53,11 +54,28 @@ case "$adm" in 401) ok "admin page requires a password (401)";; 500) note "admin
 [ "$(code "$BASE/ads-check/")" = 404 ] && ok "old public ads test page is gone (404)" || bad "public /ads-check/ still served"
 [ "$(code "$BASE/api/internal/stats")" = 404 ] && ok "internal API not exposed" || bad "internal API exposed"
 
-echo "Advertising frame and PWA"
-check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"
-afh="$(curl "${args[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
-echo "$afh" | grep -i "^content-security-policy:" | grep -Eq "frame-ancestors 'self'( https?://[A-Za-z0-9.:-]+)?;" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
-has "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" "$BASE/ad-frame.html" && ok "ad frame contains the publisher units" || bad "ad frame units"
+echo "Advertising documents"
+# The site's own origin never serves the ad documents, under any spelling or query.
+for p in /ad-frame.html /ad-test.html "/ad-frame.html?u=native&s=x" "/ad-test.html?u=monetagPush" /ad-frame.html/ /ad-test; do check 404 "site origin: $p" "$BASE$p"; done
+# The ad origin (AD_HOST=ads.yonixtools.com, sent as the Host header) serves its two documents and nothing else.
+if [ -n "${AD_HOST:-}" ]; then
+  ah=(-H "Host: $AD_HOST")
+  check 200 "ad origin: GET /ad-frame.html" "${ah[@]}" "$BASE/ad-frame.html"
+  afh="$(curl "${args[@]}" "${ah[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
+  echo "$afh" | grep -i "^content-security-policy:" | grep -Eq "frame-ancestors 'self'( https?://[A-Za-z0-9.:-]+)?;" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
+  has "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" "${ah[@]}" "$BASE/ad-frame.html" && ok "ad frame contains the publisher units" || bad "ad frame units"
+  afb="$(curl "${args[@]}" "${ah[@]}" "$BASE/ad-frame.html")"
+  if grep -Eq "data-ytx-ui|__ytxReport|admin-top|requests\(\)" <<<"$afb"; then bad "public ad frame contains diagnostics"; else ok "public ad frame has no diagnostics"; fi
+  for p in /ad-test.html "/ad-test.html?u=monetagPush"; do
+    t="$(curl "${noauth[@]}" "${ah[@]}" -o /dev/null -w '%{http_code}' "$BASE$p")"
+    [ "$t" = 401 ] && ok "ad origin: $p requires the admin password (401)" || bad "ad origin: $p without password ($t)"
+  done
+  for p in / /admin/ads/ /api/healthz /tools/ /sw.js; do check 404 "ad origin serves nothing else: $p" "${ah[@]}" "$BASE$p"; done
+else
+  note "AD_HOST not set (no ad origin configured): ad-origin checks skipped"
+fi
+
+echo "PWA"
 check 200 "GET /manifest.webmanifest" "$BASE/manifest.webmanifest"
 has -i "^content-type: application/manifest+json" -D - -o /dev/null "$BASE/manifest.webmanifest" && ok "manifest content type" || bad "manifest content type"
 has -i "^cache-control: no-cache" -D - -o /dev/null "$BASE/sw.js" && ok "service worker is always revalidated" || bad "sw.js caching"

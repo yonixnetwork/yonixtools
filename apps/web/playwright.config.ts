@@ -25,11 +25,11 @@ export default defineConfig({
   webServer: [
     // Site on :4173 and the separate ad origin on :4175 (npm run build:test bakes it in).
     // With REAL_NGINX=1 both ports are already served by the real nginx config (scripts/nginx-local.sh).
-    { command: "node scripts/serve-static.mjs out", port: 4173, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
-    { command: "PORT=4175 node scripts/serve-static.mjs out", port: 4175, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
+    { command: "ORIGIN_ROLE=site node scripts/serve-static.mjs out", port: 4173, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
+    { command: "ORIGIN_ROLE=ad PORT=4175 node scripts/serve-static.mjs out", port: 4175, reuseExistingServer: !process.env.CI || !!process.env.REAL_NGINX },
     ...(integrated
       ? [
-          { command: "PORT=4174 API_PROXY=http://127.0.0.1:8788 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },
+          { command: "ORIGIN_ROLE=site PORT=4174 API_PROXY=http://127.0.0.1:8788 node scripts/serve-static.mjs out-integrated", port: 4174, reuseExistingServer: !process.env.CI },
           { command: live ? "LIVE=1 bash scripts/e2e-backend.sh" : "bash scripts/e2e-backend.sh", url: "http://127.0.0.1:8788/readyz", reuseExistingServer: !process.env.CI, timeout: 60_000 },
         ]
       : []),

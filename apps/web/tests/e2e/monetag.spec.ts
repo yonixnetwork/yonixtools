@@ -127,14 +127,73 @@ test("[off] a MONETAG=off build has no Monetag slot anywhere", async ({ page }) 
   expect(requests).toEqual([]);
 });
 
-test("admin top-level check: the zone code runs outside a frame and reports its own status and requests", async ({ page }) => {
+// ── Admin ad test (/ad-test.html on the ad origin; its password is tested through the real nginx
+//    config in admin.spec.ts). Here: what it reports, strictly. ──────────────────────────────────
+const AD = "http://localhost:4175";
+const panelOf = (page: Page) => page.locator("pre[data-ytx-ui]");
+// Through the real nginx config the ad test needs the admin login (401 without it: admin.spec.ts).
+if (process.env.REAL_NGINX && process.env.ADMIN_USER) test.use({ httpCredentials: { username: process.env.ADMIN_USER, password: process.env.ADMIN_PASS || "" } });
+
+test("ad test: Monetag In-Page Push as a separate top-level document; rendered only with a real creative", async ({ page }) => {
   stubBody.value = "var d=document.createElement('div');d.style.cssText='width:320px;height:90px;background:#ccc';d.textContent='Sponsored message from a test';document.body.appendChild(d);";
-  await page.goto("http://localhost:4175/ad-frame.html?u=monetagPush&s=admin-top");
-  const diag = page.locator("#ytx-diag");
-  await expect(diag).toContainText("AD RENDERED", { timeout: 10_000 });
-  await expect(diag).toContainText("nap5k.com/tag.min.js");
-  // Without the admin marker, the document shows nothing of its own when opened directly.
-  await page.goto("http://localhost:4175/ad-frame.html?u=monetagPush&s=x");
-  await page.waitForTimeout(1500);
-  await expect(page.locator("#ytx-diag")).toHaveCount(0);
+  await page.goto(AD + "/ad-test.html?u=monetagPush");
+  const p = panelOf(page);
+  await expect(p).toContainText("CREATIVE RENDERED", { timeout: 10_000 });
+  await expect(p).toContainText("separate top-level document on http://localhost:4175");
+  await expect(p).toContainText("nap5k.com/tag.min.js loaded");
+  await expect(p).toContainText("network requests:");
+  expect(requests.some((r) => r.url.includes("tag.min.js"))).toBe(true);
+});
+
+test("ad test: a script that loads but shows nothing is never 'rendered'", async ({ page }) => {
+  stubBody.value = ""; // loads, adds nothing
+  await page.goto(AD + "/ad-test.html?u=monetagVignette");
+  const p = panelOf(page);
+  await expect(p).toContainText("script loaded, no creative yet", { timeout: 10_000 });
+  await page.waitForTimeout(3000);
+  await expect(p).not.toContainText("CREATIVE RENDERED");
+});
+
+test("ad test: blocked request and failing script are told apart", async ({ page }) => {
+  await page.unrouteAll({ behavior: "ignoreErrors" });
+  await page.route("https://nap5k.com/**", (r) => r.abort("blockedbyclient"));
+  await page.route("https://n6wxm.com/**", (r) => r.fulfill({ contentType: "application/javascript", body: "throw new Error('zone setup failed')" }));
+  await page.goto(AD + "/ad-test.html?u=monetagPush");
+  await expect(panelOf(page)).toContainText("REQUEST BLOCKED", { timeout: 10_000 });
+  await page.goto(AD + "/ad-test.html?u=monetagVignette");
+  await expect(panelOf(page)).toContainText("SCRIPT FAILED", { timeout: 10_000 });
+});
+
+test("ad test: an Adsterra zone that returns nothing ends as NO CREATIVE RETURNED", async ({ page }) => {
+  test.setTimeout(60_000);
+  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
+  await page.goto(AD + "/ad-test.html?u=banner300x250");
+  await expect(panelOf(page)).toContainText("NO CREATIVE RETURNED", { timeout: 30_000 });
+});
+
+test("ad test index: every format framed on the ad origin, with a top-level link each", async ({ page }) => {
+  await page.route("https://bellnewyork.org/**", (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
+  await page.goto(AD + "/ad-test.html");
+  await expect(page.locator("section iframe")).toHaveCount(6);
+  await expect(page.locator('a[href="/ad-test.html?u=monetagPush"]')).toHaveCount(1);
+  await expect(page.locator('a[href="/ad-test.html?u=monetagVignette"]')).toHaveCount(1);
+  await expect(page.locator("#report")).toContainText("Monetag In-Page Push (zone 12218944)", { timeout: 10_000 });
+  await expect(page.locator("#report")).toContainText("context: inside a frame");
+});
+
+test("the public ad frame has no diagnostics and does nothing when opened directly, whatever the query", async ({ page, request }) => {
+  const html = await (await request.get(AD + "/ad-frame.html")).text();
+  expect(html).not.toMatch(/data-ytx-ui|__ytxReport|admin-top|ytxTest|performance\.getEntries|errors\.push/);
+  stubBody.value = "";
+  for (const q of ["?u=monetagPush&s=admin-top", "?u=monetagPush&s=admin-x&embed=1", "?u=monetagPush&s=x&debug=1"]) {
+    await page.goto(AD + "/ad-frame.html" + q);
+    await page.waitForTimeout(1200);
+    expect(await page.locator("pre, [data-ytx-ui]").count(), q).toBe(0);
+    expect(await page.evaluate(() => document.body.innerText.trim()), q).toBe("");
+  }
+});
+
+test("the site origin never serves the ad documents", async ({ request }) => {
+  for (const p of ["/ad-frame.html", "/ad-test.html", "/ad-frame.html?u=native", "/ad-test.html?u=monetagPush"]) expect((await request.get(p)).status(), p).toBe(404);
+  for (const p of ["/", "/tools/", "/admin/ads/"]) expect((await request.get(AD + p)).status(), "ad origin " + p).toBe(404);
 });

@@ -10,6 +10,10 @@ const root = resolve(process.argv[2] || "out");
 const port = Number(process.env.PORT || 4173);
 // Optional: forward /api/* to the downloader (prefix stripped), like the production Nginx.
 const apiProxy = process.env.API_PROXY ? new URL(process.env.API_PROXY) : null;
+// Same origin rule as the production Nginx (web.conf $ytx_wrong_origin): ORIGIN_ROLE=ad serves
+// only the two ad documents; ORIGIN_ROLE=site never serves them. (Unset: everything, for previews.)
+const role = process.env.ORIGIN_ROLE || "";
+const AD_DOC = /^\/(ad-frame|ad-test)\.html$/;
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff", ".txt": "text/plain; charset=utf-8", ".xml": "application/xml", ".webmanifest": "application/manifest+json" };
 
 async function file(p) {
@@ -33,6 +37,9 @@ createServer(async (req, res) => {
     });
     up.on("error", () => res.writeHead(502).end());
     return req.pipe(up);
+  }
+  if ((role === "ad" && !AD_DOC.test(url.pathname)) || (role === "site" && /^\/ad-(frame|test)/.test(url.pathname))) {
+    return res.writeHead(404, { "content-type": "text/plain" }).end("Not found\n");
   }
   const rel = normalize(decodeURIComponent(url.pathname)).replace(/^(\.\.[/\\])+/, "");
   const target = resolve(root, "." + rel);

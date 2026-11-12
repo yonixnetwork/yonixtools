@@ -5,7 +5,9 @@
  * 1. HEAD request: make sure the file still exists (never trigger a broken download).
  * 2. Programmatic click on an <a download> pointing at the attachment URL: the
  *    browser saves the file and the page does not navigate.
- * 3. The server sets a short-lived cookie `ytx_dl_<token>` on the file response;
+ * 3. The server sets a short-lived cookie `__Host-ytx_dl_<token>` (`ytx_dl_<token>` over plain
+ *    http in development) on the file response. The `__Host-` prefix means no other host of
+ *    the domain (such as the ad origin) can set or overwrite it;
  *    seeing it means the response headers reached the browser, i.e. the
  *    download really started. (Only possible same-origin, as in production.)
  */
@@ -17,12 +19,13 @@ export function randomToken(): string {
   return Array.from(a, (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 16).toLowerCase();
 }
 
-function hasCookie(name: string) {
-  return document.cookie.split(";").some((c) => c.trim().startsWith(`${name}=`));
+function findCookie(name: string): string | null {
+  for (const n of [`__Host-${name}`, name]) if (document.cookie.split(";").some((c) => c.trim().startsWith(`${n}=`))) return n;
+  return null;
 }
 
 function clearCookie(name: string) {
-  document.cookie = `${name}=; Max-Age=0; Path=/`;
+  document.cookie = `${name}=; Max-Age=0; Path=/${name.startsWith("__Host-") ? "; Secure" : ""}`;
 }
 
 export function withParam(url: string, key: string, value: string) {
@@ -49,8 +52,9 @@ export async function startBrowserDownload(fileUrl: string, opts: { timeoutMs?: 
   if (!sameOrigin) return "requested"; // can't observe the cookie cross-origin (local development only)
   const deadline = Date.now() + (opts.timeoutMs ?? 20_000);
   while (Date.now() < deadline) {
-    if (hasCookie(cookie)) {
-      clearCookie(cookie);
+    const found = findCookie(cookie);
+    if (found) {
+      clearCookie(found);
       return "started";
     }
     await new Promise((r) => setTimeout(r, 250));

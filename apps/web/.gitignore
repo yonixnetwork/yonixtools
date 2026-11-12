@@ -10,4 +10,5 @@ playwright-report/
 !.env.example
 out-integrated/
 public/ad-frame.html
+public/ad-test.html
 public/admin/

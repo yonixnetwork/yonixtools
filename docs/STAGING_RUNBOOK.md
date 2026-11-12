@@ -122,7 +122,7 @@ Refuses to build if the checkout has changes or isn't exactly that commit.
   - limits: 120 page requests/min and 12 API requests/min per visitor, 30 API requests/min in total;
   - the password is stripped before forwarding;
   - noindex header on every response, and `robots.txt` = `Disallow: /`.
-- **ad-frame origin (8093):** serves `/ad-frame.html` and nothing else (404).
+- **ad-frame origin (8093):** serves the public `/ad-frame.html` and the admin-only `/ad-test.html` (staging password here, then the web container checks the admin login again), and nothing else (404).
 
 **7. Verifies the setup and fails loudly** (exit 1, "SOME CHECKS FAILED") if anything below is wrong.
 - **Isolation, proven on the server:**
@@ -130,21 +130,31 @@ Refuses to build if the checkout has changes or isn't exactly that commit.
   - the staging backend is on the internal (no-internet) network only, with nothing mounted except the test worker (no volumes, no production `.env`);
   - a sample extraction returns the simulated "Test clip", so the downloader answers from the staging backend;
   - production's web and downloader containers have the same IDs, start times and restart counts before and after.
-- **Gatekeeper checks:** 401 without the password, 200 with it, diagnostics and API locked, the ad origin serving only the frame, the noindex header.
+- **Gatekeeper checks:** 401 without the password, 200 with it, diagnostics and API locked, the noindex header.
+- **Ad documents (Gap 1 / Gap 2):**
+  - the site origin answers 404 for `/ad-frame.html`, `/ad-test.html` and `/ad-frame.html?u=native`;
+  - the ad origin serves `/ad-frame.html`, both locally and through its tunnel, and the frame contains no diagnostics;
+  - `/ad-test.html` answers 401 without the password (with or without a query), 200 with the login, and is never cached;
+  - the ad origin serves nothing else (404).
 - **Full smoke test through the password**, using the staging rules:
   - `robots.txt` must block everything;
   - the page CSP allows no ad host at all, only the one ad-origin frame;
   - `/admin/ads/` needs the login, and `/ads-check/` is gone (404);
   - the CSP must not be broadened beyond that.
 
-**8. Prints the site URL, the admin ad test URL (`/admin/ads/`) and the login.** In staging, the staging login is also the admin login.
+**8. Prints the site URL, the admin ad test URL (`/admin/ads/`), the ad-origin test URL (`<ads tunnel>/ad-test.html`) and the login.** In staging, the staging login is also the admin login.
 
 ## 6. Test
 
 Use the checklist in `STAGING_TEST_REPORT.md` §C on Android Chrome, iPhone Safari and desktop Chrome, with and without an ad blocker. Don't click ads.
 - **Log in** with the printed user and password. The browser asks once per site.
 - **Downloader:** test-data mode returns a test clip for any link from a supported platform. URLs containing `private` or `blocked` show the matching error messages.
-- **`/admin/ads/` → Copy report** (admin only): each of the six formats reports AD RENDERED or EMPTY with the reason. Send me the report from each device.
+- **`/admin/ads/` → Copy report** (admin only): each format loads the public ad frame like a real slot and reports AD RENDERED, EMPTY or BLOCKED. Send me the report from each device.
+- **`<ads tunnel>/ad-test.html` → Copy report** (asks for the login again, because it's on the ad origin): every format framed, with script loaded / network requests / blocked / script errors.
+- **Monetag top-level:** on that page, tap **open top-level** next to *Monetag In-Page Push (zone 12218944)*, then the Vignette one. Each opens a separate document on the ad origin (never on the site) and shows its status at the bottom. Wait about a minute, then send me that text.
+  - CREATIVE RENDERED top-level but not framed: the zone refuses frames.
+  - NO CREATIVE RETURNED in both: no fill, or the domain isn't approved. A temporary trycloudflare address isn't registered with Monetag, so an empty result on staging is expected and doesn't settle it; a rendered one does.
+- **Check that diagnostics stay private:** open `<ads tunnel>/ad-test.html` in a private window. It must ask for a password. Open `<ads tunnel>/ad-frame.html?u=monetagPush&s=admin-top`: the page must stay blank. Open `<site>/ad-frame.html`: it must be "not found".
 
 ```bash
 bash deploy/scripts/staging-web.sh status

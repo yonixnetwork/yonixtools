@@ -187,7 +187,10 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         # (the page sees the cookie only once this response's headers arrive).
         token = request.query_params.get("dl", "")
         if request.method == "GET" and re.fullmatch(r"[a-z0-9]{8,32}", token):
-            resp.set_cookie(f"ytx_dl_{token}", "1", max_age=120, path="/", samesite="lax", secure=request.url.scheme == "https" or settings.is_production)
+            secure = request.url.scheme == "https" or settings.is_production
+            # "__Host-" (secure contexts): the browser rejects a cookie of this name that has a Domain
+            # attribute, so a sibling host (e.g. the ad origin) can't set or overwrite it.
+            resp.set_cookie(f"{'__Host-' if secure else ''}ytx_dl_{token}", "1", max_age=120, path="/", samesite="lax", secure=secure)
         return resp
 
     @app.post("/v1/ad-events")

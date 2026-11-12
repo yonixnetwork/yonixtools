@@ -62,6 +62,20 @@ describe("startBrowserDownload", () => {
     expect(document.cookie).toBe(""); // cleaned up
   });
 
+  it("recognises (and clears) the __Host- cookie the server sends over https", async () => {
+    let cleared = "";
+    const { document } = fakeDom("https://yonixtools.com", (a) => {
+      const token = new URL(a.href, "https://yonixtools.com").searchParams.get("dl")!;
+      setTimeout(() => (document.cookie = `__Host-ytx_dl_${token}=1; Path=/; Secure`), 200);
+    });
+    const set = Object.getOwnPropertyDescriptor(document, "cookie")!.set!;
+    Object.defineProperty(document, "cookie", { get: Object.getOwnPropertyDescriptor(document, "cookie")!.get, set: (v: string) => { if (/Max-Age=0/.test(v)) cleared = v; set.call(document, v); } });
+    const r = await startBrowserDownload("/api/v1/jobs/abc/file", { fetchImpl: (async () => new Response(null, { status: 200 })) as unknown as typeof fetch, timeoutMs: 3000 });
+    expect(r).toBe("started");
+    expect(cleared).toMatch(/^__Host-ytx_dl_[a-z0-9]+=; Max-Age=0; Path=\/; Secure$/);
+    expect(document.cookie).toBe("");
+  });
+
   it("never claims 'started' without the cookie", async () => {
     fakeDom("https://yonixtools.com", () => {});
     const r = await startBrowserDownload("/api/v1/jobs/abc/file", { fetchImpl: (async () => new Response(null, { status: 200 })) as unknown as typeof fetch, timeoutMs: 600 });

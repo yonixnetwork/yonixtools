@@ -65,7 +65,9 @@ jobs:
       - run: cp services/downloader/.env.example services/downloader/.env
       - run: docker compose -f deploy/docker-compose.yml config --quiet
       - run: docker compose -f deploy/docker-compose.yml build
+        env: { AD_ORIGIN: "https://ads.yonixtools.com" }
       - name: Start the stack exactly as deploy.sh does and smoke-test it
+        env: { AD_ORIGIN: "https://ads.yonixtools.com" }
         run: |
           docker compose -f deploy/docker-compose.yml up -d
           for i in $(seq 1 60); do
@@ -76,7 +78,7 @@ jobs:
           done
           echo "web=$web downloader=$dl"
           [ "$web" = healthy ] && [ "$dl" = healthy ]
-          SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh http://127.0.0.1:8090
+          AD_HOST=ads.yonixtools.com SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh http://127.0.0.1:8090
       - name: Egress firewall blocks internal targets, allows the internet
         run: |
           sudo bash deploy/scripts/egress-firewall.sh

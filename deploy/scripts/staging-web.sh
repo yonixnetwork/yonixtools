@@ -156,7 +156,17 @@ case "${1:-}" in
     [ "$(code -u "$(cat "$ST/auth")" "http://127.0.0.1:$SITE_PORT/admin/ads/")" = 200 ] && ok "admin test page works with the login" || bad "admin page with login"
     [ "$(code "http://127.0.0.1:$SITE_PORT/api/healthz")" = 401 ] && ok "API needs the password" || bad "API exposed"
     [ "$(code "http://127.0.0.1:$ADS_PORT/")" = 404 ] && ok "ad-frame origin serves nothing else" || bad "ad-frame origin exposes the site"
-    [ "$(code "http://127.0.0.1:$ADS_PORT/ad-frame.html")" = 200 ] && ok "ad frame served" || bad "ad frame"
+    AH="Host: ${ADS#https://}"   # the web container serves the ad documents only for the ad origin's host
+    [ "$(code -H "$AH" "http://127.0.0.1:$ADS_PORT/ad-frame.html")" = 200 ] && ok "ad frame served on the ad origin" || bad "ad frame"
+    [ "$(code "$ADS/ad-frame.html")" = 200 ] && ok "ad frame served through the ad tunnel" || bad "ad frame through the tunnel"
+    if curl -s --noproxy '*' -H "$AH" "http://127.0.0.1:$ADS_PORT/ad-frame.html" | grep -Eq 'data-ytx-ui|__ytxReport|requests\(\)|admin-top'; then bad "public ad frame contains diagnostics"; else ok "public ad frame has no diagnostics"; fi
+    [ "$(code -H "$AH" "http://127.0.0.1:$ADS_PORT/ad-test.html")" = 401 ] && ok "ad test needs the password (401)" || bad "ad test exposed"
+    [ "$(code -H "$AH" "http://127.0.0.1:$ADS_PORT/ad-test.html?u=monetagPush")" = 401 ] && ok "ad test with a query still needs the password" || bad "ad test with a query exposed"
+    [ "$(code -H "$AH" -u "$(cat "$ST/auth")" "http://127.0.0.1:$ADS_PORT/ad-test.html")" = 200 ] && ok "ad test works with the login" || bad "ad test with the login"
+    curl -s --noproxy '*' -D - -o /dev/null -H "$AH" -u "$(cat "$ST/auth")" "http://127.0.0.1:$ADS_PORT/ad-test.html" | grep -qi '^cache-control: no-store' && ok "ad test never cached" || bad "ad test caching"
+    for pth in /ad-frame.html /ad-test.html /ad-frame.html?u=native; do
+      [ "$(code -u "$(cat "$ST/auth")" "http://127.0.0.1:$SITE_PORT$pth")" = 404 ] && ok "site origin: $pth is 404" || bad "site origin serves $pth"
+    done
     curl -s --noproxy '*' -D - -o /dev/null "http://127.0.0.1:$SITE_PORT/" | grep -qi '^x-robots-tag: noindex' && ok "noindex header" || bad "noindex header"
     echo "Isolation checks"
     for c in "$P-web" "$P-downloader" "$P-proxy"; do
@@ -177,6 +187,7 @@ case "${1:-}" in
     echo "Staging ready ($(git rev-parse --short HEAD); backend $BACKEND; Monetag ${MONETAG:-off})"
     echo "  Site:      $SITE/"
     echo "  Ad test (admin): $SITE/admin/ads/"
+    echo "  Ad-origin test with diagnostics + Monetag top-level (admin): $ADS/ad-test.html"
     echo "  Login:     $(cat "$ST/auth")   (also in $PWD/$ST/auth)"
     echo "Production untouched."
     ;;

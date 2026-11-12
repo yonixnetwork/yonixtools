@@ -9,8 +9,9 @@ const files: string[] = [];
 const walk = (d: string) => { for (const f of readdirSync(d)) { const p = join(d, f); if (statSync(p).isDirectory()) walk(p); else files.push(p); } };
 try { walk(out); } catch { /* no build */ }
 const rel = (p: string) => relative(out, p);
-// Allowed to contain ad code: the ad-origin document and the password-protected admin page.
-const isAdDoc = (p: string) => rel(p) === "ad-frame.html" || rel(p).startsWith("admin/");
+// Allowed to contain ad code: the two ad-origin documents (the web server serves them only on the
+// ad origin, ad-test.html only with the admin password) and the password-protected admin page.
+const isAdDoc = (p: string) => rel(p) === "ad-frame.html" || rel(p) === "ad-test.html" || rel(p).startsWith("admin/");
 const publicHtml = files.filter((p) => p.endsWith(".html") && !isAdDoc(p));
 const publicJs = files.filter((p) => p.endsWith(".js") && !isAdDoc(p) && !rel(p).endsWith("sw.js"));
 
