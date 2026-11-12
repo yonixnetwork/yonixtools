@@ -28,6 +28,16 @@ What they **don't** prove:
 - that a real Adsterra or Monetag ad renders: ad networks were stubbed, and my environment can't reach them;
 - behaviour in real Safari/WebKit and on real devices.
 
+## A2. Staging safety checks (local, 12 Nov 2026)
+
+| Check | Result |
+|---|---|
+| Gatekeeper (`deploy/staging/proxy.conf`) | 401 without or with a wrong password. `/ads-check/` and `/api/*` locked. Ad-frame origin serves only `/ad-frame.html` (404 elsewhere). `robots.txt` = `Disallow: /`. `X-Robots-Tag: noindex` on every response incl. 401. API limit returns 429 after the burst |
+| Full topology in Chromium | site through the password proxy, ad frame from the proxy's ad port. Stub ad filled. PWA installability errors: **none**. Service worker active. Monetag on the utility page, **not** on the downloader. **0 CSP violations** |
+| Test-data backend through the proxy (phone viewport) | Instagram link → formats → **Download started**, MP4 saved (30 KB test clip) |
+| `staging-web.sh` dry run (logging stand-in for docker) | preflight/tunnels/up/down run cleanly. Password file 600, hash 644, state folder 700. `down` removes every staging resource and the state folder |
+| Egress firewall guard | the production chain can't be rebuilt with another subnet. Staging uses its own chain |
+
 ## B. Real-device evidence so far
 
 - **8 Nov 2026, your phone, live `/ads-check/`:** in same-origin frames, all four Adsterra units rendered real creatives (image banners 320×50, 300×250, 728×90; native tiles). Sandboxed frames: banners empty, native nothing.

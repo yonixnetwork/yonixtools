@@ -10,6 +10,7 @@ HOST="${SITE_HOST:-$(echo "$BASE" | sed -E 's#^https?://([^/:]+).*#\1#')}"
 args=(-s --max-time 20 --noproxy '*')
 [ -n "${RESOLVE:-}" ] && for r in $RESOLVE; do args+=(--resolve "$r"); done
 [ "${INSECURE:-0}" = "1" ] && args+=(-k)
+[ -n "${CURL_AUTH:-}" ] && args+=(-u "$CURL_AUTH")   # staging password (user:password)
 pass=0; fail=0
 ok()  { echo "  PASS  $1"; pass=$((pass+1)); }
 bad() { echo "  FAIL  $1"; fail=$((fail+1)); }
@@ -22,7 +23,8 @@ for p in / /tools/ /instagram-downloader/ /youtube-downloader/ /pdf-merger/ /qr-
 check 404 "unknown page is 404" "$BASE/definitely-not-a-page/"
 check 301 "missing trailing slash redirects" "$BASE/pdf-merger"
 sm="$(curl "${args[@]}" "$BASE/sitemap.xml")"; echo "$sm" | grep -q "<loc>https://$HOST/pdf-merger/</loc>" && ok "sitemap lists tool pages" || bad "sitemap"
-curl "${args[@]}" "$BASE/robots.txt" | grep -q "Sitemap: https://$HOST/sitemap.xml" && ok "robots.txt points to sitemap" || bad "robots.txt"
+if [ "${STAGING:-0}" = "1" ]; then curl "${args[@]}" "$BASE/robots.txt" | grep -q "^Disallow: /$" && ok "staging robots.txt blocks all crawlers" || bad "staging robots.txt"
+else curl "${args[@]}" "$BASE/robots.txt" | grep -q "Sitemap: https://$HOST/sitemap.xml" && ok "robots.txt points to sitemap" || bad "robots.txt"; fi
 
 echo "Headers"
 hdr="$(curl "${args[@]}" -D - -o /dev/null "$BASE/")"

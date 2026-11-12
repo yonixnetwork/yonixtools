@@ -19,7 +19,7 @@ cp "$here/deploy/nginx/web.conf" "$dir/conf.d/web.conf"
 SITE_URL="${SITE_URL:-https://yonixtools.com}" sh "$here/deploy/nginx/apply-build-options.sh" "$dir/snippets/security-headers.conf" "$dir/conf.d/web.conf"
 listens=""; for p in "$@"; do listens="$listens    listen 127.0.0.1:$p;\n"; done
 # No backend locally: /api/ goes to a closed port (fast 502) instead of Docker's DNS.
-sed -i -e "s#resolver 127.0.0.11 valid=10s ipv6=off;#resolver 127.0.0.1 valid=10s ipv6=off;#" -e "s#set \$downloader_upstream downloader:8787;#set \$downloader_upstream 127.0.0.1:9;#" "$dir/conf.d/web.conf"
+sed -i -e "s#resolver 127.0.0.11 valid=10s ipv6=off;#resolver 127.0.0.1 valid=10s ipv6=off;#" -e "s#set \$downloader_upstream downloader:8787;#set \$downloader_upstream ${API_UPSTREAM:-127.0.0.1:9};#" "$dir/conf.d/web.conf"
 sed -i -e "s#^    listen 80;#$listens#" -e "s#root /usr/share/nginx/html;#root $out;#" -e "s#/etc/nginx/snippets/#$dir/snippets/#g" "$dir/conf.d/web.conf"
 cat > "$dir/nginx.conf" <<CONF
 worker_processes 1;

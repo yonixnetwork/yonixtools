@@ -9,7 +9,13 @@
 #   bash deploy/scripts/egress-firewall.sh --remove
 set -euo pipefail
 SUBNET="${YONIXTOOLS_SUBNET:-172.30.99.0/24}"
-CHAIN=YONIXTOOLS-EGRESS
+# Chain per stack: staging MUST use its own chain (YONIXTOOLS_EGRESS_CHAIN) so it never
+# flushes production's rules. The default is production's chain, unchanged.
+CHAIN="${YONIXTOOLS_EGRESS_CHAIN:-YONIXTOOLS-EGRESS}"
+if [ "$CHAIN" != "YONIXTOOLS-EGRESS" ] && [ "$SUBNET" = "172.30.99.0/24" ]; then echo "refusing: a non-production chain needs its own subnet" >&2; exit 1; fi
+if [ "$CHAIN" = "YONIXTOOLS-EGRESS" ] && [ "$SUBNET" != "172.30.99.0/24" ] && [ -z "${YONIXTOOLS_SUBNET_OVERRIDE_OK:-}" ]; then
+  echo "refusing: production's chain with a different subnet would replace production's rules (set YONIXTOOLS_EGRESS_CHAIN)" >&2; exit 1
+fi
 BLOCK=(0.0.0.0/8 10.0.0.0/8 100.64.0.0/10 127.0.0.0/8 169.254.0.0/16 172.16.0.0/12 192.0.0.0/24 192.168.0.0/16 198.18.0.0/15 224.0.0.0/4 240.0.0.0/4)
 IPT="iptables"
 [ "${1:-}" = "--print" ] && IPT="echo iptables"
