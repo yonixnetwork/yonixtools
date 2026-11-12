@@ -7,6 +7,15 @@ set -euo pipefail
 cd "$(dirname "$0")/../.."
 COMPOSE=(docker compose -f deploy/docker-compose.yml)
 
+# Production hostnames (owner, 12 Nov 2026): the site is https://yonixtools.com and advertising lives
+# only on https://ads.yonixtools.com. Refuse anything else, so a typo can't swap in another domain.
+[ "${SITE_URL:-https://yonixtools.com}" = "https://yonixtools.com" ] || { echo "SITE_URL must be https://yonixtools.com (got '${SITE_URL}')."; exit 1; }
+case "${AD_ORIGIN:-}" in
+  ""|https://ads.yonixtools.com) ;;
+  *) echo "AD_ORIGIN must be https://ads.yonixtools.com or empty (no ads), got '${AD_ORIGIN}'."; exit 1 ;;
+esac
+if [ -n "${AD_FRAME_PARENT:-}" ] && [ "$AD_FRAME_PARENT" != "https://yonixtools.com" ]; then echo "AD_FRAME_PARENT must be https://yonixtools.com."; exit 1; fi
+
 bash deploy/scripts/preflight.sh || { echo "Fix preflight problems first."; exit 1; }
 if [ "${DEPLOY_PULL:-0}" = "1" ]; then git fetch origin && git merge --ff-only "origin/$(git rev-parse --abbrev-ref HEAD)"; fi
 rev="$(git rev-parse --short HEAD)"
