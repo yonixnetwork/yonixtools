@@ -38,6 +38,32 @@ What they **don't** prove:
 | `staging-web.sh` dry run (logging stand-in for docker) | preflight/tunnels/up/down run cleanly. Password file 600, hash 644, state folder 700. `down` removes every staging resource and the state folder |
 | Egress firewall guard | the production chain can't be rebuilt with another subnet. Staging uses its own chain |
 
+## A3. Incident: automated tests reached the real ad networks (found 12 Nov 2026; fixed)
+
+**What happened:**
+- CI runs on GitHub with real internet access. E2E tests that didn't stub the ad networks loaded the real ad scripts on pages with ads.
+- **Adsterra:** likely since the ads release (7 Nov).
+- **Monetag:** on the Monetag branches (since 8 Nov). CI run 42520517879 (8 Nov) recorded the requests, and the run in progress on 12 Nov was cancelled.
+- Those were real ad requests from a datacenter, headless browser. Networks usually filter such traffic, but I can't confirm how many were counted. Worth checking the Adsterra and Monetag dashboards for impressions from US datacenter IPs on those dates.
+- The two `prod-ads-inspect` runs I made on 8 Nov were deliberate inspections of the live site's ads; they were reported at the time.
+
+**Fix:**
+- **Chromium test projects:** every hostname except `localhost` resolves to "not found" (`playwright.config.ts`).
+  - Verified: without the rule, a page reached the network; with it, the request failed at name resolution before any connection.
+  - Guard test: `no-external-traffic.spec.ts` opens an ad page without stubs and asserts zero external responses.
+- **Downloader test build** (used by the WebKit and live-platform suites): built with ads **off**, so it contains no ad code.
+- **The two ad-inspection workflows** now run only when triggered manually from the Actions tab.
+
+**What the incident revealed** (runtime hosts Monetag contacted, from CI's request log):
+
+| Host | Request seen | Zone |
+|---|---|---|
+| `my.rtmark.net` | `/gid.js` | both |
+| `jhnwr.com` | `/400/12218944?oo=1&sw_version=…&oaid=…` | In-Page Push |
+| `ldrws.com` | `/401/12218952?oo=1&sw_version=…&oaid=…` | Vignette |
+
+These are **candidates for stage 2. Not added.** The request type, and so the CSP directive, is unknown, and the hosts may rotate. Staging's `/ads-check/` report shows exactly which directive blocked which host. The stage-2 diff will be built from that, for your approval.
+
 ## B. Real-device evidence so far
 
 - **8 Nov 2026, your phone, live `/ads-check/`:** in same-origin frames, all four Adsterra units rendered real creatives (image banners 320×50, 300×250, 728×90; native tiles). Sandboxed frames: banners empty, native nothing.

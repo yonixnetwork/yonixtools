@@ -1,14 +1,13 @@
 # Inspect the real Adsterra scripts and how each loading strategy behaves in real Chromium.
 name: Ads probe
+# Manual only: it loads real ad scripts from a datacenter browser, which ad networks may count
+# as impressions. Run it only when the owner asks (Actions tab -> Run workflow).
 on:
-  push:
-    branches: ["feature/**"]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   probe:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[ads-probe]')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults: { run: { working-directory: apps/web } }

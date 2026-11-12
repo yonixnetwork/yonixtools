@@ -1,14 +1,13 @@
 # Read-only inspection of the live site's ads in real Chromium (no clicks).
 name: Prod ads inspect
+# Manual only: it loads real ad scripts from a datacenter browser, which ad networks may count
+# as impressions. Run it only when the owner asks (Actions tab -> Run workflow).
 on:
-  push:
-    branches: ["feature/**"]
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   inspect:
-    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[prod-inspect]')
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     defaults: { run: { working-directory: apps/web } }

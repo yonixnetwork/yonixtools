@@ -42,7 +42,7 @@ Consequence: any script the CSP allows can run inline code in the page. **Allow-
 |---|---|---|
 | `https://n6wxm.com` | supplied code | Vignette loader `vignette.min.js` |
 | `https://nap5k.com` | supplied code | In-Page Push loader `tag.min.js` |
-| *(further hosts)* | **not knowable statically** | ad requests, creatives, tracking |
+| *(further hosts)* | not knowable statically. **Observed at runtime in CI (12 Nov):** `my.rtmark.net` (`/gid.js`), `jhnwr.com` (zone 12218944), `ldrws.com` (zone 12218952). Directive unknown; may rotate | ad requests, creatives, tracking |
 
 **Static analysis evidence** (GitHub Actions run 42501157416, `apps/web/scripts/ads/inspect-monetag.mjs`; the scripts were downloaded as text and never executed):
 - `vignette.min.js` → 200, 177,253 bytes. `tag.min.js` → 200, 153,458 bytes.
