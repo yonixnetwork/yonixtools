@@ -177,3 +177,39 @@ Use the staging runbook and `/admin/ads/` → Copy report.
 - **Controls:** **Cancel download** stops it, so no file is started. **Hide** keeps it going. After the download starts, the panel stays with **Close**.
 - **No waiting:** nothing waits for the ad. A test with a hanging ad script still downloads immediately.
 - **Without ads:** if no ad origin is configured, the panel shows only the progress.
+
+## 10. Update 12 Nov 2026 (later): central placements, Monetag diagnostics, delivery counts
+
+**The newest owner rules replace §9's download-panel ad.** There are no ads when Download is clicked or while a file is processed. The panel keeps its progress, Cancel and Hide, and its placement (`downloader.panel`) is switched off.
+
+**Central placement configuration: `apps/web/src/lib/ads/placements.ts`.**
+- **Fields:** each row has an id, page type, position, network, format, devices and on/off, plus a note.
+- **How pages use it:** pages only declare `<AdPlacement page=… position=… />`.
+- **Changing an ad:** move it, add it or switch it off by editing that one table. A unit test (`tests/unit/placements.test.ts`) keeps the rules:
+  - no zone repeated on a page;
+  - at most one native unit;
+  - at most 3 ads on phones and 4 on desktop;
+  - never Monetag on the homepage or downloader pages;
+  - no native on phones;
+  - nothing above the URL box.
+
+| Page | Phone | Desktop |
+|---|---|---|
+| Home | 320×50 after the hero · 300×250 between Popular tools and Categories | 728×90 after the hero · 300×250 mid-page · native lower down (after Recommended) |
+| Utility tool | 320×50 before the tool · 300×250 after the tool | 728×90 before the tool · 300×250 after · In-Page Push (How to use → Features) · native before the FAQ |
+| Downloader | 320×50 below the downloader/results · 300×250 after the FAQ | + native between How to use and Features. No Monetag, nothing above the URL box or inside results, none in the download panel |
+| All tools, categories with 9+ tools | full-width 320×50 after the first 6 tools (hidden while searching) · In-Page Push after the list | full-width 728×90 after the first 6 tools · native after the list |
+
+**Empty slots** now collapse only *after* a tap or click has finished. Collapsing on press-down moved the tool under the pointer when a slot above it was empty (seen with ad blockers).
+
+**Monetag diagnostics, admin only:**
+- **Requests:** each test frame now lists the network requests it made (from Resource Timing; hosts and paths only).
+- **Top-level check:** `/admin/ads/` links to "Open In-Page Push / Vignette top-level". These load the same zone code as a normal page on the ad origin, not framed, and show their own status.
+  - Rendered top-level but not framed means the zone refuses frames.
+  - Empty in both means no fill, or the domain or zone isn't approved.
+
+**Delivery counts:**
+- **How it works:** each slot reports one outcome to this site's backend (`POST /api/v1/ad-events`): `requested`, `filled` (a real creative rendered), `empty` (no fill) or `blocked` (scripts unreachable or ad blocker). Each report carries the placement id, the unit and mobile/desktop, and is rate-limited and enum-validated.
+- **What is kept:** counts only, in memory, reset on restart.
+- **Where to see them:** on `/admin/ads/` via `/admin/api/ad-stats`, behind the admin password. nginx strips the admin header from all public `/api/` requests.
+- **Not measured:** these are not impressions, clicks or revenue. Use the Adsterra and Monetag dashboards for those.

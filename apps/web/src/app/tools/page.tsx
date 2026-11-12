@@ -1,5 +1,4 @@
-import { AdSlot } from "@/components/AdSlot";
-import { MonetagZones } from "@/components/MonetagZones";
+import { AdPlacement } from "@/components/AdPlacement";
 import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ToolsExplorer } from "@/components/ToolsExplorer";
@@ -19,9 +18,8 @@ export default function ToolsPage() {
         <h1>All tools</h1>
         <p>Search by what you want to do. Synonyms and small typos are understood.</p>
       </header>
-      <ToolsExplorer />
-      <AdSlot unit="native" className="ad-native ad-wide-only" />
-      <MonetagZones page={{ kind: "tools" }} narrowOnly />
+      <ToolsExplorer gridAd={<AdPlacement page="listing" position="in-grid" className="ad-grid-break" />} />
+      <AdPlacement page="listing" position="after-list" monetag={{ kind: "tools" }} />
     </div>
   );
 }

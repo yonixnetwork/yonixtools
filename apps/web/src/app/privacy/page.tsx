@@ -38,6 +38,10 @@ export default function Privacy() {
             <a href="https://monetag.com/privacy-policy/" rel="noopener noreferrer" target="_blank">Monetag&apos;s privacy policy</a>. We don&apos;t use push
             notification ads, and nothing subscribes you to notifications.
           </p>
+          <p>
+            To place ads sensibly, each ad space reports to our own server only whether an ad appeared, came back empty or was blocked, with the ad position and
+            whether the screen is phone- or desktop-sized. These are anonymous counts: no address, link, cookie or identifier is sent or kept.
+          </p>
           <p>Advertising never decides whether a tool works: there are no forced ad clicks, countdowns or redirects, and pop-under or redirect ad formats are not used.</p>
         </section>
         <section>

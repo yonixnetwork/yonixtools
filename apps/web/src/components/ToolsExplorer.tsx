@@ -1,11 +1,13 @@
 "use client";
 import { Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { GRID_AD_AFTER, GRID_AD_MIN } from "@/lib/ads/placements";
 import { ToolCard } from "./ToolCard";
 import { searchTools, popularSearches } from "@/lib/search";
 import { categories, tools, type CategoryId } from "@/lib/registry";
 
-export function ToolsExplorer() {
+/** gridAd: a full-width ad break after the first rows (long, unsearched lists only; it stays mounted while filtering, so it never reloads). */
+export function ToolsExplorer({ gridAd }: { gridAd?: ReactNode } = {}) {
   const [q, setQ] = useState("");
   const [cat, setCat] = useState<CategoryId | "all">("all");
 
@@ -60,7 +62,10 @@ export function ToolsExplorer() {
 
       {list.length > 0 ? (
         <div className="tool-grid">
-          {list.map((t) => <ToolCard key={t.slug} tool={t} headingLevel={2} />)}
+          {list.map((t, i) => [
+            <ToolCard key={t.slug} tool={t} headingLevel={2} />,
+            gridAd && !q.trim() && i === GRID_AD_AFTER - 1 && list.length >= GRID_AD_MIN && <div key="ad" className="grid-break">{gridAd}</div>,
+          ])}
         </div>
       ) : (
         <div className="empty card">

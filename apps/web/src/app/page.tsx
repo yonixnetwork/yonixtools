@@ -1,6 +1,6 @@
 import { ArrowRight, CircleAlert, CircleCheck, CircleMinus, Gauge, Link as LinkIcon, ShieldCheck, Sparkles } from "lucide-react";
 import type { Metadata } from "next";
-import { AdSlot } from "@/components/AdSlot";
+import { AdPlacement } from "@/components/AdPlacement";
 import { Downloader } from "@/components/Downloader";
 import { FaqList } from "@/components/Faq";
 import { Icon, PlatformIcon } from "@/components/Icon";
@@ -70,7 +70,7 @@ export default function Home() {
       </section>
 
       <div className="container">
-        <AdSlot responsive="leaderboard" />
+        <AdPlacement page="home" position="after-hero" />
       </div>
 
       <section className="section" aria-labelledby="platforms-h">
@@ -104,10 +104,6 @@ export default function Home() {
         </div>
       </section>
 
-      <div className="container">
-        <AdSlot unit="native" className="ad-native ad-wide-only" />
-      </div>
-
       <section className="section" aria-labelledby="popular-h">
         <div className="container">
           <div className="section-head">
@@ -124,6 +120,10 @@ export default function Home() {
           </div>
         </div>
       </section>
+
+      <div className="container">
+        <AdPlacement page="home" position="mid-content" />
+      </div>
 
       <section className="section" aria-labelledby="cat-h">
         <div className="container">
@@ -163,6 +163,10 @@ export default function Home() {
       </section>
 
       <Recommended cards={tools.map(toCard)} picks={editorsPicks} />
+
+      <div className="container">
+        <AdPlacement page="home" position="lower-native" />
+      </div>
 
       <section className="section" aria-labelledby="why-h">
         <div className="container">

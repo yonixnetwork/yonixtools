@@ -643,3 +643,11 @@ table.data tr:last-child td { border-bottom: 0; }
 .dl-panel .ad-slot.dl-panel-ad { margin: 6px auto 4px; }
 .dl-panel-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--border); }
 @media (max-width: 480px) { .dl-panel { bottom: 0; width: 100vw; border-radius: var(--radius) var(--radius) 0 0; } }
+
+/* Central placements: a full-width, clearly separated break inside listing grids, and a subtle
+   separator above any filled ad so it never reads as a YoniXTools feature. */
+.grid-break { grid-column: 1 / -1; }
+.grid-break .ad-slot { margin: 12px auto; }
+.ad-slot[data-ad-state="filled"] { padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
+.ad-grid-break[data-ad-state="filled"], .dl-panel .ad-slot[data-ad-state="filled"] { border-top: 0; padding-top: 0; }
+.ad-off { display: none !important; }

@@ -1,5 +1,5 @@
-import { AdSlot } from "@/components/AdSlot";
-import { MonetagZones } from "@/components/MonetagZones";
+import { AdPlacement } from "@/components/AdPlacement";
+import { GRID_AD_AFTER, GRID_AD_MIN } from "@/lib/ads/placements";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import type { CategoryId } from "@/lib/registry";
@@ -65,10 +65,16 @@ export default async function CategoryPage({ params }: Props) {
         <p>{c.description}</p>
       </header>
       <div className="tool-grid">
-        {list.map((t) => <ToolCard key={t.slug} tool={t} headingLevel={2} />)}
+        {list.map((t, i) => [
+          <ToolCard key={t.slug} tool={t} headingLevel={2} />,
+          i === GRID_AD_AFTER - 1 && list.length >= GRID_AD_MIN && (
+            <div key="ad" className="grid-break">
+              <AdPlacement page="listing" position="in-grid" className="ad-grid-break" />
+            </div>
+          ),
+        ])}
       </div>
-      <AdSlot unit="native" className="ad-native ad-wide-only" />
-      <MonetagZones page={{ kind: "category", id: c.id }} narrowOnly />
+      <AdPlacement page="listing" position="after-list" monetag={{ kind: "category", id: c.id }} />
       <section className="section" aria-labelledby="other-h" style={{ paddingBottom: 0 }}>
         <h2 id="other-h" style={{ fontSize: "1.1rem", marginBottom: 12 }}>
           Other categories

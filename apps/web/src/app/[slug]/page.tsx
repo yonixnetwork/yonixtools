@@ -2,8 +2,7 @@ import { Clock, MonitorSmartphone, Server } from "lucide-react";
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
-import { AdSlot } from "@/components/AdSlot";
-import { MonetagZones } from "@/components/MonetagZones";
+import { AdPlacement } from "@/components/AdPlacement";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
@@ -38,6 +37,7 @@ export default async function ToolPage({ params }: Props) {
   const isDownloader = tool.category === "social";
   const status = tool.platform ? PLATFORM_STATUS.find((p) => p.id === tool.platform) : undefined;
   const ads = !tool.hidden; // no advertising on pages of unavailable platforms
+  const pt = isDownloader ? "downloader" : "tool";
 
   return (
     <>
@@ -72,6 +72,9 @@ export default async function ToolPage({ params }: Props) {
           </div>
         </header>
 
+        {/* Utility tools: one ad between the heading and the tool (never inside it). Downloaders: none above the URL box. */}
+        {ads && !isDownloader && <AdPlacement page="tool" position="before-tool" />}
+
         <section className={isDownloader ? "" : "card tool-surface"} aria-label={`${tool.name} tool`}>
           {isDownloader && unavailableMessage(tool.platform) && (
             <div className="notice notice-error" role="status" data-testid="platform-status">
@@ -95,7 +98,7 @@ export default async function ToolPage({ params }: Props) {
         </section>
 
         {/* Below the tool and its results, never between its controls. */}
-        {ads && (isDownloader ? <AdSlot responsive="leaderboard" /> : <AdSlot unit="banner300x250" />)}
+        {ads && <AdPlacement page={pt} position={isDownloader ? "after-result" : "after-tool"} />}
 
         <div className="content-grid">
           <article className="prose">
@@ -107,8 +110,7 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ol>
             </section>
-            {ads && isDownloader && <AdSlot unit="native" className="ad-native ad-wide-only" />}
-            {ads && <MonetagZones page={{ kind: "tool", tool }} desktopOnly />}
+            {ads && <AdPlacement page={pt} position="content-1" monetag={{ kind: "tool", tool }} />}
             <section aria-labelledby="feat-h">
               <h2 id="feat-h">Features</h2>
               <ul>
@@ -117,12 +119,12 @@ export default async function ToolPage({ params }: Props) {
                 ))}
               </ul>
             </section>
-            {ads && !isDownloader && <AdSlot unit="native" className="ad-native ad-wide-only" />}
+            {ads && <AdPlacement page={pt} position="content-2" />}
             <section aria-labelledby="faq-h">
               <h2 id="faq-h">Frequently asked questions</h2>
               <FaqList faqs={tool.content.faqs} />
             </section>
-            {ads && isDownloader && <AdSlot unit="banner300x250" />}
+            {ads && <AdPlacement page={pt} position="after-faq" />}
           </article>
           <aside>
             <div className="card aside-card">
@@ -143,7 +145,6 @@ export default async function ToolPage({ params }: Props) {
             </div>
           </aside>
         </div>
-        {ads && !isDownloader && <AdSlot responsive="leaderboard" className="ad-desktop-only" />}
       </div>
     </>
   );

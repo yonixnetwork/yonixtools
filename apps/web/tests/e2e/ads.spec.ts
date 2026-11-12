@@ -65,19 +65,20 @@ test("the ad frame serves the four publisher codes byte for byte (and the two Mo
 test.describe("desktop placements", () => {
   test.use({ viewport: { width: 1280, height: 900 } });
 
-  test("homepage: 728×90 leaderboard below the downloader and a native banner", async ({ page }) => {
+  test("homepage: leaderboard below the downloader, 300×250 between sections, native lower down", async ({ page }) => {
     await page.goto("/");
-    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "native"]);
+    expect((await slots(page)).map((s) => s.unit)).toEqual(["banner728x90", "banner300x250", "native"]);
+    expect(await page.locator(".hero aside.ad-slot, #downloader aside.ad-slot").count()).toBe(0);
   });
 
-  test("tool page: 300×250 below the tool, native in the content, desktop leaderboard", async ({ page }) => {
+  test("tool page: leaderboard before the tool, 300×250 after it, In-Page Push and native in the content", async ({ page }) => {
     for (const path of ["/image-compressor/", "/pdf-merger/", "/qr-code-generator/", "/json-formatter/", "/loan-calculator/", "/color-converter/", "/video-info/", "/random-number-generator/", "/meta-tag-generator/", "/word-counter/"]) {
       await page.goto(path);
       const s = await slots(page);
-      expect(s.map((x) => x.unit), path).toEqual(["banner300x250", "monetagPush", "native", "banner728x90"]);
+      expect(s.map((x) => x.unit), path).toEqual(["banner728x90", "banner300x250", "monetagPush", "native"]);
       expect(new Set(s.map((x) => x.unit)).size, path).toBe(s.length); // never the same unit twice
       expect(s.every((x) => x.label === "Advertisement"), path).toBe(true);
-      // The first ad comes after the tool surface, never inside it.
+      // Ads sit before and after the tool surface, never inside it.
       expect(await page.locator(".tool-surface aside.ad-slot").count(), path).toBe(0);
     }
   });
@@ -102,9 +103,9 @@ test.describe("phone placements", () => {
   test("phones get 320×50 (never a squeezed 728×90), no native (its 4 tiles stack), at most two ads on a tool page", async ({ page }) => {
     const visible = async () => (await slots(page)).filter((x) => x.visible).map((x) => x.unit);
     await page.goto("/");
-    expect(await visible()).toEqual(["banner320x50"]);
+    expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     await page.goto("/image-compressor/");
-    expect(await visible()).toEqual(["banner300x250"]); // leaderboard, native and In-Page Push are wide-screen only on tool pages
+    expect(await visible()).toEqual(["banner320x50", "banner300x250"]); // native and In-Page Push are wide-screen only on tool pages
     await page.goto("/tiktok-downloader/");
     expect(await visible()).toEqual(["banner320x50", "banner300x250"]);
     const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
@@ -131,8 +132,11 @@ test("frames: loaded from the separate ad origin, no top navigation, banner size
   // Native reserves a small strip only, not a tall empty box.
   const native = page.locator('aside[data-ad-unit="native"] .ad-box');
   expect(Math.round((await native.boundingBox())!.height)).toBeLessThanOrEqual(100);
-  // The bottom leaderboard is far below the fold: not loaded yet.
-  await expect(page.locator('aside[data-ad-unit="banner728x90"] iframe')).toHaveCount(0);
+  // Lazy: a slot more than ~300px below the viewport hasn't loaded its frame yet.
+  const far = page.locator('aside[data-ad-unit="native"]');
+  const dist = await far.evaluate((e) => e.getBoundingClientRect().top - innerHeight);
+  if (dist > 400) await expect(far.locator("iframe")).toHaveCount(0);
+  else expect(dist, "native slot should be far below the fold in this layout").toBeGreaterThan(400);
 });
 
 test("when the ad network is unreachable (or blocked), slots collapse within seconds and the page has no errors", async ({ page }) => {
@@ -144,7 +148,8 @@ test("when the ad network is unreachable (or blocked), slots collapse within sec
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/word-counter/");
   // It may already be gone by the time we scroll (scripts fail at once), so scroll without waiting on it.
-  await page.evaluate(() => document.querySelector('aside[data-ad-unit="banner300x250"]')?.scrollIntoView());
+  await page.locator('aside.ad-banner300x250').first().waitFor({ state: "attached" });
+  await page.evaluate(() => document.querySelector("aside.ad-banner300x250")?.scrollIntoView());
   const ad = page.locator('aside[data-ad-unit="banner300x250"]');
   // On screen: it turns blank and unlabeled within seconds, and collapses on the next interaction (no layout shift while being looked at).
   await expect(ad).toHaveAttribute("data-ad-state", "empty", { timeout: 4_000 });
@@ -153,7 +158,10 @@ test("when the ad network is unreachable (or blocked), slots collapse within sec
   await expect(ad).toHaveCount(0);
   // Off screen: slots collapse by themselves.
   await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect(page.locator('aside[data-ad-unit="native"]')).toHaveCount(0, { timeout: 4_000 });
+  const native = page.locator('aside[data-ad-unit="native"]');
+  await expect.poll(async () => (await native.count()) === 0 || (await native.getAttribute("data-ad-state")) === "empty", { timeout: 4_000 }).toBe(true);
+  await page.evaluate(() => window.scrollTo(0, 0)); // now off screen
+  await expect(native).toHaveCount(0, { timeout: 4_000 });
   // The tool is unaffected.
   await page.locator("textarea").first().fill("one two three");
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();

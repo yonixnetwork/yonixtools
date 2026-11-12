@@ -126,3 +126,15 @@ test("[off] a MONETAG=off build has no Monetag slot anywhere", async ({ page }) 
   }
   expect(requests).toEqual([]);
 });
+
+test("admin top-level check: the zone code runs outside a frame and reports its own status and requests", async ({ page }) => {
+  stubBody.value = "var d=document.createElement('div');d.style.cssText='width:320px;height:90px;background:#ccc';d.textContent='Sponsored message from a test';document.body.appendChild(d);";
+  await page.goto("http://localhost:4175/ad-frame.html?u=monetagPush&s=admin-top");
+  const diag = page.locator("#ytx-diag");
+  await expect(diag).toContainText("AD RENDERED", { timeout: 10_000 });
+  await expect(diag).toContainText("nap5k.com/tag.min.js");
+  // Without the admin marker, the document shows nothing of its own when opened directly.
+  await page.goto("http://localhost:4175/ad-frame.html?u=monetagPush&s=x");
+  await page.waitForTimeout(1500);
+  await expect(page.locator("#ytx-diag")).toHaveCount(0);
+});

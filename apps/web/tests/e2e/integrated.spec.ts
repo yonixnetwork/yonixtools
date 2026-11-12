@@ -160,17 +160,17 @@ test("Reddit and Vimeo links are refused with the reason, without calling the AP
   expect(apiCalls).toEqual([]);
 });
 
-// ── Download panel (owner request 12 Nov 2026): progress while the file is prepared, one
-//    labelled ad, Cancel / Hide; the download never waits for the ad. ─────────────────────
-const AD_300 = "https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40";
-const creative = `document.write('<a href="https://example.com"><img width="300" height="250" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22/%3E"></a>')`;
-
-test("download panel: progress while preparing, a labelled ad, then 'Download started' until closed", async ({ page }) => {
-  await page.route(AD_300, (r) => r.fulfill({ contentType: "application/javascript", body: creative }));
+// ── Download panel: progress while the file is prepared, Cancel / Hide. Owner rule (12 Nov
+//    2026, latest): no ads when Download is clicked or while it is processed. ──────────────
+test("download panel: progress while preparing, no ad, then 'Download started' until closed", async ({ page }) => {
+  const adFrames: string[] = [];
+  page.on("request", (r) => r.url().includes("/ad-frame.html") && adFrames.push(r.url()));
   await page.goto("/tiktok-downloader/");
   await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000101");
   await page.getByRole("button", { name: "Download", exact: true }).click();
   const card = page.locator(".media-result");
+  await expect(card).toBeVisible({ timeout: 20_000 });
+  const before = adFrames.length;
   const [download] = await Promise.all([
     page.waitForEvent("download", { timeout: 20_000 }),
     card.locator(".format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
@@ -180,27 +180,12 @@ test("download panel: progress while preparing, a labelled ad, then 'Download st
   expect(download.suggestedFilename()).toMatch(/\.mp4$/);
   await expect(panel).toHaveAttribute("data-phase", /started|requested/, { timeout: 20_000 });
   await expect(panel).toContainText("Download started");
-  const ad = panel.locator('aside[data-ad-unit="banner300x250"]');
-  await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
-  await expect(ad.locator(".ad-label")).toHaveText("Advertisement");
+  await expect(panel.locator("aside.ad-slot, iframe")).toHaveCount(0);
+  expect(adFrames.slice(before), "clicking Download opens no ad").toEqual([]);
   await page.waitForTimeout(1500);
   await expect(panel).toBeVisible(); // stays until the visitor closes it
   await panel.getByRole("button", { name: "Close", exact: true }).click();
   await expect(panel).toHaveCount(0);
-});
-
-test("download panel: the download never waits for the ad (ad script hangs)", async ({ page }) => {
-  await page.route(AD_300, () => { /* never answers */ });
-  await page.goto("/tiktok-downloader/");
-  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000102");
-  await page.getByRole("button", { name: "Download", exact: true }).click();
-  const t0 = Date.now();
-  const [download] = await Promise.all([
-    page.waitForEvent("download", { timeout: 15_000 }),
-    page.locator(".media-result .format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
-  ]);
-  expect(download.suggestedFilename()).toMatch(/\.mp4$/);
-  expect(Date.now() - t0).toBeLessThan(10_000);
 });
 
 test("download panel: Cancel stops a download that is still being prepared; no file is saved", async ({ page }) => {
@@ -234,4 +219,24 @@ test("download panel: Hide keeps the download going", async ({ page }) => {
   ]);
   expect(download.suggestedFilename()).toMatch(/\.mp4$/);
   await expect(page.getByTestId("download-panel")).toHaveCount(0);
+});
+
+test("anonymous delivery counts: only placement, unit, outcome and device reach this site's backend", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/tiktok-downloader/");
+  const slot = page.locator('aside[data-ad-placement="downloader.after-result"]');
+  await slot.scrollIntoViewIfNeeded();
+  await expect(slot).toHaveAttribute("data-ad-state", /empty|filled/, { timeout: 20_000 });
+  const [req] = await Promise.all([
+    page.waitForRequest((r) => r.url().endsWith("/api/v1/ad-events") && r.method() === "POST"),
+    page.evaluate(() => { Object.defineProperty(document, "visibilityState", { value: "hidden", configurable: true }); document.dispatchEvent(new Event("visibilitychange")); }),
+  ]);
+  const body = req.postDataJSON() as { events: Record<string, string>[] };
+  expect(body.events.length).toBeGreaterThan(0);
+  for (const e of body.events) {
+    expect(Object.keys(e).sort()).toEqual(["d", "o", "p", "u"]);
+    expect(e.o).toMatch(/^(requested|filled|empty|blocked)$/);
+    expect(e.p).toMatch(/^downloader\./);
+  }
+  expect((await req.response())?.status()).toBe(204);
 });

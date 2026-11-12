@@ -354,3 +354,26 @@ def test_preview_proxy_never_reaches_internal_addresses(client, target):
         return
     r = client.get(tok)
     assert r.status_code == 404
+
+
+def test_ad_events_count_only_valid_enums_and_stats_need_the_admin_header(client):
+    ok = {"p": "tool.after-tool", "u": "banner300x250", "o": "filled", "d": "mobile"}
+    bad = [
+        {"p": "tool.after-tool", "u": "banner300x250", "o": "clicked", "d": "mobile"},  # no click/impression/revenue outcomes
+        {"p": "https://evil.example/x", "u": "native", "o": "filled", "d": "desktop"},
+        {"p": "tool.after-tool", "u": "popunder", "o": "filled", "d": "desktop"},
+        "garbage",
+    ]
+    assert client.post("/v1/ad-events", json={"events": [ok, ok, *bad]}).status_code == 204
+    assert client.post("/v1/ad-events", json={"events": "nope"}).status_code == 204
+    assert client.get("/v1/ad-stats").status_code == 404  # visitors: not found
+    assert client.get("/v1/ad-stats", headers={"x-ytx-admin": "guess"}).status_code == 404
+    r = client.get("/v1/ad-stats", headers={"x-ytx-admin": "nginx-admin-auth"})
+    assert r.status_code == 200 and r.headers["cache-control"] == "no-store"
+    rows = r.json()["rows"]
+    assert rows == [{"placement": "tool.after-tool", "unit": "banner300x250", "device": "mobile", "requested": 0, "filled": 2, "empty": 0, "blocked": 0}]
+
+
+def test_ad_events_are_rate_limited(client):
+    codes = [client.post("/v1/ad-events", json={"events": []}).status_code for _ in range(40)]
+    assert 429 in codes

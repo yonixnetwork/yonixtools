@@ -9,8 +9,8 @@
 // Served ONLY from the separate ad origin (e.g. https://ads.yonixtools.com): the
 // ad code runs there, isolated from the site by the browser's same-origin policy.
 // Units: the four Adsterra units (units.json) and the two Monetag zones (monetag.json).
-// Diagnostics (script load/error, errors, CSP violations, DOM inventory, access) are
-// sent only to the password-protected admin test page (slot ids starting "admin-").
+// Diagnostics (script load/error, errors, CSP violations, DOM inventory, access, network
+// requests from Resource Timing) are sent only to the password-protected admin test page (slot ids starting "admin-").
 import { readFileSync, writeFileSync } from "node:fs";
 
 const adsterra = JSON.parse(readFileSync(new URL("../src/lib/ads/units.json", import.meta.url), "utf8"));
@@ -57,10 +57,14 @@ const html = `<!doctype html>
 <script>
 (function () {
   var slot = window.__ytxSlot, d = window.__ytxDiag;
-  if (slot === undefined || !d || parent === window) return;
+  // Normally only inside a frame. "admin-top" opens the same document as a top-level page
+  // (linked from the admin test page) to tell "the zone refuses to run in a frame" apart
+  // from "no fill / site not approved". It shows only this document's own state.
+  var topLevel = parent === window;
+  if (slot === undefined || !d || (topLevel && slot !== "admin-top")) return;
   var SIZE = ${JSON.stringify(SIZES)}[d.unit], native = d.unit === "native", mt = d.unit.indexOf("monetag") === 0, admin = slot.indexOf("admin-") === 0;
   var SKIP = { HTML: 1, HEAD: 1, BODY: 1, SCRIPT: 1, STYLE: 1, META: 1, LINK: 1, TITLE: 1, BASE: 1, NOSCRIPT: 1 };
-  var sent = "", seen = 0, done = "", loaded = typeof WeakSet === "function" ? new WeakSet() : null;
+  var sent = "", seen = 0, done = "", reason = "", loaded = typeof WeakSet === "function" ? new WeakSet() : null;
   function track(f) { if (loaded && !f.__ytx) { f.__ytx = 1; f.addEventListener("load", function () { loaded.add(f); }); } }
   function box(el) { var r = el.getBoundingClientRect(), cs = getComputedStyle(el); return cs.display !== "none" && cs.visibility !== "hidden" && +cs.opacity > 0 ? r : { width: 0, height: 0 }; }
   function frameHasContent(f) {
@@ -71,7 +75,7 @@ const html = `<!doctype html>
   function monetagRendered() { // anything visible the zone added (its own elements or frames), not just its script
     var all = document.querySelectorAll("*"), bottom = 0, ok = false;
     for (var i = 0; i < all.length; i++) {
-      var el = all[i]; if (SKIP[el.tagName]) continue;
+      var el = all[i]; if (SKIP[el.tagName] || el.id === "ytx-diag") continue;
       var r = box(el); if (r.width * r.height < 3000) continue;
       if (el.tagName === "IFRAME") { track(el); if (!frameHasContent(el)) continue; }
       if (el.tagName === "IMG" && !(el.complete && el.naturalWidth > 0)) continue;
@@ -100,10 +104,21 @@ const html = `<!doctype html>
   function inventory() {
     var out = [], els = document.body.querySelectorAll("*");
     for (var i = 0; i < els.length && out.length < 10; i++) {
-      var e = els[i]; if (e.tagName === "SCRIPT" || e.tagName === "STYLE") continue;
+      var e = els[i]; if (e.tagName === "SCRIPT" || e.tagName === "STYLE" || e.id === "ytx-diag") continue;
       var r = e.getBoundingClientRect(), s = e.getAttribute("src");
       out.push(e.tagName.toLowerCase() + (e.id ? "#" + e.id.slice(0, 18) : "") + " " + Math.round(r.width) + "x" + Math.round(r.height) + (s ? " " + s.replace(/^(https?:)?\\/\\//, "").split(/[/?]/)[0] : ""));
     }
+    return out;
+  }
+  function requests() { // network requests this document made (Resource Timing): hosts and paths only, no responses
+    var out = [];
+    try {
+      var es = performance.getEntriesByType("resource");
+      for (var i = 0; i < es.length && out.length < 30; i++) {
+        var u = es[i].name.replace(/^https?:\\/\\//, "").split("#")[0];
+        out.push(u.split("?")[0].slice(0, 70) + (u.indexOf("?") > 0 ? "?…" : "") + " [" + es[i].initiatorType + " " + Math.round(es[i].duration) + "ms]");
+      }
+    } catch (e) { out.push("resource timing unavailable"); }
     return out;
   }
   function access() {
@@ -116,7 +131,9 @@ const html = `<!doctype html>
     if (key === sent) return;
     sent = key;
     var msg = { ytxAd: slot, state: state, height: h };
-    if (admin) msg.diag = { scripts: d.scripts, errors: d.errors, nodes: inventory(), access: access(), ms: Date.now() - d.start };
+    if (state === "empty") msg.reason = reason; // "blocked" (scripts unreachable) or "nofill"
+    if (admin) msg.diag = { scripts: d.scripts, errors: d.errors, nodes: inventory(), access: access(), requests: requests(), ms: Date.now() - d.start };
+    if (topLevel) return showTop(msg);
     parent.postMessage(msg, "*");
   }
   function check() {
@@ -125,8 +142,16 @@ const html = `<!doctype html>
     if (rendered()) { if (++seen >= 2) { done = "filled"; return post("filled"); } } else seen = 0;
     var list = [].slice.call(document.scripts).filter(function (s) { return s.src; });
     var allFailed = list.length > 0 && list.every(function (s) { return d.scripts[s.src] && d.scripts[s.src].state === "failed"; });
-    if (allFailed || Date.now() - d.start > (mt ? (admin ? ${ADMIN_MONETAG_TIMEOUT_MS} : ${MONETAG_TIMEOUT_MS}) : ${FILL_TIMEOUT_MS})) { done = "empty"; clearInterval(timer); return post("empty"); }
+    if (allFailed || Date.now() - d.start > (mt ? (admin ? ${ADMIN_MONETAG_TIMEOUT_MS} : ${MONETAG_TIMEOUT_MS}) : ${FILL_TIMEOUT_MS})) { done = "empty"; reason = allFailed ? "blocked" : "nofill"; clearInterval(timer); return post("empty"); }
     post("loading");
+  }
+  function showTop(m) { // top-level admin test only: a small status panel
+    var p = document.getElementById("ytx-diag");
+    if (!p) { p = document.createElement("pre"); p.id = "ytx-diag"; p.style.cssText = "position:fixed;left:0;right:0;bottom:0;max-height:45vh;overflow:auto;margin:0;padding:8px;font:12px/1.4 monospace;text-align:left;white-space:pre-wrap;background:#fff;color:#111;border-top:2px solid #888;z-index:2147483647"; document.documentElement.appendChild(p); document.documentElement.style.overflow = document.body.style.overflow = "auto"; }
+    var g = m.diag;
+    p.textContent = "TOP-LEVEL TEST (" + d.unit + ", not framed): " + (m.state === "filled" ? "AD RENDERED" : m.state === "empty" ? "EMPTY" : "watching…") + " after " + g.ms + " ms\\n" +
+      "scripts: " + Object.keys(g.scripts).map(function (k) { return k.replace(/^https?:\\/\\//, "") + " " + g.scripts[k].state; }).join("; ") + "\\nerrors: " + (g.errors.join(" | ") || "none") +
+      "\\nrequests:\\n  " + (g.requests.join("\\n  ") || "none") + "\\ndom: " + (g.nodes.join(", ") || "empty");
   }
   var timer = setInterval(check, 500);
   window.addEventListener("load", check);

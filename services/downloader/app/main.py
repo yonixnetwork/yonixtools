@@ -15,6 +15,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from .adstats import AdStats
 from .config import Settings, load_settings
 from .errors import ApiError
 from .netguard import install_socket_guard
@@ -52,6 +53,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     extract_rl = RateLimiter(settings.rate_extract, settings.rate_window_seconds)
     jobs_rl = RateLimiter(settings.rate_jobs, settings.rate_window_seconds)
     poll_rl = RateLimiter(240, settings.rate_window_seconds)
+    ad_rl = RateLimiter(30, settings.rate_window_seconds)
+    ad_stats = AdStats()
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -186,6 +189,21 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if request.method == "GET" and re.fullmatch(r"[a-z0-9]{8,32}", token):
             resp.set_cookie(f"ytx_dl_{token}", "1", max_age=120, path="/", samesite="lax", secure=request.url.scheme == "https" or settings.is_production)
         return resp
+
+    @app.post("/v1/ad-events")
+    async def ad_events(request: Request):
+        limit(ad_rl, request)
+        data = await json_body(request)
+        ad_stats.record(data.get("events"))
+        return Response(status_code=204)
+
+    @app.get("/v1/ad-stats")
+    async def ad_stats_view(request: Request):
+        # Only through the password-protected /admin/ location: nginx sets this header there
+        # and clears it on the public /api/ location, so visitors can't send it.
+        if request.headers.get("x-ytx-admin") != "nginx-admin-auth":
+            raise ApiError("not_found")
+        return JSONResponse(ad_stats.snapshot(), headers={"Cache-Control": "no-store"})
 
     @app.get("/internal/stats")
     async def stats(request: Request):

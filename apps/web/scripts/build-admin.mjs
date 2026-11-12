@@ -37,7 +37,13 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
 <p>Ad origin: <code id="origin"></code></p>
 <p><button id="copy" type="button">Copy report</button> <span id="copied" class="m"></span></p>
 <div id="units"></div>
+<section id="toplevel"><b>Monetag outside a frame</b>
+<p class="m">If Monetag stays EMPTY above, open these. Each loads the same zone code as a normal page on the ad origin (not inside a frame) and shows its own status at the bottom. Rendered there but not in the frame: the zone refuses frames. Empty in both: no fill, or the domain/zone isn't approved in the Monetag dashboard.</p>
+<p id="toplinks"></p></section>
 <pre id="report"></pre>
+<section><b>Delivery counts on the live pages</b> <button id="stats-load" type="button">Refresh</button>
+<p class="m">How ad slots on real pages ended, per placement and device, since the server last started: requested, AD RENDERED (filled), empty (no fill) and blocked (ad blocker or network). Anonymous counts only. These are <b>not</b> impressions, clicks or revenue: use the Adsterra and Monetag dashboards for those.</p>
+<div id="stats" class="box" style="border:0"></div></section>
 <script>
 (function () {
   var ORIGIN = ${JSON.stringify(AD_ORIGIN)}, SANDBOX = ${JSON.stringify(SANDBOX)}, UNITS = ${JSON.stringify(UNITS)};
@@ -65,6 +71,7 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
         lines.push("  frame: origin=" + d.access.origin + " cookies=" + d.access.cookies + " storage=" + d.access.storage + " top=" + d.access.top);
         lines.push("  errors: " + (d.errors.join(" | ") || "none"));
         lines.push("  dom: " + (d.nodes.join(", ") || "empty"));
+        if (d.requests) lines.push("  requests: " + (d.requests.join("; ") || "none"));
       }
     });
     document.getElementById("report").textContent = lines.join("\\n");
@@ -81,6 +88,11 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
       f.src = ORIGIN + "/ad-frame.html?u=" + encodeURIComponent(u[0]) + "&s=admin-" + u[0];
       sec.querySelector(".box").appendChild(f); host.appendChild(sec); frames[u[0]] = f;
     });
+    [["monetagPush", "In-Page Push"], ["monetagVignette", "Vignette"]].forEach(function (z) {
+      var a = document.createElement("a");
+      a.href = ORIGIN + "/ad-frame.html?u=" + z[0] + "&s=admin-top"; a.target = "_blank"; a.rel = "noopener"; a.textContent = "Open " + z[1] + " top-level";
+      var t = document.getElementById("toplinks"); t.appendChild(a); t.appendChild(document.createTextNode("  "));
+    });
     window.addEventListener("message", function (e) {
       var d = e.data;
       if (e.origin !== ORIGIN || !d || typeof d.ytxAd !== "string" || d.ytxAd.indexOf("admin-") !== 0) return;
@@ -92,6 +104,23 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
       render();
     });
   }
+  function loadStats() {
+    var box = document.getElementById("stats");
+    fetch("/admin/api/ad-stats", { cache: "no-store", credentials: "same-origin" }).then(function (r) { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); }).then(function (j) {
+      var t = document.createElement("table"); t.style.cssText = "border-collapse:collapse;font-size:13px;width:100%";
+      var head = ["placement", "unit", "device", "requested", "filled", "empty", "blocked"];
+      t.innerHTML = "<tr>" + head.map(function (h) { return "<th style='text-align:left;padding:4px;border-bottom:1px solid var(--b)'>" + h + "</th>"; }).join("") + "</tr>";
+      (j.rows || []).forEach(function (row) {
+        var tr = document.createElement("tr");
+        head.forEach(function (h) { var td = document.createElement("td"); td.style.padding = "4px"; td.textContent = String(row[h]); tr.appendChild(td); });
+        t.appendChild(tr);
+      });
+      box.textContent = ""; var p = document.createElement("p"); p.className = "m"; p.textContent = "Since " + new Date(j.since * 1000).toLocaleString() + (j.rows && j.rows.length ? "" : ": nothing reported yet");
+      box.appendChild(p); box.appendChild(t);
+    }).catch(function (e) { box.textContent = "Counts unavailable (" + e.message + ")."; });
+  }
+  document.getElementById("stats-load").onclick = loadStats;
+  loadStats();
   render();
   setInterval(render, 2000);
   document.getElementById("copy").onclick = function () {

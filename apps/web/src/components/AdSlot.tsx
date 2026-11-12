@@ -1,5 +1,6 @@
 "use client";
 import { useEffect, useId, useRef, useState } from "react";
+import { reportAd } from "@/lib/ads/report";
 import { AD_ORIGIN, AD_SANDBOX, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, type AdUnitId } from "@/lib/ads/config";
 
 /**
@@ -20,8 +21,10 @@ type Props = {
   unit?: AdUnitId;
   responsive?: "leaderboard";
   className?: string;
-  /** Allow a second instance of a unit (download panel only: its own isolated frame). */
+  /** Allow a second instance of a unit (its own isolated frame). */
   duplicate?: boolean;
+  /** Placement id from lib/ads/placements.ts (anonymous delivery counts). */
+  placement?: string;
 };
 
 const mounted = new Set<AdUnitId>(); // unit ids currently on the page
@@ -32,7 +35,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
   return null;
 }
 
-export function AdSlot({ unit, responsive, className, duplicate }: Props) {
+export function AdSlot({ unit, responsive, className, duplicate, placement }: Props) {
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -70,25 +73,33 @@ export function AdSlot({ unit, responsive, className, duplicate }: Props) {
   useEffect(() => {
     if (!near || !chosen) return;
     setState("loading");
+    // One final outcome per slot for the anonymous delivery counts.
+    let outcome: "filled" | "empty" | "blocked" | null = null;
+    const finish = (o: "filled" | "empty" | "blocked") => { if (!outcome) { outcome = o; reportAd(placement, chosen, o); } };
+    reportAd(placement, chosen, "requested");
     const onMsg = (e: MessageEvent) => {
-      const d = e.data as { ytxAd?: unknown; state?: unknown; height?: unknown };
+      const d = e.data as { ytxAd?: unknown; state?: unknown; height?: unknown; reason?: unknown };
       if (!d || typeof d !== "object" || d.ytxAd !== slotId || e.source !== frame.current?.contentWindow || e.origin !== AD_ORIGIN) return;
       if (d.state === "filled") {
         setState("filled");
+        finish("filled");
         if (AD_UNITS[chosen].fluid && typeof d.height === "number" && d.height > 0) setHeight(Math.min(Math.max(Math.round(d.height), 40), 1200));
-      } else if (d.state === "empty") setState((s) => (s === "filled" ? s : "empty"));
+      } else if (d.state === "empty") {
+        setState((s) => (s === "filled" ? s : "empty"));
+        finish(d.reason === "blocked" ? "blocked" : "empty");
+      }
     };
     window.addEventListener("message", onMsg);
-    // Safety net: a frame that never reports (failed to load) must not hold space.
-    const t = window.setTimeout(() => setState((s) => (s === "filled" ? s : "empty")), FILL_TIMEOUT_MS);
+    // Safety net: a frame that never reports (failed to load, e.g. blocked) must not hold space.
+    const t = window.setTimeout(() => { setState((s) => (s === "filled" ? s : "empty")); finish("blocked"); }, FILL_TIMEOUT_MS);
     return () => {
       window.removeEventListener("message", onMsg);
       window.clearTimeout(t);
     };
-  }, [near, slotId, chosen]);
+  }, [near, slotId, chosen, placement]);
 
   // An empty slot collapses without moving what the visitor is looking at: right away when
-  // it's off screen, otherwise once it scrolls out of view or on the next tap/key press
+  // it's off screen, otherwise once it scrolls out of view or after the next tap/key press
   // (layout changes right after input don't count as layout shift). Until then it's blank, unlabeled.
   const [gone, setGone] = useState(false);
   useEffect(() => {
@@ -98,13 +109,22 @@ export function AdSlot({ unit, responsive, className, duplicate }: Props) {
     const io = "IntersectionObserver" in window ? new IntersectionObserver((es) => es.every((e) => !e.isIntersecting) && collapse()) : null;
     if (io) io.observe(el);
     else collapse();
+    // Only once a tap/click has FINISHED (after its click event): collapsing on pointerdown would
+    // move the controls under the pointer mid-click when the slot sits above a tool.
+    let t: number | undefined;
+    const later = () => { window.clearTimeout(t); t = window.setTimeout(collapse, 0); };
+    const onKey = (e: KeyboardEvent) => { // never shift a field the visitor is typing in
+      const f = document.activeElement;
+      if (!f || f === document.body || !(el.compareDocumentPosition(f) & Node.DOCUMENT_POSITION_FOLLOWING) || e.key === "Tab") later();
+    };
     const opts = { capture: true, passive: true } as const;
-    window.addEventListener("pointerdown", collapse, opts);
-    window.addEventListener("keydown", collapse, opts);
+    window.addEventListener("pointerup", later, opts);
+    window.addEventListener("keyup", onKey, opts);
     return () => {
       io?.disconnect();
-      window.removeEventListener("pointerdown", collapse, opts);
-      window.removeEventListener("keydown", collapse, opts);
+      window.clearTimeout(t);
+      window.removeEventListener("pointerup", later, opts);
+      window.removeEventListener("keyup", onKey, opts);
     };
   }, [state]);
 
@@ -123,7 +143,7 @@ export function AdSlot({ unit, responsive, className, duplicate }: Props) {
   const fluid = u.fluid;
   const h = fluid ? (height ?? u.height) : u.height;
   return (
-    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state}>
+    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state} data-ad-placement={placement}>
       <span className="ad-label">Advertisement</span>
       <div className="ad-box" style={{ width: fluid ? "100%" : u.width, maxWidth: "100%", height: h }}>
         {near && (

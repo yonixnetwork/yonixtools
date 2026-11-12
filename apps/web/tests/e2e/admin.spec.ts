@@ -50,3 +50,28 @@ test("removed or internal routes are not exposed to visitors", async ({ request 
   const ready = await request.get("/api/readyz");
   expect(await ready.text()).not.toContain("checks"); // no internal health details (or 502 without a local backend)
 });
+
+// Delivery counts: only the password-protected /admin/ location may reach the backend's stats,
+// and a visitor can't forge the header that location adds. A local echo server stands in for
+// the backend (start nginx with API_UPSTREAM=127.0.0.1:$API_ECHO_PORT).
+test.describe("admin delivery counts", () => {
+  const port = Number(process.env.API_ECHO_PORT || 0);
+  test.skip(!port, "API_ECHO_PORT not set");
+  let server: import("node:http").Server;
+  test.beforeAll(async () => {
+    const http = await import("node:http");
+    server = http.createServer((req, res) => { res.setHeader("content-type", "application/json"); res.end(JSON.stringify({ path: req.url, admin: req.headers["x-ytx-admin"] ?? null })); });
+    await new Promise<void>((r) => server.listen(port, "127.0.0.1", () => r()));
+  });
+  test.afterAll(() => new Promise<void>((r) => server.close(() => r())));
+
+  test("visitors can't reach them or forge the admin header; the admin login can", async ({ request }) => {
+    expect((await request.get("/admin/api/ad-stats")).status()).toBe(401);
+    const forged = await (await request.get("/api/v1/ad-stats", { headers: { "X-Ytx-Admin": "nginx-admin-auth" } })).json();
+    expect(forged).toEqual({ path: "/v1/ad-stats", admin: null }); // removed by nginx: the backend answers 404
+    test.skip(!USER || !PASS, "ADMIN_USER/ADMIN_PASS not set");
+    const r = await request.get("/admin/api/ad-stats", { headers: basic(USER, PASS) });
+    expect(r.status()).toBe(200);
+    expect(await r.json()).toEqual({ path: "/v1/ad-stats", admin: "nginx-admin-auth" });
+  });
+});
