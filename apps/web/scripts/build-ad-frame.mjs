@@ -22,6 +22,7 @@ const units = {
 };
 const FILL_TIMEOUT_MS = 8000;
 const MONETAG_TIMEOUT_MS = 14000; // In-Page Push can appear after a short delay
+const ADMIN_MONETAG_TIMEOUT_MS = 90000; // admin test page: watch Monetag much longer (it may show late)
 const NATIVE_CONTAINER = "container-cdabddda1b7a8e769299c93b91d77822";
 const SIZES = Object.fromEntries(Object.entries(units).map(([k, v]) => [k, [v.width, v.height]]));
 
@@ -124,7 +125,7 @@ const html = `<!doctype html>
     if (rendered()) { if (++seen >= 2) { done = "filled"; return post("filled"); } } else seen = 0;
     var list = [].slice.call(document.scripts).filter(function (s) { return s.src; });
     var allFailed = list.length > 0 && list.every(function (s) { return d.scripts[s.src] && d.scripts[s.src].state === "failed"; });
-    if (allFailed || Date.now() - d.start > (mt ? ${MONETAG_TIMEOUT_MS} : ${FILL_TIMEOUT_MS})) { done = "empty"; clearInterval(timer); return post("empty"); }
+    if (allFailed || Date.now() - d.start > (mt ? (admin ? ${ADMIN_MONETAG_TIMEOUT_MS} : ${MONETAG_TIMEOUT_MS}) : ${FILL_TIMEOUT_MS})) { done = "empty"; clearInterval(timer); return post("empty"); }
     post("loading");
   }
   var timer = setInterval(check, 500);

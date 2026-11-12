@@ -33,7 +33,7 @@ pre{white-space:pre-wrap;font-size:12px;background:rgba(127,127,127,.12);padding
 button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b);cursor:pointer}
 </style></head><body>
 <h1>Ad delivery test (admin only)</h1>
-<p class="m">Each format loads from the ad origin in its own test frame. <b>AD RENDERED</b> means a visible creative exists; an existing frame or a loaded script alone never counts. Don't click the ads.</p>
+<p class="m">Each format loads from the ad origin in its own test frame. <b>AD RENDERED</b> means a visible creative exists; an existing frame or a loaded script alone never counts. Monetag is watched for up to 90 seconds. Don't click the ads.</p>
 <p>Ad origin: <code id="origin"></code></p>
 <p><button id="copy" type="button">Copy report</button> <span id="copied" class="m"></span></p>
 <div id="units"></div>
