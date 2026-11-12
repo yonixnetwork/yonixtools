@@ -142,13 +142,13 @@ case "${1:-}" in
     curl -s --noproxy '*' -D - -o /dev/null "http://127.0.0.1:$SITE_PORT/" | grep -qi '^x-robots-tag: noindex' && ok "noindex header" || bad "noindex header"
     echo "Isolation checks"
     for c in "$P-web" "$P-downloader" "$P-proxy"; do
-      nets="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$c")"
-      case " $nets" in *" yonixtools_stack "*) bad "$c is on the production network ($nets)";; *) ok "$c networks: $nets";; esac
+      nets="$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$c" 2>/dev/null || true)"
+      case " $nets" in *" yonixtools_stack "*) bad "$c is on the production network ($nets)";; " ") bad "$c is not running";; *) ok "$c networks: $nets";; esac
     done
     if [ "$BACKEND" = test ]; then
-      [ "$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$P-downloader")" = "$NET_INT " ] && ok "staging backend: internal network only (no internet, no production)" || bad "staging backend has extra networks"
-      [ "$(docker inspect -f '{{range .Mounts}}{{.Destination}} {{end}}' "$P-downloader")" = "/stg/fake_worker.py " ] && ok "staging backend: no volumes, no production .env (only the test worker mounted)" || bad "staging backend mounts"
-      title="$(curl -s --noproxy '*' -u "$(cat "$ST/auth")" -H 'Content-Type: application/json' -d '{"url":"https://www.tiktok.com/@creator/video/7350000000000000001"}' "http://127.0.0.1:$SITE_PORT/api/v1/extract" | sed -n 's/.*"title": *"\([^"]*\)".*/\1/p')"
+      [ "$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$P-downloader" 2>/dev/null || true)" = "$NET_INT " ] && ok "staging backend: internal network only (no internet, no production)" || bad "staging backend has extra networks"
+      [ "$(docker inspect -f '{{range .Mounts}}{{.Destination}} {{end}}' "$P-downloader" 2>/dev/null || true)" = "/stg/fake_worker.py " ] && ok "staging backend: no volumes, no production .env (only the test worker mounted)" || bad "staging backend mounts"
+      title="$(curl -s --noproxy '*' -u "$(cat "$ST/auth")" -H 'Content-Type: application/json' -d '{"url":"https://www.tiktok.com/@creator/video/7350000000000000001"}' "http://127.0.0.1:$SITE_PORT/api/v1/extract" | sed -n 's/.*"title": *"\([^"]*\)".*/\1/p' || true)"
       [ "$title" = "Test clip" ] && ok "downloader answers from the staging test backend (simulated 'Test clip')" || bad "downloader test extract returned '${title:-nothing}'"
     fi
     prod_after="$(docker ps -a --filter 'name=^yonixtools-(web|downloader)-1$' --format '{{.Names}}' | sort | xargs -r docker inspect -f '{{.Name}} {{.Id}} {{.State.StartedAt}} {{.RestartCount}}')"
