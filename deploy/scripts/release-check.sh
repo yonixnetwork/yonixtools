@@ -42,7 +42,7 @@ else bad "$SITE_EDGE missing"; fi
 if [ -f "$ADS_EDGE" ]; then
   grep -q "server_name ads.yonixtools.com" "$ADS_EDGE" && ok "ad edge: server_name ads.yonixtools.com" || bad "ad edge: wrong server_name"
   # The web container serves the ad documents only when the Host header is ads.yonixtools.com.
-  awk '/location = \/ad-frame.html/,/}/' "$ADS_EDGE" | grep -q 'proxy_set_header Host \$host;' && ok "ad edge forwards Host (needed: the app serves ad documents only for ads.yonixtools.com)" || bad "ad edge /ad-frame.html does not forward 'Host \$host': ads would break after this deploy"
+  grep -A8 'location = /ad-frame.html' "$ADS_EDGE" | grep -q 'proxy_set_header Host \$host;' && ok "ad edge forwards Host (needed: the app serves ad documents only for ads.yonixtools.com)" || bad "ad edge /ad-frame.html does not forward 'Host \$host': ads would break after this deploy"
   if grep -q "location = /ad-test.html" "$ADS_EDGE"; then ok "ad edge has the admin ad-test route"; else note "ad edge has no /ad-test.html route yet: production answers 404 for it (safe). Optional, approval needed: bash deploy/scripts/setup-ads-origin.sh https"; fi
   grep -q 'location / { return 404; }' "$ADS_EDGE" && ok "ad edge serves nothing else (404)" || bad "ad edge may serve other paths"
 else bad "$ADS_EDGE missing (ads.yonixtools.com not configured)"; fi
