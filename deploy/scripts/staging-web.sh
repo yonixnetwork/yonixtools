@@ -34,7 +34,10 @@ preflight() {
   echo "Preflight (read-only)"
   docker info >/dev/null 2>&1 && ok "docker available" || { bad "docker not available"; return 1; }
   free_kb=$(df -Pk /var/lib/docker 2>/dev/null | awk 'NR==2{print $4}'); free_gb=$(( ${free_kb:-0} / 1048576 ))
-  [ "$free_gb" -ge 6 ] && ok "disk: ${free_gb} GB free (need >= 6 GB: staging build + a production rollback build)" || bad "disk: only ${free_gb} GB free (need >= 6 GB); see runbook section 1"
+  # First build: >= 6 GB (staging build ~2.5 GB + a production rollback build ~3 GB). A rebuild
+  # reuses the cached layers (only changed files are rebuilt), so >= 4 GB still keeps rollback room.
+  need=6; docker image inspect yonixtools-web:staging >/dev/null 2>&1 && need=4
+  [ "$free_gb" -ge "$need" ] && ok "disk: ${free_gb} GB free (need >= ${need} GB$([ "$need" = 4 ] && echo ': rebuild with cached layers' || echo ': first staging build') + rollback room)" || bad "disk: only ${free_gb} GB free (need >= ${need} GB); see runbook section 1"
   avail_mb=$(awk '/MemAvailable/{a=$2} /SwapFree/{s=$2} END{print int((a+s)/1024)}' /proc/meminfo)
   [ "$avail_mb" -ge 1500 ] && ok "memory: ${avail_mb} MB available incl. swap (need >= 1500 MB for the build)" || bad "memory: only ${avail_mb} MB available incl. swap (need >= 1500 MB)"
   docker image inspect yonixtools-downloader:latest >/dev/null 2>&1 && ok "production downloader image present (reused read-only, not rebuilt)" || bad "image yonixtools-downloader:latest missing"
@@ -118,7 +121,9 @@ case "${1:-}" in
       --build-arg NEXT_PUBLIC_SITE_URL="https://yonixtools.com" --build-arg NEXT_PUBLIC_DOWNLOADER_API_URL=/api \
       --build-arg NEXT_PUBLIC_ADS=on \
       --build-arg NEXT_PUBLIC_AD_ORIGIN="$ADS" --build-arg AD_FRAME_PARENT="$SITE" \
-      --build-arg NEXT_PUBLIC_MONETAG="${MONETAG:-off}" apps/web
+      --build-arg NEXT_PUBLIC_MONETAG="${MONETAG:-off}" --label "yonixtools.commit=$head" apps/web
+    after_kb=$(df -Pk /var/lib/docker 2>/dev/null | awk 'NR==2{print $4}'); after_mb=$(( ${after_kb:-0} / 1024 ))
+    if [ "$after_mb" -ge 3584 ]; then ok "disk after build: $((after_mb / 1024)) GB free (rollback room kept)"; else bad "disk after build: only ${after_mb} MB free (< 3.5 GB rollback room)"; fi
     docker rm -f "$P-downloader" "$P-web" "$P-proxy" >/dev/null 2>&1 || true
     start_backend
     docker run -d --name "$P-web" --network "$NET_PUB" --restart no --read-only \
