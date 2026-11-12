@@ -67,16 +67,16 @@ start_backend() {
     -e FILE_TTL_SECONDS=300 -e JOB_TTL_SECONDS=600)
   if [ "$BACKEND" = test ]; then
     docker run -d --name "$P-downloader" --network "$NET_INT" --network-alias downloader "${common[@]}" \
-      --tmpfs /tmp:size=256m --memory 384m --cpus 0.5 \
+      --tmpfs /tmp:size=256m,mode=1777 --memory 384m --cpus 0.5 \
       -v "$PWD/services/downloader/tests/fake_worker.py:/stg/fake_worker.py:ro" \
       -e APP_ENV=test -e WORKER_COMMAND="python /stg/fake_worker.py" -e YTX_FAKE_MEDIA=/tmp/sample.mp4 \
       -e MIN_FREE_DISK_MB=1 -e MAX_TEMP_USAGE_MB=150 \
-      yonixtools-downloader:latest sh -c 'ffmpeg -loglevel error -f lavfi -i testsrc=size=640x360:rate=25 -f lavfi -i sine=frequency=440 -t 5 -c:v libx264 -pix_fmt yuv420p -c:a aac -shortest /tmp/sample.mp4 && exec uvicorn app.asgi:app --host 0.0.0.0 --port 8787 --workers 1 --no-server-header' >/dev/null
+      yonixtools-downloader:latest sh -c 'ffmpeg -loglevel error -f lavfi -i testsrc=size=320x240:rate=15 -f lavfi -i sine=frequency=440 -t 2 -c:v libx264 -preset ultrafast -pix_fmt yuv420p -c:a aac -shortest /tmp/sample.mp4 && exec uvicorn app.asgi:app --host 0.0.0.0 --port 8787 --workers 1 --no-server-header' >/dev/null
   elif [ "$BACKEND" = live ]; then
     [ "${CONFIRM_LIVE:-}" = yes ] || { echo "BACKEND=live makes real requests to the platforms from this server's IP (shared with production). Read the runbook, then set CONFIRM_LIVE=yes."; exit 1; }
     YONIXTOOLS_SUBNET="$SUB_PUB" YONIXTOOLS_EGRESS_CHAIN="$EGRESS_CHAIN" bash deploy/scripts/egress-firewall.sh
     docker run -d --name "$P-downloader" --network "$NET_PUB" "${common[@]}" \
-      --tmpfs /tmp:size=400m --memory 768m --cpus 0.5 \
+      --tmpfs /tmp:size=400m,mode=1777 --memory 768m --cpus 0.5 \
       -e APP_ENV=production -e MAX_FILESIZE_MB=100 -e MAX_DURATION_SECONDS=900 -e EXTRACT_TIMEOUT_SECONDS=45 \
       -e JOB_TIMEOUT_SECONDS=180 -e MIN_FREE_DISK_MB=50 -e MAX_TEMP_USAGE_MB=300 -e MAX_ITEMS_PER_POST=10 \
       yonixtools-downloader:latest >/dev/null
@@ -133,6 +133,16 @@ case "${1:-}" in
       --security-opt no-new-privileges:true --memory 64m --cpus 0.25 nginx:1.27-alpine >/dev/null
     for _ in $(seq 1 30); do curl -s -o /dev/null --noproxy '*' "http://127.0.0.1:$SITE_PORT/robots.txt" && break; sleep 1; done
     sleep 3
+    # Wait until the staging backend really answers through the whole chain (gatekeeper -> web -> backend).
+    echo "Waiting for the staging backend (makes a test clip, then starts; up to 3 minutes)"
+    up_ok=""
+    for i in $(seq 1 90); do
+      st="$(docker inspect -f '{{.State.Status}}' "$P-downloader" 2>/dev/null || echo missing)"
+      if [ "$st" != running ]; then bad "staging backend is $st"; docker logs --tail 40 "$P-downloader" 2>&1 | sed 's/^/    /'; break; fi
+      if [ "$(curl -s --noproxy '*' -o /dev/null -w '%{http_code}' -u "$(cat "$ST/auth")" "http://127.0.0.1:$SITE_PORT/api/healthz")" = 200 ]; then up_ok=1; ok "staging backend answering after $((i * 2)) s"; break; fi
+      sleep 2
+    done
+    if [ -z "$up_ok" ] && [ "${st:-}" = running ]; then bad "staging backend not answering after 3 minutes"; docker logs --tail 40 "$P-downloader" 2>&1 | sed 's/^/    /'; fi
     echo "Gatekeeper checks"
     code() { curl -s --noproxy '*' -o /dev/null -w '%{http_code}' "$@"; }
     [ "$(code "http://127.0.0.1:$SITE_PORT/")" = 401 ] && ok "site requires the password" || bad "site reachable without password"
@@ -152,7 +162,7 @@ case "${1:-}" in
       [ "$(docker inspect -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' "$P-downloader" 2>/dev/null || true)" = "$NET_INT " ] && ok "staging backend: internal network only (no internet, no production)" || bad "staging backend has extra networks"
       [ "$(docker inspect -f '{{range .Mounts}}{{.Destination}} {{end}}' "$P-downloader" 2>/dev/null || true)" = "/stg/fake_worker.py " ] && ok "staging backend: no volumes, no production .env (only the test worker mounted)" || bad "staging backend mounts"
       title="$(curl -s --noproxy '*' -u "$(cat "$ST/auth")" -H 'Content-Type: application/json' -d '{"url":"https://www.tiktok.com/@creator/video/7350000000000000001"}' "http://127.0.0.1:$SITE_PORT/api/v1/extract" | sed -n 's/.*"title": *"\([^"]*\)".*/\1/p' || true)"
-      [ "$title" = "Test clip" ] && ok "downloader answers from the staging test backend (simulated 'Test clip')" || bad "downloader test extract returned '${title:-nothing}'"
+      if [ "$title" = "Test clip" ]; then ok "downloader answers from the staging test backend (simulated 'Test clip')"; else bad "downloader test extract returned '${title:-nothing}'"; docker logs --tail 20 "$P-downloader" 2>&1 | sed 's/^/    /'; fi
     fi
     prod_after="$(docker ps -a --filter 'name=^yonixtools-(web|downloader)-1$' --format '{{.Names}}' | sort | xargs -r docker inspect -f '{{.Name}} {{.Id}} {{.State.StartedAt}} {{.RestartCount}}')"
     [ "$prod_before" = "$prod_after" ] && ok "production containers unchanged (same ids, start times, restarts)" || bad "production containers changed!"

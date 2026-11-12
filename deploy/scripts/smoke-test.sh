@@ -49,8 +49,9 @@ echo "Admin area and removed pages"
 noauth=(-s --max-time 20 --noproxy '*'); [ -n "${RESOLVE:-}" ] && for r in $RESOLVE; do noauth+=(--resolve "$r"); done; [ "${INSECURE:-0}" = "1" ] && noauth+=(-k)
 adm="$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/admin/ads/")"
 case "$adm" in 401) ok "admin page requires a password (401)";; 500) note "admin area locked: no password file yet (run deploy/scripts/admin-password.sh)";; *) bad "admin page reachable without password ($adm)";; esac
-[ "$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/ads-check/")" = 404 ] && ok "old public ads test page is gone (404)" || bad "public /ads-check/ still served"
-[ "$(curl "${noauth[@]}" -o /dev/null -w '%{http_code}' "$BASE/api/internal/stats")" = 404 ] && ok "internal API not exposed" || bad "internal API exposed"
+# Behind the staging gate these are asked WITH the staging login, so the app itself answers.
+[ "$(code "$BASE/ads-check/")" = 404 ] && ok "old public ads test page is gone (404)" || bad "public /ads-check/ still served"
+[ "$(code "$BASE/api/internal/stats")" = 404 ] && ok "internal API not exposed" || bad "internal API exposed"
 
 echo "Advertising frame and PWA"
 check 200 "GET /ad-frame.html" "$BASE/ad-frame.html"
