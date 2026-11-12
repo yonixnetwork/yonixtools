@@ -45,6 +45,9 @@ preflight() {
   echo "$used" | grep -qE "172\.30\.9[78]\.0/24" && bad "subnet 172.30.97.0/24 or 172.30.98.0/24 already used by another network" || ok "staging subnets free"
   others=$(docker ps -a --format '{{.Names}}' | grep -E "^$P-" | grep -vE "^$P-(web|downloader|proxy|tunnel-site|tunnel-ads)$" || true)
   [ -z "$others" ] && ok "no name clashes" || bad "unexpected containers named $P-*: $others"
+  # The first staging script (no password, on production's network) used these names: it must be gone.
+  old="$(docker ps -a --format '{{.Names}}' | grep -E '^yonixtools-web-staging(-tunnel)?$' || true)"
+  [ -z "$old" ] && ok "no old unprotected staging containers" || bad "old unprotected staging still exists: $(echo "$old" | tr '\n' ' ')(remove: docker rm -f $(echo "$old" | tr '\n' ' '))"
   docker ps --format '{{.Names}}' | grep -q '^yonixtools-web-1$' && note "production web running (not touched)" || note "production web not running"
   [ "$FAILED" = 0 ]
 }

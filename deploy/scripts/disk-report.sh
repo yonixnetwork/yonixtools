@@ -18,10 +18,12 @@ if [ "$free_gb" -ge "$NEED_GB" ]; then echo "PASS  ${free_gb} GB free (need >= $
 hr "Docker summary"
 docker system df 2>/dev/null || echo "docker not available"
 
-hr "Images (largest first; RUNNING = used by a running container, keep)"
-running_images=$(docker ps --format '{{.Image}}' 2>/dev/null | sort -u)
+hr "Images (largest first; RUNNING = used by a running container, keep. Never remove another project's images.)"
+# By image ID (a container keeps its image even after the tag moves on, so names can mislead).
+running_ids=$(docker ps -q 2>/dev/null | xargs -r docker inspect -f '{{.Image}}' | sed 's/^sha256://' | cut -c1-12 | sort -u)
 docker images --format '{{.Size}}\t{{.Repository}}:{{.Tag}}\t{{.ID}}\t{{.CreatedSince}}' 2>/dev/null | sort -h -r | head -25 | while IFS=$'\t' read -r size ref id age; do
-  use="unused"; echo "$running_images" | grep -qxF "$ref" && use="RUNNING"; [ "$ref" = "<none>:<none>" ] && use="dangling"
+  id="${id#sha256:}"; id="${id:0:12}"
+  use="unused"; echo "$running_ids" | grep -qxF "$id" && use="RUNNING"; [ "$ref" = "<none>:<none>" ] && use="dangling"
   printf '%-9s %-8s %-55s %s\n' "$size" "$use" "$ref" "$age"
 done
 
