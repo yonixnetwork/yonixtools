@@ -3,9 +3,11 @@ export const site = {
   url: (process.env.NEXT_PUBLIC_SITE_URL || "https://yonixtools.com").replace(/\/+$/, ""),
   tagline: "Free online tools and a universal social media downloader",
   description:
-    "Download videos, images and audio from TikTok, Instagram, Facebook, X, Pinterest and more with one link, plus free browser-based PDF, image, video, QR, SEO, developer, text and calculator tools.",
+    "Free online tools for everyday tasks: merge PDFs, compress images, make QR codes and save public TikTok, Instagram and Facebook videos. No sign-up.",
   downloaderApiUrl: (process.env.NEXT_PUBLIC_DOWNLOADER_API_URL || "").replace(/\/+$/, ""),
   googleVerification: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION || "",
+  /** Bing Webmaster Tools verification code (msvalidate.01), optional. */
+  bingVerification: process.env.NEXT_PUBLIC_BING_SITE_VERIFICATION || "",
 };
 
 /** True when this build is wired to a downloader backend (NEXT_PUBLIC_DOWNLOADER_API_URL). */

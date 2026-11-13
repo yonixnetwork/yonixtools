@@ -1,14 +1,15 @@
 import { AdPlacement } from "@/components/AdPlacement";
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { ToolsExplorer } from "@/components/ToolsExplorer";
 import { tools } from "@/lib/registry";
 
-export const metadata: Metadata = {
-  title: { absolute: "All Free Online Tools – Search YoniXTools" },
+export const metadata: Metadata = pageMetadata({
+  title: "All Free Online Tools – Search YoniXTools",
   description: `Search and browse all ${tools.length} YoniXTools tools: social media downloaders, QR codes, image, SEO, developer, text and calculator tools.`,
-  alternates: { canonical: "/tools/" },
-};
+  path: "/tools/",
+});
 
 export default function ToolsPage() {
   return (

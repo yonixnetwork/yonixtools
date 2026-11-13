@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { FaqList } from "@/components/Faq";
 import { JsonLd } from "@/components/JsonLd";
@@ -6,11 +7,7 @@ import { PLATFORMS } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
 import { faqLd } from "@/lib/seo";
 
-export const metadata: Metadata = {
-  title: "Help & About",
-  description: "How to use the YoniXTools downloader, which platforms work today, what to do when a download fails, and how your data is handled.",
-  alternates: { canonical: "/about/" },
-};
+export const metadata: Metadata = pageMetadata({ title: "Help & About | YoniXTools", description: "How to use the YoniXTools downloader, which platforms work today, what to do when a download fails, and how your data is handled.", path: "/about/" });
 
 const HELP_FAQ = [
   { q: "How do I download a video?", a: "Copy the link from the app's Share menu (Copy link), paste it into the box on the home page and press Download. Choose a quality and your browser starts saving the file straight away." },

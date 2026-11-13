@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AdPlacement } from "@/components/AdPlacement";
+import { guidePath, guidesForTool } from "@/lib/guides";
 import { ToolDownloadPanel } from "@/components/ToolDownloadPanel";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
@@ -145,6 +146,18 @@ export default async function ToolPage({ params }: Props) {
                 </a>
               </p>
             </div>
+            {guidesForTool(tool.slug).length > 0 && (
+              <div className="card aside-card guide-links">
+                <h2>Guides</h2>
+                <ul>
+                  {guidesForTool(tool.slug).map((g) => (
+                    <li key={g.slug}>
+                      <a href={guidePath(g.slug)} className="link">{g.h1}</a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </aside>
         </div>
       </div>

@@ -48,7 +48,9 @@ test("sitemap lists live pages only and robots.txt points to it", async ({ reque
     const listed = xml.includes(`<loc>${SITE}/${t.slug}/</loc>`);
     expect(listed, t.slug).toBe(t.status === "live");
   }
-  for (const c of categories) expect(xml).toContain(`${SITE}/category/${c.slug}/`);
+  // A category is listed when it has at least one indexable tool (in builds without the downloader
+  // backend, the downloader category has none; in production it is listed).
+  for (const c of categories) expect(xml.includes(`${SITE}/category/${c.slug}/`), c.slug).toBe(tools.some((t) => t.category === c.id && t.status === "live" && !t.hidden));
   const robots = await (await request.get("/robots.txt")).text();
   expect(robots).toContain(`Sitemap: ${SITE}/sitemap.xml`);
 });

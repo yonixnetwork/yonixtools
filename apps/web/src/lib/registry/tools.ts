@@ -101,8 +101,9 @@ const baseTools: Tool[] = [
     synonyms: ["tt downloader", "save tiktok", "tiktok saver", "tiktok mp4"],
     related: ["instagram-downloader", "youtube-downloader", "social-media-downloader"],
     addedAt: PHASE1,
+    updatedAt: "2026-11-13",
     seo: {
-      title: "TikTok Downloader – Save TikTok Videos & Photo Posts",
+      title: "TikTok Video Downloader – Download TikTok Videos Online",
       description: "Download public TikTok videos and photo slideshows from a link. Paste the TikTok URL, preview the post and pick a format.",
     },
     content: {
@@ -224,6 +225,33 @@ const baseTools: Tool[] = [
       steps: ["Copy the pin link.", "Paste it above.", "Download the image or video."],
       features: ["Video pins and image pins", "Largest available image size"],
       faqs: [...downloaderFaqsCommon],
+    },
+  },
+  {
+    slug: "twitch-clip-downloader",
+    name: "Twitch Clip Downloader",
+    tagline: "Save public Twitch clips as MP4.",
+    category: "social",
+    status: "awaiting-backend",
+    runsIn: "server",
+    icon: "Download",
+    platform: "twitch",
+    keywords: ["twitch clip downloader", "download twitch clips", "twitch clip download", "save twitch clip"],
+    synonyms: ["twitch clips downloader", "clips.twitch.tv downloader", "twitch clip to mp4"],
+    related: ["social-media-downloader", "video-frame-extractor", "video-audio-extractor"],
+    addedAt: "2026-11-13",
+    seo: {
+      title: "Twitch Clip Downloader – Save Twitch Clips as MP4",
+      description: "Download public Twitch clips as MP4 files. Paste a clips.twitch.tv or twitch.tv clip link and choose a quality. Live streams and VODs aren't supported.",
+    },
+    content: {
+      intro: "Save a public Twitch clip as an MP4 file. Clip links from clips.twitch.tv and from a channel's /clip/ page both work. Only clips are supported: not live streams or full broadcasts.",
+      steps: ["On Twitch, open the clip and choose Share, then Copy link.", "Paste the link above. YoniXTools recognises it as a Twitch clip.", "Choose a quality and download the MP4."],
+      features: ["clips.twitch.tv and twitch.tv/<channel>/clip/ links", "MP4 in the qualities Twitch provides for the clip"],
+      faqs: [
+        { q: "Can I download a full stream or VOD?", a: "No. Only clips are supported. Live streams and full past broadcasts are refused with a message saying so." },
+        ...downloaderFaqsCommon,
+      ],
     },
   },
   {
@@ -349,8 +377,9 @@ const baseTools: Tool[] = [
     synonyms: ["image optimizer", "shrink image", "make image smaller", "reduce photo size", "kb reducer"],
     related: ["image-resizer", "image-converter", "qr-code-generator"],
     addedAt: PHASE1,
+    updatedAt: "2026-11-13",
     seo: {
-      title: "Image Compressor – Reduce JPG, PNG & WebP Size Free",
+      title: "Image Compressor – Compress Images Online, JPG & WebP",
       description: "Compress images in your browser without uploading them. Choose a quality, compare file sizes before and after, and download the smaller image.",
     },
     content: {

@@ -9,7 +9,8 @@ export const extraTools: Tool[] = [
     slug: "pdf-merger", name: "PDF Merger", tagline: "Combine several PDFs into one, in the order you choose.", category: "pdf", status: "live", runsIn: "browser", icon: "Merge",
     keywords: ["pdf merger", "merge pdf", "combine pdf", "join pdf files", "merge pdf online"], synonyms: ["pdf combiner", "pdf joiner", "put pdfs together"],
     related: ["pdf-splitter", "pdf-compressor", "image-to-pdf"], addedAt: ADDED,
-    seo: { title: "PDF Merger – Combine PDF Files Online, Free & Private", description: "Merge multiple PDF files into one document in your browser. Drag to reorder, no upload, no watermark, no sign-up." },
+    updatedAt: "2026-11-13",
+    seo: { title: "Merge PDF Files Online – Free PDF Merger, No Upload", description: "Merge multiple PDF files into one document in your browser. Drag to reorder, no upload, no watermark, no sign-up." },
     content: {
       intro: "Combine PDFs into a single file. Put the files in the order you want, and the merged document keeps every page exactly as it was.",
       steps: ["Choose two or more PDF files.", "Drag them, or use the arrows, to set the order.", "Click Merge and download the combined PDF."],

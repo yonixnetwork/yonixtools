@@ -49,6 +49,8 @@ export interface Tool {
   synonyms: string[];
   related: string[];
   addedAt: string;
+  /** Last real change to this page's content (YYYY-MM-DD); the sitemap's lastmod. Defaults to addedAt. */
+  updatedAt?: string;
   seo: { title: string; description: string };
   /** Kept reachable at its URL (noindex) but not listed anywhere: the platform doesn't work right now. */
   hidden?: boolean;

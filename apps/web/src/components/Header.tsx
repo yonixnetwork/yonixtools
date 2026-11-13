@@ -1,5 +1,5 @@
 "use client";
-import { ChevronDown, Download, Grid2x2, House, LifeBuoy, Menu, X } from "lucide-react";
+import { ChevronDown, Download, Grid2x2, House, BookOpen, LifeBuoy, Menu, X } from "lucide-react";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Icon } from "./Icon";
 import { InstallMenuItem } from "./InstallPrompt";
@@ -94,6 +94,9 @@ export function Header({ nav }: { nav: NavCategory[] }) {
               <a href="/tools/" aria-current={path.startsWith("/tools/") || path.startsWith("/category/") ? "page" : undefined}>
                 Categories
               </a>
+              <a href="/guides/" aria-current={path.startsWith("/guides/") ? "page" : undefined}>
+                Guides
+              </a>
               <a href="/about/" aria-current={path.startsWith("/about/") ? "page" : undefined}>
                 Help
               </a>
@@ -122,6 +125,7 @@ export function Header({ nav }: { nav: NavCategory[] }) {
               <a href="/" aria-current={path === "/" ? "page" : undefined}><House aria-hidden /> Home</a>
               <a href={DOWNLOADER} aria-current={isCurrent(path, DOWNLOADER) ? "page" : undefined}><Download aria-hidden /> Downloader</a>
               <a href="/tools/" aria-current={path.startsWith("/tools/") ? "page" : undefined}><Grid2x2 aria-hidden /> All tools</a>
+              <a href="/guides/" aria-current={path.startsWith("/guides/") ? "page" : undefined}><BookOpen aria-hidden /> Guides</a>
               <a href="/about/" aria-current={path.startsWith("/about/") ? "page" : undefined}><LifeBuoy aria-hidden /> Help</a>
             </nav>
             <InstallMenuItem />
