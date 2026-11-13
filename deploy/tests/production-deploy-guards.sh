@@ -28,7 +28,7 @@ mk() { # a fresh clone at main with production-like untracked config
   echo "$d"
 }
 
-d="$(mk ok)"; main="$(git -C "$d" rev-parse origin/main)"; merged="$(git -C "$d" rev-parse origin/main^2 2>/dev/null || git -C "$d" rev-parse origin/main~1)"
+d="$(mk ok)"; main="$(git -C "$d" rev-parse origin/main)"; merged="$(git -C "$d" rev-parse --verify -q 'origin/main~1^{commit}')"
 expect ok   "approved commit (main) passes all guards"            "$d" "$main"
 expect ok   "an older commit merged into main passes"              "$d" "$merged"
 WHY="full 40-character sha" expect stop "short sha refused"                                    "$d" "${main:0:7}"
