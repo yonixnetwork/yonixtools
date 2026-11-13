@@ -1,30 +1,82 @@
-# Manual, approval-gated production deploy. Never runs automatically.
-# Setup (by the repository owner):
-#   1. Settings → Environments → "production" → add yourself as a required reviewer.
-#   2. Add environment secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (private key of a
-#      deploy user), DEPLOY_KNOWN_HOSTS (output of `ssh-keyscan <host>`), DEPLOY_PATH.
+# Manual, approval-gated production deploy of ONE approved commit. Never runs automatically.
+#
+# Setup (by the repository owner, once):
+#   1. Settings → Environments → "production" → add yourself as a required reviewer
+#      (the deploy job waits for your approval before it connects to the server).
+#   2. Environment secrets: DEPLOY_HOST, DEPLOY_USER, DEPLOY_SSH_KEY (private key of the deploy user),
+#      DEPLOY_KNOWN_HOSTS (output of `ssh-keyscan <host>`), DEPLOY_PATH (/opt/yonixtools).
+#
+# To deploy: Actions → "Deploy (manual)" → Run workflow → enter the full commit sha twice.
+# There is no default: an empty or mistyped commit stops the run.
+#
+# Safeguards, in order:
+#   - the commit is a full 40-character sha, typed twice identically;
+#   - it is merged into main (reviewed), and CI ("CI" workflow) passed on that exact commit;
+#   - a required reviewer approves the "production" environment;
+#   - on the server, deploy/scripts/production-deploy.sh (taken from main, never from the commit being
+#     deployed) re-checks the checkout, the approval and the configuration, backs up, tags rollback
+#     images, runs release-check.sh, and deploys with fixed settings: https://yonixtools.com,
+#     AD_ORIGIN=https://ads.yonixtools.com, Monetag OFF. It only acts on the "yonixtools" compose project.
+#   - afterwards the public site is verified from outside (sitemap, robots.txt, ad origin, Monetag off).
 name: Deploy (manual)
 
 on:
   workflow_dispatch:
     inputs:
-      ref:
-        description: "Git ref to deploy"
+      commit:
+        description: "Full 40-character commit sha to deploy (must be merged into main and green in CI)"
         required: true
-        default: main
+      confirm_commit:
+        description: "Type the same commit sha again to confirm"
+        required: true
 
 permissions:
   contents: read
+  actions: read
 
 concurrency:
   group: production-deploy
   cancel-in-progress: false
 
 jobs:
+  approve:
+    name: Check the commit is approved
+    runs-on: ubuntu-24.04
+    outputs:
+      sha: ${{ steps.check.outputs.sha }}
+    steps:
+      - uses: actions/checkout@v4
+        with: { ref: main, fetch-depth: 0 }
+      - id: check
+        name: Merged into main, CI green on this exact commit
+        env:
+          COMMIT: ${{ inputs.commit }}
+          CONFIRM: ${{ inputs.confirm_commit }}
+          GH_TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          [ "$COMMIT" = "$CONFIRM" ] || { echo "::error::The two commit entries differ."; exit 1; }
+          [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || { echo "::error::Enter the full 40-character sha (got '$COMMIT')."; exit 1; }
+          git cat-file -e "$COMMIT^{commit}" || { echo "::error::$COMMIT is not in this repository's main history."; exit 1; }
+          git merge-base --is-ancestor "$COMMIT" origin/main || { echo "::error::$COMMIT is not merged into main."; exit 1; }
+          ok="$(gh api "repos/$REPO/actions/workflows/ci.yml/runs?head_sha=$COMMIT&status=completed&per_page=50" \
+                --jq '[.workflow_runs[] | select(.conclusion == "success")] | length')"
+          [ "${ok:-0}" -gt 0 ] || { echo "::error::No successful CI run for $COMMIT. Wait for CI (or re-run it) first."; exit 1; }
+          echo "Approved: $COMMIT ($(git log -1 --format=%s "$COMMIT")), merged into main, CI green ($ok run(s))."
+          echo "sha=$COMMIT" >> "$GITHUB_OUTPUT"
+      - name: Server script passes shellcheck
+        run: shellcheck -S warning deploy/scripts/production-deploy.sh
+
   deploy:
+    name: Deploy to production
+    needs: approve
     runs-on: ubuntu-24.04
     environment: production
     steps:
+      # The server script comes from main (reviewed), never from the commit being deployed.
+      - uses: actions/checkout@v4
+        with: { ref: main }
       - name: Configure SSH
         env:
           KEY: ${{ secrets.DEPLOY_SSH_KEY }}
@@ -33,17 +85,29 @@ jobs:
           install -m 700 -d ~/.ssh
           printf '%s\n' "$KEY" > ~/.ssh/id_deploy && chmod 600 ~/.ssh/id_deploy
           printf '%s\n' "$KNOWN" > ~/.ssh/known_hosts
-      - name: Deploy over SSH
+      - name: Deploy over SSH (guards, backup, release check, deploy)
         env:
           HOST: ${{ secrets.DEPLOY_HOST }}
           USER: ${{ secrets.DEPLOY_USER }}
           DIR: ${{ secrets.DEPLOY_PATH }}
-          REF: ${{ inputs.ref }}
+          SHA: ${{ needs.approve.outputs.sha }}
+        run: ssh -i ~/.ssh/id_deploy -o BatchMode=yes "$USER@$HOST" bash -s -- "$DIR" "$SHA" < deploy/scripts/production-deploy.sh
+      - name: Verify the public site
         run: |
-          ssh -i ~/.ssh/id_deploy -o BatchMode=yes "$USER@$HOST" bash -s -- "$DIR" "$REF" <<'REMOTE'
-          set -euo pipefail
-          cd "$1"
-          git fetch --quiet origin "$2"
-          git checkout --quiet --detach FETCH_HEAD
-          bash deploy/scripts/deploy.sh
-          REMOTE
+          set -uo pipefail
+          fail=0
+          check() { local label="$1"; shift; if "$@"; then echo "PASS  $label"; else echo "::error::FAIL $label"; fail=1; fi; }
+          X="$(curl -fsS https://yonixtools.com/sitemap.xml || true)"
+          R="$(curl -fsS https://yonixtools.com/robots.txt || true)"
+          F="$(curl -fsS https://ads.yonixtools.com/ad-frame.html || true)"
+          code() { curl -s -o /dev/null -w '%{http_code}' "$1"; }
+          check "sitemap is valid XML ($(printf '%s' "$X" | grep -o '<loc>' | wc -l) URLs)" python3 -c 'import sys,xml.dom.minidom; xml.dom.minidom.parseString(sys.argv[1])' "$X"
+          check "robots.txt names the sitemap" grep -qx 'Sitemap: https://yonixtools.com/sitemap.xml' <<<"$R"
+          check "robots.txt keeps /admin/ out" grep -qx 'Disallow: /admin/' <<<"$R"
+          check "main site never serves the ad frame (404)" test "$(code https://yonixtools.com/ad-frame.html)" = 404
+          check "Adsterra units in the ad frame" grep -q 620b3190e30ed523091b51770aea0b40 <<<"$F"
+          # shellcheck disable=SC2329  # called through check()
+          no_monetag() { ! grep -qE 'nap5k|n6wxm|12218944|12218952' <<<"$F"; }
+          check "Monetag disabled (no Monetag code in the ad frame)" no_monetag
+          check "downloader API healthy" test "$(code https://yonixtools.com/api/healthz)" = 200
+          exit "$fail"

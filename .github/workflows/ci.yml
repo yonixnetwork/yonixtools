@@ -105,8 +105,11 @@ jobs:
         run: docker compose -f deploy/docker-compose.yml logs --tail 80
 
   scripts:
-    name: Shell scripts (shellcheck)
+    name: Shell scripts (shellcheck, deploy guards)
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - run: shellcheck -S warning deploy/scripts/*.sh scripts/do-audit.sh apps/web/scripts/e2e-backend.sh
+        with: { fetch-depth: 0 }   # the deploy-guard test clones this history
+      - run: shellcheck -S warning deploy/scripts/*.sh deploy/tests/*.sh scripts/do-audit.sh apps/web/scripts/e2e-backend.sh
+      - name: Production deploy guards refuse unapproved commits, wrong repositories and YonixAlpha
+        run: bash deploy/tests/production-deploy-guards.sh

@@ -152,3 +152,72 @@ cd /opt/yonixtools && git checkout --detach "$(cat deploy/state/previous-rev)" &
 3. Notification-style Monetag banners and full-screen overlays: none, anywhere.
 4. With an ad blocker: no empty boxes, and the tools still work.
 5. Install prompt and offline: as before.
+
+## 7. Deploying future releases from GitHub ("Deploy (manual)" workflow)
+
+The workflow was rewritten on 13 Nov 2026. The old version defaulted to `main`, deployed without `AD_ORIGIN` (no ads) and checked nothing.
+
+**One-time setup (owner):**
+1. Settings → Environments → **production** → add yourself as a **required reviewer**.
+2. Add the environment secrets:
+
+| Secret | Value |
+|---|---|
+| `DEPLOY_HOST` | the server's address |
+| `DEPLOY_USER` | `root`: the server script writes backups to `/root/yonixtools-backups`, like the manual deploys |
+| `DEPLOY_SSH_KEY` | a private key allowed to log in as that user |
+| `DEPLOY_KNOWN_HOSTS` | output of `ssh-keyscan <host>` |
+| `DEPLOY_PATH` | `/opt/yonixtools` |
+
+3. Optional: put the search-engine verification codes in `/opt/yonixtools/deploy/production.env` on the server, so every deploy keeps them:
+   ```
+   GOOGLE_SITE_VERIFICATION=<code>
+   BING_SITE_VERIFICATION=<code>
+   ```
+   Only these two keys are accepted. Anything else stops the deploy.
+
+**To deploy a release:**
+1. Merge it into `main` and wait for CI to be green.
+2. Actions → **Deploy (manual)** → Run workflow. Enter the **full 40-character commit sha** twice. There is no default.
+3. Approve the "production" environment when GitHub asks.
+
+**What the workflow refuses, before anything changes:**
+- a short, mistyped or unconfirmed sha;
+- a commit not merged into `main`;
+- a commit with no successful CI run;
+- no reviewer approval.
+
+**On the server**, `deploy/scripts/production-deploy.sh` runs. It is taken from `main`, never from the commit being deployed.
+
+It refuses:
+- a checkout that isn't `yonixnetwork/yonixtools`;
+- a compose project other than `yonixtools`;
+- a YonixAlpha path;
+- a commit not merged into `main`;
+- local changes;
+- a missing `.env`, or `APP_ENV` not `production`;
+- a missing admin password;
+- a `production.env` line other than the two codes.
+
+Then it:
+1. backs up the configuration to `/root/yonixtools-backups/<date>-before-<commit>/`, with the previous commit and image IDs;
+2. tags the running images `:rollback-<previous commit>`;
+3. checks out the commit and runs `release-check.sh`, restoring the old checkout if that fails;
+4. deploys with fixed settings: `https://yonixtools.com`, `AD_ORIGIN=https://ads.yonixtools.com`, Monetag off. The caller's environment can't change them.
+
+**Finally**, the workflow checks the public site:
+- sitemap XML and `robots.txt`;
+- the ad frame is 404 on the main site;
+- the Adsterra units are present and there is no Monetag code;
+- the downloader API is healthy.
+
+**Scope:** only the `yonixtools` compose project's two containers are rebuilt. No volumes, no YonixAlpha containers, images or data, and no DNS, firewall or host-nginx changes.
+
+**Rollback:** `cd /opt/yonixtools && bash deploy/scripts/rollback.sh && git checkout --detach <previous commit>`. The `:rollback-<commit>` tags stay as a second way back.
+
+**Read-only check on the server**, at any time. This runs every guard and changes nothing:
+```bash
+cd /opt/yonixtools && bash deploy/scripts/production-deploy.sh /opt/yonixtools "$(git rev-parse HEAD)" --dry-run
+```
+
+**Tests:** `deploy/tests/production-deploy-guards.sh` runs in CI and checks each refusal offline (21 cases).

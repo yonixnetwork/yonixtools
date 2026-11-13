@@ -27,3 +27,6 @@ deploy/admin-auth/
 
 # Server-side deploy state (deployed commit, rollback commit)
 deploy/state/
+
+# Server-only search-engine verification codes (deploy/scripts/production-deploy.sh)
+deploy/production.env
