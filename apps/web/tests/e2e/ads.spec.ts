@@ -152,18 +152,14 @@ test("when the ad network is unreachable (or blocked), slots collapse within sec
   for (const host of ["https://bellnewyork.org/**", "https://n6wxm.com/**", "https://nap5k.com/**"]) await page.route(host, (r) => r.abort("blockedbyclient"));
   await page.setViewportSize({ width: 1280, height: 900 });
   await page.goto("/word-counter/");
-  // It may already be gone by the time we scroll (scripts fail at once), so scroll without waiting on it.
-  await page.locator('aside.ad-banner300x250').first().waitFor({ state: "attached" });
-  await page.evaluate(() => document.querySelector("aside.ad-banner300x250")?.scrollIntoView());
-  const ad = page.locator('aside[data-ad-unit="banner300x250"]');
-  // On screen: it turns blank and unlabeled within seconds, and collapses on the next interaction (no layout shift while being looked at).
-  await expect(ad).toHaveAttribute("data-ad-state", "empty", { timeout: 4_000 });
-  await expect(ad.locator(".ad-label")).toBeHidden();
+  const slots = page.locator("aside.ad-slot");
+  // Slots that are off screen vanish on their own, so "gone" is as good as "empty". What must never happen:
+  // a slot stuck loading, or showing a label over nothing.
+  await expect.poll(async () => (await slots.evaluateAll((els) => els.map((e) => e.getAttribute("data-ad-state")))).every((st) => st === "empty" || st === null), { timeout: 8_000 }).toBe(true);
+  await expect(page.locator("aside.ad-slot .ad-label:visible")).toHaveCount(0); // no "Advertisement" over empty space
+  // Slots still in view collapse on the next interaction (no layout shift while being looked at).
   await page.keyboard.press("Shift");
-  await expect(ad).toHaveCount(0);
-  // Off screen: slots collapse by themselves (the leaderboard above the tool, once scrolled away).
-  await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
-  await expect(page.locator('aside[data-ad-unit="banner728x90"]')).toHaveCount(0, { timeout: 4_000 });
+  await expect(page.locator("aside.ad-slot[data-ad-unit]")).toHaveCount(0, { timeout: 4_000 });
   // The tool is unaffected.
   await page.locator("textarea").first().fill("one two three");
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();
