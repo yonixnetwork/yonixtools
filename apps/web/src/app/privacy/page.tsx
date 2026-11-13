@@ -1,12 +1,9 @@
 import type { Metadata } from "next";
+import { pageMetadata } from "@/lib/seo";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { MONETAG_ENABLED } from "@/lib/ads/monetag";
 
-export const metadata: Metadata = {
-  title: "Privacy",
-  description: "How YoniXTools handles your data: browser tools process files on your device, and only a theme preference and a recently-used list are stored locally.",
-  alternates: { canonical: "/privacy/" },
-};
+export const metadata: Metadata = pageMetadata({ title: "Privacy | YoniXTools", description: "How YoniXTools handles your data: browser tools process files on your device, and only a theme preference and a recently-used list are stored locally.", path: "/privacy/" });
 
 export default function Privacy() {
   return (

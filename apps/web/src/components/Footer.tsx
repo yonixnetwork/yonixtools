@@ -51,7 +51,7 @@ export function Footer() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} YoniXTools. Download only content you have the right to save.</span>
           <span>
-            <a href="/about/">Help</a> · <a href="/privacy/">Privacy</a>
+            <a href="/guides/">Guides</a> · <a href="/about/">Help</a> · <a href="/privacy/">Privacy</a>
           </span>
         </div>
       </div>

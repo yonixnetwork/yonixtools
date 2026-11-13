@@ -84,7 +84,8 @@ export const moreTools: Tool[] = [
     slug: "time-zone-converter", name: "Time Zone Converter", tagline: "See what time it is in other cities for any date and time.", category: "converters", status: "live", runsIn: "browser", icon: "Globe",
     keywords: ["time zone converter", "time converter", "world clock", "convert time zones", "meeting time planner"], synonyms: ["timezone converter", "time difference calculator", "world time"],
     related: ["timestamp-converter", "age-calculator", "unit-converter"], addedAt: ADDED,
-    seo: { title: "Time Zone Converter – Convert Times Between Cities", description: "Convert a date and time from one time zone to several others at once, with daylight saving time handled automatically. Ideal for planning calls across countries." },
+    updatedAt: "2026-11-13",
+    seo: { title: "Time Zone Converter – Convert Times Between Cities", description: "Convert a date and time from one time zone to several others at once, with daylight saving time handled automatically. Ideal for planning calls abroad." },
     content: {
       intro: "Choose a date, a time and its time zone, and see the matching local time anywhere in the world. Daylight saving changes are applied for the exact date you pick.",
       steps: ["Set the date and time.", "Choose the time zone it's in.", "Add the cities you want to compare."],

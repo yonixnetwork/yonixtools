@@ -5,18 +5,17 @@ import { Downloader } from "@/components/Downloader";
 import { FaqList } from "@/components/Faq";
 import { Icon, PlatformIcon } from "@/components/Icon";
 import { JsonLd } from "@/components/JsonLd";
+import { guidePath, guides } from "@/lib/guides";
 import { Recommended } from "@/components/Recommended";
 import { ToolCard } from "@/components/ToolCard";
 import { PLATFORMS } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
 import { categories, editorsPicks, getTool, popularSlugs, recentlyAdded, tools, toolsInCategory } from "@/lib/registry";
 import { toCard } from "@/lib/registry/cards";
-import { faqLd, websiteLd } from "@/lib/seo";
-import { categoryPath, toolPath } from "@/lib/site";
+import { faqLd, organizationLd, pageMetadata, websiteLd } from "@/lib/seo";
+import { categoryPath, site, toolPath } from "@/lib/site";
 
-export const metadata: Metadata = {
-  alternates: { canonical: "/" },
-};
+export const metadata: Metadata = pageMetadata({ title: `Free Online Tools & Social Media Downloader | ${site.name}`, description: site.description, path: "/" });
 
 const HOME_FAQ = [
   { q: "What is YoniXTools?", a: "A free website with two parts: a universal downloader for public social media posts, and a growing collection of online tools for images, QR codes, SEO, development, text and everyday calculations." },
@@ -40,6 +39,7 @@ export default function Home() {
   const working = PLATFORM_STATUS.filter((p) => p.state === "working").slice(0, 6);
   return (
     <>
+      <JsonLd data={organizationLd()} />
       <JsonLd data={websiteLd()} />
       <JsonLd data={faqLd(HOME_FAQ)} />
 
@@ -184,6 +184,30 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section className="section" aria-labelledby="guides-h">
+        <div className="container">
+          <div className="section-head">
+            <div>
+              <h2 id="guides-h">Guides</h2>
+              <p>Step-by-step help for the most common tasks.</p>
+            </div>
+            <a className="link-more" href="/guides/">
+              All guides <ArrowRight aria-hidden />
+            </a>
+          </div>
+          <ul className="guide-list" role="list">
+            {guides.slice(0, 4).map((g) => (
+              <li key={g.slug} className="card guide-card">
+                <h3>
+                  <a href={guidePath(g.slug)}>{g.h1}</a>
+                </h3>
+                <p>{g.description}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 

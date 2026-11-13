@@ -13,6 +13,7 @@ services:
         NEXT_PUBLIC_SITE_URL: ${SITE_URL:-https://yonixtools.com}
         NEXT_PUBLIC_DOWNLOADER_API_URL: /api
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${GOOGLE_SITE_VERIFICATION:-}
+        NEXT_PUBLIC_BING_SITE_VERIFICATION: ${BING_SITE_VERIFICATION:-}
         NEXT_PUBLIC_ADS: ${ADS:-on}
         # Ads are served only from a separate ad origin. Empty (default) = no ads at all.
         # Set AD_ORIGIN=https://ads.yonixtools.com once its DNS record + edge config are approved

@@ -25,7 +25,7 @@ export const PLATFORMS: Record<PlatformId, PlatformInfo> = {
   reddit: { id: "reddit", name: "Reddit", toolSlug: "reddit-downloader" },
   vimeo: { id: "vimeo", name: "Vimeo", toolSlug: "social-media-downloader" },
   dailymotion: { id: "dailymotion", name: "Dailymotion", toolSlug: "social-media-downloader" },
-  twitch: { id: "twitch", name: "Twitch", toolSlug: "social-media-downloader" },
+  twitch: { id: "twitch", name: "Twitch", toolSlug: "twitch-clip-downloader" },
   soundcloud: { id: "soundcloud", name: "SoundCloud", toolSlug: "social-media-downloader" },
   bluesky: { id: "bluesky", name: "Bluesky", toolSlug: "social-media-downloader" },
   streamable: { id: "streamable", name: "Streamable", toolSlug: "social-media-downloader" },
