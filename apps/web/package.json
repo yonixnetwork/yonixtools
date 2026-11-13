@@ -1,0 +1,46 @@
+{
+  "name": "@yonixtools/web",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "node scripts/build-ad-frame.mjs && node scripts/build-admin.mjs && next build",
+    "start": "node scripts/serve-static.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:e2e": "playwright test --trace off",
+    "build:test": "NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=off npm run build",
+    "build:test:monetag": "NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=on npm run build",
+    "build:integrated": "node scripts/build-ad-frame.mjs && node scripts/build-admin.mjs && NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
+    "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated --project=integrated-mobile"
+  },
+  "dependencies": {
+    "@fontsource-variable/inter": "5.3.0",
+    "csso": "5.0.5",
+    "fflate": "0.8.3",
+    "html-minifier-terser": "7.2.0",
+    "jsqr": "1.4.0",
+    "lucide-react": "1.70.0",
+    "next": "16.4.3",
+    "pdf-lib": "1.17.1",
+    "pdfjs-dist": "6.4.299",
+    "qrcode": "1.5.4",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "simple-icons": "16.36.0",
+    "terser": "5.51.2"
+  },
+  "devDependencies": {
+    "@axe-core/playwright": "4.10.2",
+    "@playwright/test": "1.63.0",
+    "@types/csso": "5.0.5",
+    "@types/html-minifier-terser": "7.0.2",
+    "@types/node": "22.20.5",
+    "@types/qrcode": "1.5.6",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "typescript": "5.9.3",
+    "vitest": "4.1.12"
+  }
+}

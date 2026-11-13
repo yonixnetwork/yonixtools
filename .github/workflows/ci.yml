@@ -1,0 +1,112 @@
+name: CI
+
+on:
+  push:
+    branches: [main, "feature/**", "ccr-**"]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  downloader:
+    name: Downloader service (pytest, pip-audit)
+    runs-on: ubuntu-24.04
+    defaults: { run: { working-directory: services/downloader } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: services/downloader/requirements-dev.txt }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+      - run: pip-audit -r requirements.txt
+
+  web:
+    name: Website (typecheck, unit, build, e2e, integrated e2e)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Backend for integrated e2e
+        working-directory: services/downloader
+        run: python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+      - working-directory: apps/web
+        run: |
+          npm ci
+          npm run typecheck
+          npm test
+          npm audit --omit=dev --audit-level=high
+          npm run build:integrated
+          npm run build:test
+          # Build-wide scans (need the built site): nothing internal or ad-related in public pages/bundles.
+          npx vitest run tests/unit/public-exposure.test.ts tests/unit/monetag-policy.test.ts
+          npx playwright install --with-deps chromium webkit
+          npm run test:e2e
+          npm run test:e2e:integrated
+          E2E_INTEGRATED=1 npx playwright test --trace off --project=integrated-iphone
+          # The real nginx config: admin password protection, removed pages, CSP on every page.
+          sudo apt-get install -y -qq nginx >/dev/null
+          printf 'ci-admin:%s\n' "$(openssl passwd -apr1 ci-admin-password)" > /tmp/ci-admin.htpasswd
+          API_UPSTREAM=127.0.0.1:8799 ADMIN_HTPASSWD=/tmp/ci-admin.htpasswd AD_ORIGIN=http://localhost:4175 AD_FRAME_PARENT=http://localhost:4173 scripts/nginx-local.sh start out 4173 4175
+          API_ECHO_PORT=8799 REAL_NGINX=1 ADMIN_USER=ci-admin ADMIN_PASS=ci-admin-password npx playwright test --trace off --project=desktop tests/e2e/csp.spec.ts tests/e2e/admin.spec.ts
+          scripts/nginx-local.sh stop
+        env: { CI: "true" }
+
+  docker:
+    name: Docker images build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: cp services/downloader/.env.example services/downloader/.env
+      - run: docker compose -f deploy/docker-compose.yml config --quiet
+      - run: docker compose -f deploy/docker-compose.yml build
+        env: { AD_ORIGIN: "https://ads.yonixtools.com" }
+      - name: Start the stack exactly as deploy.sh does and smoke-test it
+        env: { AD_ORIGIN: "https://ads.yonixtools.com" }
+        run: |
+          docker compose -f deploy/docker-compose.yml up -d
+          for i in $(seq 1 60); do
+            web=$(docker inspect -f '{{.State.Health.Status}}' yonixtools-web-1 2>/dev/null || echo starting)
+            dl=$(docker inspect -f '{{.State.Health.Status}}' yonixtools-downloader-1 2>/dev/null || echo starting)
+            [ "$web" = healthy ] && [ "$dl" = healthy ] && break
+            sleep 2
+          done
+          echo "web=$web downloader=$dl"
+          [ "$web" = healthy ] && [ "$dl" = healthy ]
+          AD_HOST=ads.yonixtools.com SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh http://127.0.0.1:8090
+      - name: Egress firewall blocks internal targets, allows the internet
+        run: |
+          sudo bash deploy/scripts/egress-firewall.sh
+          probe() { docker compose -f deploy/docker-compose.yml exec -T downloader python -c "import socket,sys; s=socket.socket(); s.settimeout(4); sys.exit(0 if s.connect_ex(('$1', $2)) == 0 else 1)"; }
+          # Docker doesn't report a gateway for a subnet-only network: it is the subnet's first address.
+          gw=$(docker network inspect yonixtools_stack -f '{{(index .IPAM.Config 0).Gateway}}')
+          if [ -z "$gw" ]; then sub=$(docker network inspect yonixtools_stack -f '{{(index .IPAM.Config 0).Subnet}}'); gw="${sub%/*}"; gw="${gw%.*}.1"; fi
+          echo "$gw" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+\.1$' || { echo "FAIL: could not determine the stack gateway ('$gw')"; exit 1; }
+          for t in "169.254.169.254 80" "$gw 22" "10.1.2.3 80" "192.168.1.1 80"; do
+            if probe $t; then echo "FAIL: reached $t"; exit 1; else rc=$?; [ "$rc" = 1 ] || { echo "FAIL: probe error for $t (exit $rc)"; exit 1; }; echo "blocked: $t"; fi
+          done
+          probe 1.1.1.1 443 && echo "public internet OK (1.1.1.1:443)"
+          curl -fsS http://127.0.0.1:8090/api/healthz && echo " (stack still serves through the edge port)"
+      - name: Rollback script restores the previous images and the stack stays healthy
+        run: |
+          for i in yonixtools-web yonixtools-downloader; do docker tag $i:latest $i:previous; done
+          echo ci-previous > /tmp/prev && mkdir -p deploy/state && cp /tmp/prev deploy/state/previous-rev
+          bash deploy/scripts/rollback.sh
+          for i in yonixtools-web yonixtools-downloader; do docker image inspect $i:failed >/dev/null; done
+          [ "$(cat deploy/state/deployed-rev)" = ci-previous ]
+          curl -fsS http://127.0.0.1:8090/api/healthz && curl -fsS -o /dev/null http://127.0.0.1:8090/ && echo " site and API up after rollback"
+      - name: Container logs
+        if: always()
+        run: docker compose -f deploy/docker-compose.yml logs --tail 80
+
+  scripts:
+    name: Shell scripts (shellcheck)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - run: shellcheck -S warning deploy/scripts/*.sh scripts/do-audit.sh apps/web/scripts/e2e-backend.sh

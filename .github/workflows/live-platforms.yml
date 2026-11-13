@@ -1,0 +1,101 @@
+# Real-platform diagnostics from a datacenter IP (like the droplet).
+# Runs on demand: a push whose commit message contains "[live-matrix]", or manually.
+name: Live platform matrix
+
+on:
+  push:
+    branches: ["feature/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-matrix]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        phase: [deployed, full]
+        platform: [youtube, tiktok, instagram, facebook, x, pinterest, dailymotion, twitch, soundcloud, bluesky, streamable,
+                   imgur, kick, mixcloud, 9gag, medal, linkedin, ted]
+        exclude:  # "deployed" = production regression baseline; candidates don't exist there
+          - { phase: deployed, platform: imgur }
+          - { phase: deployed, platform: kick }
+          - { phase: deployed, platform: mixcloud }
+          - { phase: deployed, platform: 9gag }
+          - { phase: deployed, platform: ted }
+          - { phase: deployed, platform: medal }
+          - { phase: deployed, platform: linkedin }
+    name: ${{ matrix.phase }} / ${{ matrix.platform }}
+    defaults: { run: { working-directory: services/downloader } }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Code exactly as in production (feature/downloader-reliability, c259dfc)
+        if: matrix.phase == 'deployed'
+        uses: actions/checkout@v4
+        with: { ref: c259dfce2acd6a15687dff1de077cdf8d4b976f3, path: deployed }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Dependencies as in production
+        if: matrix.phase == 'deployed'
+        run: pip install -q -r ${{ github.workspace }}/deployed/services/downloader/requirements.txt
+      - name: Candidate dependencies
+        if: matrix.phase == 'full'
+        run: pip install -q -r requirements.txt
+      - name: Deno (JavaScript runtime for YouTube, as in the production image)
+        run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - name: YouTube experiment - PO token provider (bgutil, open source, local)
+        if: matrix.phase == 'full' && matrix.platform == 'youtube'
+        run: |
+          docker run -d --name bgutil -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider
+          pip install -q bgutil-ytdlp-pot-provider
+          for i in $(seq 1 30); do curl -fsS http://127.0.0.1:4416/ping && break; sleep 2; done
+          echo "DIAG_BGUTIL=1" >> "$GITHUB_ENV"
+      - run: python -c "import yt_dlp, sys; print('yt-dlp', yt_dlp.version.__version__)"; deno --version 2>/dev/null | head -1 || echo "no deno"; python -c "import curl_cffi; print('curl_cffi', curl_cffi.__version__)" 2>/dev/null || echo "no curl_cffi"
+      - run: python diagnostics/live_matrix.py --platform ${{ matrix.platform }} --phase ${{ matrix.phase }} --out results-${{ matrix.phase }}-${{ matrix.platform }}.json
+        env:
+          DIAG_APP_ROOT: ${{ matrix.phase == 'deployed' && format('{0}/deployed/services/downloader', github.workspace) || '' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: results-${{ matrix.phase }}-${{ matrix.platform }}
+          path: services/downloader/results-*.json
+
+  browser:
+    # The real website + real worker + real platforms, in Chromium emulating an Android phone (Pixel 7).
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[live-matrix]')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    name: live browser / Android emulation
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12" }
+      - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - name: Deno (as in the production image)
+        run: curl -fsSL https://deno.land/install.sh | sh -s -- -y && echo "$HOME/.deno/bin" >> "$GITHUB_PATH"
+      - working-directory: services/downloader
+        run: python -m venv .venv && .venv/bin/pip install -q -r requirements.txt
+      - working-directory: apps/web
+        run: |
+          npm ci
+          npm run build:integrated
+          npx playwright install --with-deps chromium
+          E2E_LIVE=1 npx playwright test --trace off --project=live-mobile --workers=1
+        env: { CI: "true" }
+
+  report:
+    needs: live
+    if: always() && needs.live.result != 'skipped'
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with: { path: artifacts }
+      - run: python3 services/downloader/diagnostics/report.py artifacts

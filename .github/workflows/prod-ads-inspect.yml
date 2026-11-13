@@ -1,0 +1,22 @@
+# Read-only inspection of the live site's ads in real Chromium (no clicks).
+name: Prod ads inspect
+# Manual only: it loads real ad scripts from a datacenter browser, which ad networks may count
+# as impressions. Run it only when the owner asks (Actions tab -> Run workflow).
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  inspect:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    defaults: { run: { working-directory: apps/web } }
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm, cache-dependency-path: apps/web/package-lock.json }
+      - run: npm ci && npx playwright install --with-deps chromium
+      - run: node scripts/ads/inspect-prod.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: prod-ads-screens, path: apps/web/prod-*.png }

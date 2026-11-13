@@ -1,0 +1,26 @@
+{
+  "native": {
+    "label": "Native Banner",
+    "width": 728,
+    "height": 280,
+    "snippet": "<script async=\"async\" data-cfasync=\"false\" src=\"https://bellnewyork.org/21/cdabddda1b7a8e769299c93b91d77822\"></script>\n<div id=\"container-cdabddda1b7a8e769299c93b91d77822\"></div>"
+  },
+  "banner300x250": {
+    "label": "Banner 300 × 250",
+    "width": 300,
+    "height": 250,
+    "snippet": "<script>\natOptions = {\n'key' : '620b3190e30ed523091b51770aea0b40',\n'format' : 'iframe',\n'height' : 250,\n'width' : 300,\n'params' : {}\n};\n</script>\n<script src=\"https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40\"></script>"
+  },
+  "banner728x90": {
+    "label": "Banner 728 × 90",
+    "width": 728,
+    "height": 90,
+    "snippet": "<script>\natOptions = {\n'key' : '087c1ea1a028c67071c19090b33ca01b',\n'format' : 'iframe',\n'height' : 90,\n'width' : 728,\n'params' : {}\n};\n</script>\n<script src=\"https://bellnewyork.org/22/087c1ea1a028c67071c19090b33ca01b\"></script>"
+  },
+  "banner320x50": {
+    "label": "Banner 320 × 50",
+    "width": 320,
+    "height": 50,
+    "snippet": "<script>\natOptions = {\n'key' : '184daaa0dde35a067c7494257f37cd70',\n'format' : 'iframe',\n'height' : 50,\n'width' : 320,\n'params' : {}\n};\n</script>\n<script src=\"https://bellnewyork.org/22/184daaa0dde35a067c7494257f37cd70\"></script>"
+  }
+}

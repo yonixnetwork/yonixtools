@@ -1,0 +1,95 @@
+"use client";
+import dynamic from "next/dynamic";
+import { useEffect, type ComponentType } from "react";
+import type { toolComponentSlugs } from "./slugs";
+
+// Each category is its own chunk, so a tool page only downloads its own group's code.
+const qr = () => import("./QrTools");
+const img = () => import("./ImageTools");
+const seo = () => import("./SeoTools");
+const dev = () => import("./DevTools");
+const text = () => import("./TextTools");
+const calc = () => import("./CalcTools");
+const pdf = () => import("./PdfTools");
+const crop = () => import("./CropTool");
+const scan = () => import("./ScannerTool");
+const mini = () => import("./MinifyTools");
+const seo2 = () => import("./SeoExtraTools");
+const video = () => import("./VideoTools");
+const conv = () => import("./ConvertTools");
+const util = () => import("./UtilityTools");
+
+const loading = () => <div className="muted" style={{ padding: "48px 0", textAlign: "center" }}>Loading tool…</div>;
+// Marks <html data-tool-ready> once the tool has hydrated and is interactive
+// (used by end-to-end tests; harmless otherwise).
+function withReady(C: ComponentType): ComponentType {
+  return function ReadyTool() {
+    useEffect(() => {
+      document.documentElement.dataset.toolReady = "1";
+    }, []);
+    return <C />;
+  };
+}
+
+const d = <M,>(load: () => Promise<M>, pick: (m: M) => ComponentType) => dynamic(() => load().then((m) => withReady(pick(m))), { loading });
+
+export const toolComponents: Record<(typeof toolComponentSlugs)[number], ComponentType> = {
+  "qr-code-generator": d(qr, (m) => m.QrCodeGenerator),
+  "wifi-qr-code-generator": d(qr, (m) => m.WifiQrGenerator),
+  "vcard-qr-code-generator": d(qr, (m) => m.VcardQrGenerator),
+  "image-compressor": d(img, (m) => m.ImageCompressor),
+  "image-resizer": d(img, (m) => m.ImageResizer),
+  "image-converter": d(img, (m) => m.ImageConverter),
+  "meta-tag-generator": d(seo, (m) => m.MetaTagGenerator),
+  "serp-snippet-preview": d(seo, (m) => m.SerpPreview),
+  "robots-txt-generator": d(seo, (m) => m.RobotsTxtGenerator),
+  "url-slug-generator": d(seo, (m) => m.SlugGenerator),
+  "json-formatter": d(dev, (m) => m.JsonFormatter),
+  "base64-encoder-decoder": d(dev, (m) => m.Base64Tool),
+  "url-encoder-decoder": d(dev, (m) => m.UrlTool),
+  "uuid-generator": d(dev, (m) => m.UuidTool),
+  "jwt-decoder": d(dev, (m) => m.JwtTool),
+  "hash-generator": d(dev, (m) => m.HashTool),
+  "regex-tester": d(dev, (m) => m.RegexTool),
+  "word-counter": d(text, (m) => m.WordCounter),
+  "case-converter": d(text, (m) => m.CaseConverter),
+  "password-generator": d(text, (m) => m.PasswordGenerator),
+  "lorem-ipsum-generator": d(text, (m) => m.LoremGenerator),
+  "text-compare": d(text, (m) => m.TextCompare),
+  "percentage-calculator": d(calc, (m) => m.PercentageCalculator),
+  "age-calculator": d(calc, (m) => m.AgeCalculator),
+  "bmi-calculator": d(calc, (m) => m.BmiCalculator),
+  "loan-calculator": d(calc, (m) => m.LoanCalculator),
+  "compound-interest-calculator": d(calc, (m) => m.CompoundInterestCalculator),
+  "unit-converter": d(calc, (m) => m.UnitConverter),
+  "pdf-merger": d(pdf, (m) => m.PdfMerger),
+  "pdf-splitter": d(pdf, (m) => m.PdfSplitter),
+  "pdf-compressor": d(pdf, (m) => m.PdfCompressor),
+  "pdf-to-image": d(pdf, (m) => m.PdfToImage),
+  "image-to-pdf": d(pdf, (m) => m.ImageToPdf),
+  "rotate-pdf": d(pdf, (m) => m.RotatePdf),
+  "image-cropper": d(crop, (m) => m.ImageCropper),
+  "qr-code-scanner": d(scan, (m) => m.QrScanner),
+  "html-minifier": d(mini, (m) => m.HtmlMinifier),
+  "css-minifier": d(mini, (m) => m.CssMinifier),
+  "javascript-minifier": d(mini, (m) => m.JsMinifier),
+  "sitemap-generator": d(seo2, (m) => m.SitemapGenerator),
+  "schema-markup-generator": d(seo2, (m) => m.SchemaGenerator),
+  "open-graph-preview": d(seo2, (m) => m.OgPreview),
+  "keyword-idea-generator": d(seo2, (m) => m.KeywordIdeaGenerator),
+  "seo-title-generator": d(seo2, (m) => m.SeoTitleGenerator),
+  "video-frame-extractor": d(video, (m) => m.VideoFrameExtractor),
+  "video-audio-extractor": d(video, (m) => m.VideoAudioExtractor),
+  "video-info": d(video, (m) => m.VideoInfo),
+  "color-converter": d(conv, (m) => m.ColorConverter),
+  "timestamp-converter": d(conv, (m) => m.TimestampConverter),
+  "number-base-converter": d(conv, (m) => m.NumberBaseConverter),
+  "time-zone-converter": d(conv, (m) => m.TimeZoneConverter),
+  "random-number-generator": d(util, (m) => m.RandomNumberGenerator),
+  "stopwatch-timer": d(util, (m) => m.StopwatchTimer),
+};
+
+export function ToolRenderer({ slug }: { slug: string }) {
+  const C = toolComponents[slug as keyof typeof toolComponents];
+  return C ? <C /> : null;
+}

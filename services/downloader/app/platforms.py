@@ -1,0 +1,302 @@
+"""Supported platforms: host allowlist, URL classification and extractor mapping.
+
+This module is the backend's source of truth. The frontend has a mirror for
+instant feedback, but nothing reaches an extractor unless it passes here.
+"""
+from __future__ import annotations
+
+import re
+from dataclasses import dataclass, field
+from typing import Callable
+from urllib.parse import urlsplit, urlunsplit
+
+from .errors import ApiError
+
+MAX_URL_LENGTH = 2048
+
+
+def _is(host: str, domain: str) -> bool:
+    return host == domain or host.endswith("." + domain)
+
+
+@dataclass(frozen=True)
+class Classification:
+    content_type: str
+    needs_resolution: bool = False
+
+
+@dataclass(frozen=True)
+class Platform:
+    id: str
+    name: str
+    matches_host: Callable[[str], bool]
+    classify: Callable[[str, str, dict[str, list[str]]], Classification]
+    # Exact yt-dlp extractor names (lowercase) allowed for this platform.
+    # The generic extractor is never allowed, so yt-dlp can't be used to fetch arbitrary URLs.
+    ytdlp_extractors: tuple[str, ...]
+    # Platforms whose image posts can fall back to gallery-dl.
+    gallerydl_fallback: bool = False
+    # Hosts that are short links and must be resolved (with every hop validated) before extraction.
+    short_link_hosts: tuple[str, ...] = ()
+    # Every host a redirect from a short link may land on.
+    redirect_hosts: Callable[[str], bool] = field(default=lambda h: False)
+    # Set when the platform can't work from our servers: links are refused up front
+    # with this explanation instead of spending an extraction on a known failure.
+    unavailable: str | None = None
+
+
+def _unsupported(msg: str) -> ApiError:
+    return ApiError("unsupported_content", msg)
+
+
+def _instagram(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(stories|s)/", path):
+        raise _unsupported("Instagram Stories require logging in, so they can't be downloaded. Use a public post or Reel link instead.")
+    if re.match(r"^/([\w.]+/)?(reel|reels)/[\w-]+", path):
+        return Classification("reel")
+    if re.match(r"^/([\w.]+/)?tv/[\w-]+", path):
+        return Classification("video")
+    if re.match(r"^/([\w.]+/)?p/[\w-]+", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Instagram post or Reel.")
+
+
+def _tiktok(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/@[\w.-]+/video/\d+", path):
+        return Classification("video")
+    if re.match(r"^/@[\w.-]+/photo/\d+", path):
+        return Classification("photo")
+    if host.startswith(("vm.", "vt.")) or re.match(r"^/t/[\w-]+", path):
+        return Classification("short_link", needs_resolution=True)
+    raise _unsupported("Paste the link of a specific TikTok video or photo post.")
+
+
+def _youtube(host: str, path: str, q: dict) -> Classification:
+    if host == "youtu.be" and re.match(r"^/[\w-]{6,}$", path):
+        return Classification("video")
+    if re.match(r"^/shorts/[\w-]+", path):
+        return Classification("short")
+    if path == "/watch" and q.get("v"):
+        return Classification("video")
+    if re.match(r"^/(live|embed|v)/[\w-]+", path):
+        return Classification("video")
+    if path == "/playlist":
+        raise _unsupported("Playlists aren't supported. Paste the link of an individual video.")
+    raise _unsupported("Paste the link of a specific YouTube video or Short.")
+
+
+def _facebook(host: str, path: str, q: dict) -> Classification:
+    if host == "fb.watch":
+        return Classification("video", needs_resolution=True)
+    if re.match(r"^/share/[rv]/", path):
+        return Classification("reel" if "/r/" in path else "video", needs_resolution=True)
+    if re.search(r"/reel/\d+", path):
+        return Classification("reel")
+    if "/videos/" in path or (path == "/watch" and q.get("v")):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific public Facebook video or Reel.")
+
+
+def _x(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(\w+|i(/web)?)/status/\d+", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific post that contains a video, GIF or images.")
+
+
+def _pinterest(host: str, path: str, q: dict) -> Classification:
+    if host == "pin.it":
+        return Classification("pin", needs_resolution=True)
+    if re.match(r"^/pin/[\w-]+", path):
+        return Classification("pin")
+    raise _unsupported("Paste the link of a specific pin.")
+
+
+def _reddit(host: str, path: str, q: dict) -> Classification:
+    if host in ("v.redd.it", "redd.it"):
+        return Classification("post", needs_resolution=True)
+    if re.match(r"^/r/\w+/s/\w+", path):
+        return Classification("post", needs_resolution=True)
+    if re.search(r"/comments/\w+", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Reddit post.")
+
+
+def _vimeo(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(\d+|channels/[\w-]+/\d+|video/\d+|[\w-]+/[\w-]+/video/\d+)", path):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific Vimeo video.")
+
+
+def _dailymotion(host: str, path: str, q: dict) -> Classification:
+    if host == "dai.ly" and re.match(r"^/[a-z0-9]{5,}$", path, re.I):
+        return Classification("video")
+    if re.match(r"^/video/[a-z0-9]{5,}", path, re.I):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific Dailymotion video.")
+
+
+def _twitch(host: str, path: str, q: dict) -> Classification:
+    if host == "clips.twitch.tv" and re.match(r"^/[\w-]{6,}$", path):
+        return Classification("clip")
+    if re.match(r"^/[\w]+/clip/[\w-]{6,}$", path):
+        return Classification("clip")
+    raise _unsupported("Only Twitch clips are supported (not live streams or full broadcasts). Paste a clip link.")
+
+
+def _soundcloud(host: str, path: str, q: dict) -> Classification:
+    if host == "on.soundcloud.com":
+        return Classification("short_link", needs_resolution=True)
+    if re.match(r"^/[\w-]+/sets/", path):
+        raise _unsupported("Playlists aren't supported. Paste the link of a single track.")
+    if re.match(r"^/[\w-]+/[\w-]+$", path) and not re.match(r"^/[\w-]+/(tracks|albums|reposts|likes|followers|following|popular-tracks|comments|spotlight)$", path):
+        return Classification("track")
+    raise _unsupported("Paste the link of a specific SoundCloud track.")
+
+
+def _bluesky(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/profile/[\w.:-]+/post/[\w]+$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Bluesky post with a video.")
+
+
+def _streamable(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(e/|o/|s/)?[a-z0-9]{3,}$", path, re.I):
+        return Classification("video")
+    raise _unsupported("Paste the link of a specific Streamable video.")
+
+
+def _ninegag(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/gag/[a-zA-Z0-9]{5,}$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific 9GAG post.")
+
+
+def _kick(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/[\w-]+/clips/clip_[A-Za-z0-9]{10,}$", path) or (re.match(r"^/[\w-]+$", path) and re.match(r"^clip_[A-Za-z0-9]{10,}$", (q.get("clip") or [""])[0])):
+        return Classification("clip")
+    raise _unsupported("Only Kick clips are supported (not live streams or VODs). Paste a clip link.")
+
+
+def _linkedin(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/posts/[\w%.-]+$", path) or re.match(r"^/feed/update/urn:li:(activity|ugcPost):\d+$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a public LinkedIn post that contains a video.")
+
+
+def _medal(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/(games/[\w-]+/clips|clips?)/[\w-]{6,}", path):
+        return Classification("clip")
+    raise _unsupported("Paste the link of a specific Medal clip.")
+
+
+def _mixcloud(host: str, path: str, q: dict) -> Classification:
+    if re.match(r"^/[\w.-]+/[\w.%-]+$", path) and not re.match(r"^/[\w.-]+/(uploads|favorites|listens|playlists|followers|following|stream|reposts)$", path) \
+            and not path.startswith(("/discover/", "/live/", "/select/")):
+        return Classification("mix")
+    raise _unsupported("Paste the link of a specific Mixcloud show.")
+
+
+def _imgur(host: str, path: str, q: dict) -> Classification:
+    if host == "i.imgur.com" and re.match(r"^/[a-zA-Z0-9]{5,8}\.(gifv|mp4|jpe?g|png|gif|webp)$", path):
+        return Classification("media")
+    if re.match(r"^/(a|gallery)/[\w-]{5,}$", path):
+        return Classification("album")
+    if re.match(r"^/(?:[\w-]+-)?[a-zA-Z0-9]{5,8}$", path):
+        return Classification("post")
+    raise _unsupported("Paste the link of a specific Imgur post or album.")
+
+
+_PINTEREST_HOST = re.compile(r"(^|\.)pinterest\.(com|co\.uk|ca|com\.au|de|fr|es|it|jp|com\.mx|ph|nz|ie|at|ch|pt|se|dk|cl)$")
+
+PLATFORMS: dict[str, Platform] = {p.id: p for p in [
+    Platform("instagram", "Instagram", lambda h: _is(h, "instagram.com"), _instagram, ("instagram",), gallerydl_fallback=True),
+    Platform("tiktok", "TikTok", lambda h: _is(h, "tiktok.com"), _tiktok, ("tiktok", "vm.tiktok"),
+             short_link_hosts=("vm.tiktok.com", "vt.tiktok.com"), redirect_hosts=lambda h: _is(h, "tiktok.com")),
+    Platform("youtube", "YouTube", lambda h: _is(h, "youtube.com") or h == "youtu.be", _youtube, ("youtube",)),
+    Platform("facebook", "Facebook", lambda h: _is(h, "facebook.com") or h == "fb.watch", _facebook, ("facebook", "facebook:reel"),
+             short_link_hosts=("fb.watch", "www.facebook.com", "facebook.com", "m.facebook.com"),
+             redirect_hosts=lambda h: _is(h, "facebook.com") or h == "fb.watch"),
+    Platform("x", "X (Twitter)", lambda h: _is(h, "x.com") or _is(h, "twitter.com"), _x, ("twitter",), gallerydl_fallback=True),
+    Platform("pinterest", "Pinterest", lambda h: bool(_PINTEREST_HOST.search(h)) or h == "pin.it", _pinterest, ("pinterest",),
+             gallerydl_fallback=True, short_link_hosts=("pin.it",), redirect_hosts=lambda h: bool(_PINTEREST_HOST.search(h)) or h == "pin.it"),
+    Platform("reddit", "Reddit", lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it"), _reddit, ("reddit",),
+             gallerydl_fallback=True, short_link_hosts=("redd.it", "v.redd.it", "www.reddit.com", "reddit.com"),
+             redirect_hosts=lambda h: _is(h, "reddit.com") or h in ("redd.it", "v.redd.it"),
+             unavailable="Reddit downloads aren't available: Reddit currently refuses requests from our server. We don't use accounts to get around this."),
+    Platform("vimeo", "Vimeo", lambda h: _is(h, "vimeo.com"), _vimeo, ("vimeo",),
+             unavailable="Vimeo downloads aren't available: Vimeo now requires an account or serves DRM-protected streams to servers."),
+    Platform("dailymotion", "Dailymotion", lambda h: _is(h, "dailymotion.com") or h == "dai.ly", _dailymotion, ("dailymotion",)),
+    Platform("twitch", "Twitch", lambda h: _is(h, "twitch.tv"), _twitch, ("twitch:clips",)),
+    Platform("soundcloud", "SoundCloud", lambda h: _is(h, "soundcloud.com"), _soundcloud, ("soundcloud",),
+             short_link_hosts=("on.soundcloud.com",), redirect_hosts=lambda h: _is(h, "soundcloud.com")),
+    Platform("bluesky", "Bluesky", lambda h: h in ("bsky.app", "www.bsky.app"), _bluesky, ("bluesky",)),
+    Platform("streamable", "Streamable", lambda h: _is(h, "streamable.com"), _streamable, ("streamable",)),
+    Platform("9gag", "9GAG", lambda h: _is(h, "9gag.com"), _ninegag, ("9gag",)),
+    Platform("kick", "Kick", lambda h: _is(h, "kick.com"), _kick, ("kick:clips", "kick:clip")),
+    Platform("linkedin", "LinkedIn", lambda h: _is(h, "linkedin.com"), _linkedin, ("linkedin",)),
+    Platform("medal", "Medal", lambda h: _is(h, "medal.tv"), _medal, ("medaltv",)),
+    Platform("mixcloud", "Mixcloud", lambda h: _is(h, "mixcloud.com"), _mixcloud, ("mixcloud",)),
+    Platform("imgur", "Imgur", lambda h: _is(h, "imgur.com") or _is(h, "imgur.io"), _imgur, ("imgur", "imgur:album", "imgur:gallery"),
+             gallerydl_fallback=True),
+]}
+
+
+@dataclass(frozen=True)
+class ParsedUrl:
+    url: str
+    host: str
+    path: str
+    platform: Platform
+    classification: Classification
+
+
+def parse_media_url(raw: object) -> ParsedUrl:
+    """Validate a user-supplied URL and match it to a platform. Raises ApiError."""
+    if not isinstance(raw, str) or not raw.strip():
+        raise ApiError("invalid_request", "Paste a link first.")
+    raw = raw.strip()
+    if len(raw) > MAX_URL_LENGTH:
+        raise ApiError("invalid_request", "That link is too long.")
+    if any(ord(c) < 0x21 or ord(c) == 0x7F for c in raw):
+        raise ApiError("invalid_request", "That link contains invalid characters.")
+    if not re.match(r"^https?://", raw, re.I):
+        if re.match(r"^[a-z][a-z0-9+.-]*:", raw, re.I) and not re.match(r"^[\w.-]+\.[a-z]{2,}(:\d+)?(/|$)", raw, re.I):
+            raise ApiError("unsafe_url", "Only http and https links are supported.")
+        raw = "https://" + raw
+    try:
+        parts = urlsplit(raw)
+        port = parts.port
+    except ValueError:
+        raise ApiError("invalid_request", "That doesn't look like a valid link.") from None
+    if parts.scheme.lower() not in ("http", "https"):
+        raise ApiError("unsafe_url", "Only http and https links are supported.")
+    if parts.username or parts.password or "@" in parts.netloc:
+        raise ApiError("unsafe_url")
+    if port not in (None, 80, 443):
+        raise ApiError("unsafe_url")
+    host = (parts.hostname or "").lower().rstrip(".")
+    try:
+        host.encode("ascii")
+    except UnicodeEncodeError:
+        raise ApiError("unsupported_url") from None
+    if not host or "." not in host or re.match(r"^[\d.]+$", host) or ":" in host:
+        raise ApiError("unsafe_url")
+    platform = next((p for p in PLATFORMS.values() if p.matches_host(host)), None)
+    if platform is None:
+        raise ApiError("unsupported_url", f"{host} isn't a supported platform. Supported: {', '.join(p.name for p in PLATFORMS.values() if not p.unavailable)}.")
+    if platform.unavailable:
+        raise ApiError("unsupported_content", platform.unavailable, platform=platform.id)
+    path = re.sub(r"/+$", "", parts.path) or "/"
+    query: dict[str, list[str]] = {}
+    for kv in parts.query.split("&"):
+        if "=" in kv:
+            k, v = kv.split("=", 1)
+            query.setdefault(k, []).append(v)
+    try:
+        cls = platform.classify(host, path, query)
+    except ApiError as e:
+        e.platform = platform.id
+        raise
+    # Normalise: https, no fragment, no credentials, default port.
+    url = urlunsplit(("https", host, parts.path or "/", parts.query, ""))
+    return ParsedUrl(url=url, host=host, path=path, platform=platform, classification=cls)

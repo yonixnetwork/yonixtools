@@ -1,0 +1,10 @@
+# Runtime dependencies (pinned). Update yt-dlp regularly: platforms change often.
+fastapi==0.162.0
+starlette==1.10.0
+uvicorn==0.54.0
+httpx==0.28.1
+pydantic==2.13.4
+# [default] adds yt-dlp-ejs (YouTube challenge solving, needs a JS runtime: Deno)
+# [pin-curl-cffi] adds browser TLS impersonation (Vimeo, Reddit, others need it)
+yt-dlp[default,pin-curl-cffi]==2026.10.26
+gallery-dl==1.32.19
