@@ -2,7 +2,7 @@
 import { Archive, Download, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import { baseName, downloadZip, FileDrop, FileOrderList, fmtBytes, toBlob, uid } from "./files";
-import { downloadBlob, Field, Notice, Segmented } from "./ui";
+import { announceDownload, downloadBlob, Field, Notice, Segmented } from "./ui";
 import { imagesToPdf, MAX_PDF_BYTES, mergePdfs, optimizePdf, pageCount, parseRanges, rotatePdf, splitPdf, type PageSize, type PdfImage } from "@/lib/tools/pdf";
 
 type Picked = { id: string; name: string; size: number; file: File; note?: string };
@@ -282,7 +282,7 @@ export function PdfToImage() {
               <figure key={o.name}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img src={o.url} alt={`Page ${i + 1}`} loading="lazy" />
-                <a className="link" href={o.url} download={o.name}>Page {i + 1}</a>
+                <a className="link" href={o.url} download={o.name} onClick={() => announceDownload(o.name)}>Page {i + 1}</a>
               </figure>
             ))}
           </div>

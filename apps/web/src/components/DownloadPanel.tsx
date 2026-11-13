@@ -12,7 +12,8 @@ import { ACTIVE_PHASES, phaseText } from "@/lib/downloader/phases";
  *    the moment the file is ready, whatever the ad does;
  *  - never forced: it doesn't block the page; "Hide" keeps the download going, "Cancel"
  *    stops it; after the download starts it stays until the visitor closes it;
- *  - no advertising: the panel's placement is switched off centrally (lib/ads/placements.ts).
+ *  - one clearly labelled ad from the isolated ad origin, apart from the buttons (placement
+ *    "downloader.panel" in lib/ads/placements.ts). If no ad is available the space collapses.
  */
 export function DownloadPanel({ transfer: t, onCancel, onClose }: { transfer: Transfer; onCancel: () => void; onClose: () => void }) {
   const active = ACTIVE_PHASES.includes(t.phase);
@@ -48,7 +49,7 @@ export function DownloadPanel({ transfer: t, onCancel, onClose }: { transfer: Tr
           <span className={pct == null ? "indeterminate" : ""} style={pct == null ? undefined : { width: `${pct}%` }} />
         </span>
       )}
-      {/* Off in lib/ads/placements.ts (owner, 12 Nov): no ads on Download or while processing. */}
+      {/* One labelled ad while the file is prepared (owner request); the download never waits for it. */}
       <AdPlacement page="downloader" position="download-panel" className="dl-panel-ad" />
       <div className="dl-panel-actions">
         {active ? (

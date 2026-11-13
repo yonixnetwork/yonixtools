@@ -651,3 +651,4 @@ table.data tr:last-child td { border-bottom: 0; }
 .ad-slot[data-ad-state="filled"] { padding-top: 10px; border-top: 1px solid color-mix(in srgb, var(--border) 70%, transparent); }
 .ad-grid-break[data-ad-state="filled"], .dl-panel .ad-slot[data-ad-state="filled"] { border-top: 0; padding-top: 0; }
 .ad-off { display: none !important; }
+.dl-panel[hidden] { display: none; }

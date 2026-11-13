@@ -282,3 +282,13 @@ The release configuration is in `docs/PRODUCTION_RELEASE.md`. In short:
 - All tests share one address, and other tests' jobs were still running. The Cancel test's job, for one, keeps running on the server.
 - The test backend now allows 20 active jobs (`e2e-backend.sh`); production keeps 2. Ten consecutive runs passed afterwards.
 - **For real visitors:** Cancel stops a download only in the browser, so a visitor who cancels and quickly retries can see that message until the earlier job finishes. Recorded as a known issue.
+
+## 13. Download pop-up with an ad on every tool (owner request, 13 Nov 2026)
+
+**Correction:** my earlier "no ads on Download" reading was wrong. The owner wants the pop-up with an ad whenever a download starts, on all tools as on the social downloaders.
+- **Downloaders:** the panel's ad is back on (`downloader.panel`).
+- **Browser tools:** new `ToolDownloadPanel`. Every tool download goes through `downloadBlob`, which announces the saved file. The panel appears after the file has already been saved, with one labelled 300×250 ad.
+- **Limits:**
+  - nothing waits for the ad;
+  - the ad slot stays mounted while the panel is closed, so repeated downloads don't refresh it;
+  - no popup, new tab or redirect.

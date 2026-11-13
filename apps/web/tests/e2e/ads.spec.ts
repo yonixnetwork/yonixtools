@@ -288,3 +288,50 @@ test("download buttons never open a popup or new tab, even with an ad on the pag
   expect(opened).toEqual([]);
   expect(new URL(page.url()).pathname).toBe("/qr-code-generator/");
 });
+
+// Download pop-up on the browser tools (owner request): the same panel as on the downloaders.
+test("tool download pop-up: appears after a download with one labelled ad, never delays it, closes, and the ad loads once", async ({ page, context }) => {
+  const opened: string[] = [];
+  context.on("page", (p) => opened.push(p.url()));
+  const frames: string[] = [];
+  page.on("request", (r) => /ad-frame\.html\?u=banner300x250/.test(r.url()) && frames.push(r.url()));
+  await page.route("https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40", (r) => r.fulfill(stub(`document.write('<a href="https://example.com"><img width="300" height="250" src="${CREATIVE_300}"></a>')`)));
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/qr-code-generator/");
+  const panel = page.getByTestId("tool-download-panel");
+  await expect(panel).toHaveCount(0); // nothing, and no ad, before a download
+  await page.locator("#qr-text").fill("https://example.com");
+  const t0 = Date.now();
+  const [dl] = await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "PNG", exact: true }).click()]);
+  expect(Date.now() - t0).toBeLessThan(5_000); // no countdown, no waiting for the ad
+  expect(dl.suggestedFilename()).toMatch(/\.png$/);
+  await expect(panel).toBeVisible();
+  await expect(panel).toContainText("Download started");
+  const ad = panel.locator('aside[data-ad-unit="banner300x250"]');
+  await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
+  await expect(ad.locator(".ad-label")).toHaveText("Advertisement");
+  const inPanel = () => frames.filter((u) => !/s=$/.test(u)).length;
+  const before = inPanel();
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(panel).toBeHidden();
+  // A second download shows the panel again without reloading (refreshing) its ad.
+  await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "SVG", exact: true }).click()]);
+  await expect(panel).toBeVisible();
+  await page.waitForTimeout(800);
+  expect(inPanel()).toBe(before);
+  expect(opened).toEqual([]);
+  expect(new URL(page.url()).pathname).toBe("/qr-code-generator/");
+});
+
+test("tool download pop-up: with ads blocked it still confirms the download, with no empty box", async ({ page }) => {
+  await page.route("https://bellnewyork.org/**", (r) => r.abort("blockedbyclient"));
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/qr-code-generator/");
+  await page.locator("#qr-text").fill("https://example.com");
+  await Promise.all([page.waitForEvent("download"), page.getByRole("button", { name: "PNG", exact: true }).click()]);
+  const panel = page.getByTestId("tool-download-panel");
+  await expect(panel).toContainText("Download started");
+  await expect(panel.locator(".ad-label")).toBeHidden();
+  await panel.getByRole("button", { name: "Close", exact: true }).click();
+  await expect(panel).toBeHidden();
+});

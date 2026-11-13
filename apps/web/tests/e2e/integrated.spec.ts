@@ -160,9 +160,12 @@ test("Reddit and Vimeo links are refused with the reason, without calling the AP
   expect(apiCalls).toEqual([]);
 });
 
-// ── Download panel: progress while the file is prepared, Cancel / Hide. Owner rule (12 Nov
-//    2026, latest): no ads when Download is clicked or while it is processed. ──────────────
-test("download panel: progress while preparing, no ad, then 'Download started' until closed", async ({ page, context }) => {
+// ── Download panel (owner request, confirmed 12 Nov 2026): progress while the file is prepared,
+//    one labelled ad, Cancel / Hide. The download never waits for the ad. ──────────────────
+test("download panel: progress while preparing, one labelled ad, then 'Download started' until closed; no popup or new tab", async ({ page, context }) => {
+  await page.unroute("https://bellnewyork.org/**").catch(() => {});
+  await page.route("https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40", (r) => r.fulfill({ contentType: "application/javascript",
+    body: `document.write('<a href="https://example.com"><img width="300" height="250" src="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22300%22 height=%22250%22/%3E"></a>')` }));
   const opened: string[] = [];
   context.on("page", (p) => opened.push(p.url())); // a popup or new tab would show up here
   const adFrames: string[] = [];
@@ -182,14 +185,30 @@ test("download panel: progress while preparing, no ad, then 'Download started' u
   expect(download.suggestedFilename()).toMatch(/\.mp4$/);
   await expect(panel).toHaveAttribute("data-phase", /started|requested/, { timeout: 20_000 });
   await expect(panel).toContainText("Download started");
-  await expect(panel.locator("aside.ad-slot, iframe")).toHaveCount(0);
-  expect(adFrames.slice(before), "clicking Download opens no ad").toEqual([]);
+  const ad = panel.locator('aside[data-ad-unit="banner300x250"]');
+  await expect(ad).toHaveAttribute("data-ad-state", "filled", { timeout: 10_000 });
+  await expect(ad.locator(".ad-label")).toHaveText("Advertisement");
+  expect(adFrames.slice(before).length, "one ad frame for the panel, in the isolated origin").toBe(1);
   expect(opened, "clicking Download opens no popup or new tab").toEqual([]);
   expect(new URL(page.url()).pathname).toBe("/tiktok-downloader/"); // and never navigates away
   await page.waitForTimeout(1500);
   await expect(panel).toBeVisible(); // stays until the visitor closes it
   await panel.getByRole("button", { name: "Close", exact: true }).click();
   await expect(panel).toHaveCount(0);
+});
+
+test("download panel: the download never waits for the ad (ad script hangs)", async ({ page }) => {
+  await page.route("https://bellnewyork.org/22/620b3190e30ed523091b51770aea0b40", () => { /* never answers */ });
+  await page.goto("/tiktok-downloader/");
+  await page.locator("#dl-url").fill("https://www.tiktok.com/@creator/video/7350000000000000102");
+  await page.getByRole("button", { name: "Download", exact: true }).click();
+  const t0 = Date.now();
+  const [download] = await Promise.all([
+    page.waitForEvent("download", { timeout: 15_000 }),
+    page.locator(".media-result .format-item").nth(1).getByRole("button", { name: /Download 720p/ }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/\.mp4$/);
+  expect(Date.now() - t0).toBeLessThan(10_000);
 });
 
 test("download panel: Cancel stops a download that is still being prepared; no file is saved", async ({ page }) => {

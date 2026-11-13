@@ -14,7 +14,7 @@ export function AdPlacement({ page, position, monetag, className }: { page: Page
   return (
     <>
       {list.map((p) => (
-        <AdSlot key={p.id} placement={p.id} {...unitProps(p)} className={[deviceClass(p), formatClass(p), className].filter(Boolean).join(" ")} />
+        <AdSlot key={p.id} placement={p.id} {...unitProps(p)} duplicate={p.position === "download-panel"} className={[deviceClass(p), formatClass(p), className].filter(Boolean).join(" ")} />
       ))}
     </>
   );

@@ -4,7 +4,8 @@ import { LIMITS, PLACEMENTS, type Device, type PageType } from "@/lib/ads/placem
 // The central placement table keeps the owner's rules (12 Nov 2026).
 const PAGES: PageType[] = ["home", "tool", "downloader", "listing"];
 const DEVICES: Device[] = ["mobile", "desktop"];
-const on = PLACEMENTS.filter((p) => p.enabled);
+const all = PLACEMENTS.filter((p) => p.enabled);
+const on = all.filter((p) => p.position !== "download-panel"); // in the page itself; the pop-up is checked separately
 const units = (page: PageType, d: Device) => on.filter((p) => p.page === page && p.devices.includes(d)).map((p) => (p.format === "leaderboard" ? (d === "mobile" ? "banner320x50" : "banner728x90") : p.format));
 
 describe("central ad placements", () => {
@@ -24,9 +25,13 @@ describe("central ad placements", () => {
         expect(adsterra.length, adsterra.map((p) => p.id).join(", ")).toBeLessThanOrEqual(LIMITS.adsterraPerPage);
       });
 
-  it("never Monetag on the homepage or downloader pages, and the download panel has no ad", () => {
-    expect(on.filter((p) => p.network === "monetag" && (p.page === "home" || p.page === "downloader"))).toEqual([]);
-    expect(on.filter((p) => p.position === "download-panel")).toEqual([]);
+  it("never Monetag on the homepage or downloader pages", () => {
+    expect(all.filter((p) => p.network === "monetag" && (p.page === "home" || p.page === "downloader"))).toEqual([]);
+  });
+
+  it("the download pop-up has exactly one Adsterra 300x250 on tool and downloader pages, never Monetag", () => {
+    const panel = all.filter((p) => p.position === "download-panel");
+    expect(panel.map((p) => `${p.page}:${p.network}:${p.format}`).sort()).toEqual(["downloader:adsterra:banner300x250", "tool:adsterra:banner300x250"]);
   });
 
   it("the native unit is never shown on phones (it stacks into one tall column)", () => {

@@ -28,6 +28,16 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.download = filename;
   a.click(); // detached: page-level listeners (e.g. ad scripts) never see this click
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+  announceDownload(filename);
+}
+
+/** Tells the page's download panel (ToolDownloadPanel) that a file was just saved. The download itself never waits for it. */
+export function announceDownload(filename: string) {
+  try {
+    window.dispatchEvent(new CustomEvent("ytx:download", { detail: { filename } }));
+  } catch {
+    /* the panel is optional */
+  }
 }
 
 export function DownloadTextButton({ text, filename, label = "Download", type = "text/plain" }: { text: string; filename: string; label?: string; type?: string }) {

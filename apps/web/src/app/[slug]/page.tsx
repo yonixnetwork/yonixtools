@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Breadcrumbs } from "@/components/Breadcrumbs";
 import { AdPlacement } from "@/components/AdPlacement";
+import { ToolDownloadPanel } from "@/components/ToolDownloadPanel";
 import { Downloader } from "@/components/Downloader";
 import { PLATFORMS, unavailableMessage } from "@/lib/downloader/detect";
 import { PLATFORM_STATUS, STATE_LABEL } from "@/lib/downloader/platform-status";
@@ -95,6 +96,7 @@ export default async function ToolPage({ params }: Props) {
             </div>
           )}
           {isDownloader ? <Downloader expectedPlatform={tool.platform} /> : <ToolRenderer slug={tool.slug} />}
+          {!isDownloader && <ToolDownloadPanel ad={ads ? <AdPlacement page="tool" position="download-panel" className="dl-panel-ad" /> : null} />}
         </section>
 
         {/* Below the tool and its results, never between its controls. */}

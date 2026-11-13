@@ -8,8 +8,8 @@
  * Rules kept by this table (and enforced by tests/e2e/ad-spacing.spec.ts and
  * tests/unit/placements.test.ts):
  *  - never two ads next to each other: there is always page content between placements;
- *  - each zone at most once per page (no repeated units), at most one native unit;
- *  - at most LIMITS.adsterraPerPage (2) Adsterra ads per page per device;
+ *  - each zone at most once in the page (the download pop-up has its own 300x250), at most one native unit;
+ *  - at most LIMITS.adsterraPerPage (2) Adsterra ads in the page per device, plus the download pop-up's;
  *  - Monetag (In-Page Push, Vignette) OFF unless the administrator builds with MONETAG=on;
  *  - Monetag only where monetag-policy allows it (never on pages with the downloader);
  *  - no ads inside tools, over inputs, previews, quality choices or Download buttons.
@@ -42,7 +42,10 @@ export interface Placement {
 export const GRID_AD_AFTER = 6;
 export const GRID_AD_MIN = 9;
 
-/** Owner rule for the initial release (12 Nov 2026): at most TWO Adsterra placements per page. */
+/**
+ * Owner rules (12 Nov 2026): at most TWO Adsterra placements in the page itself, plus one in the
+ * download pop-up ("download-panel"), which appears only after the visitor starts a download.
+ */
 export const LIMITS = { adsterraPerPage: 2, nativePerPage: 1 } as const;
 
 export const PLACEMENTS: Placement[] = [
@@ -54,10 +57,12 @@ export const PLACEMENTS: Placement[] = [
   { id: "tool.before-tool", page: "tool", position: "before-tool", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "between the tool heading and the tool, with space; never inside the tool" },
   { id: "tool.after-tool", page: "tool", position: "after-tool", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "below the tool and its result, before the article" },
 
+  { id: "tool.panel", page: "tool", position: "download-panel", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "owner request: in the download pop-up after a tool saves a file; loads once per page view" },
+
   // Downloader pages: nothing over the URL box, preview, status or Download buttons; never Monetag.
   { id: "downloader.after-result", page: "downloader", position: "after-result", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "below the downloader and its completed results" },
   { id: "downloader.content", page: "downloader", position: "content-1", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "natural content position: between How to use and Features" },
-  { id: "downloader.panel", page: "downloader", position: "download-panel", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: false, note: "OFF (owner): no ads when Download is clicked or during processing" },
+  { id: "downloader.panel", page: "downloader", position: "download-panel", network: "adsterra", format: "banner300x250", devices: ["mobile", "desktop"], enabled: true, note: "owner request: in the download pop-up while the file is prepared; the download never waits for it" },
 
   // All tools and category pages: a clearly separated break between groups of tools (long lists), one after the list.
   { id: "listing.in-grid", page: "listing", position: "in-grid", network: "adsterra", format: "leaderboard", devices: ["mobile", "desktop"], enabled: true, note: "full-width break after the first 6 tools (lists of 9+: All tools, Developer, SEO)" },

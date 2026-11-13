@@ -10,7 +10,7 @@
 
 **Advertising**
 - **Network:** Adsterra is the only active one. Every ad runs in an isolated frame on `ads.yonixtools.com`.
-- **Placements:** at most two Adsterra ads per page, from the central table `apps/web/src/lib/ads/placements.ts`:
+- **Placements:** at most two Adsterra ads in the page itself (plus the download pop-up's), from the central table `apps/web/src/lib/ads/placements.ts`:
 
 | Page | Phone | Desktop |
 |---|---|---|
@@ -20,8 +20,14 @@
 | All tools; Developer and SEO categories (9+ tools) | full-width 320×50 after the first 6 tools · 300×250 after the list | 728×90 after 6 tools · native after the list |
 | Shorter categories | 300×250 after the list | native after the list |
 
-- **Download panel:** no ad.
-- **On Download clicks:** no popup, no new tab, no redirect.
+- **Download pop-up with an ad (owner request, 13 Nov):**
+  - **When it appears:** after a visitor starts a download, on the downloader pages and on every browser tool (PDF, image, QR, video, text and so on).
+  - **Downloaders:** the pop-up shows progress and Cancel/Hide, and the download starts as soon as the file is ready.
+  - **Browser tools:** the file saves instantly, then the pop-up confirms it ("Download started").
+  - **Ad:** one clearly labelled 300×250 Adsterra ad from the isolated origin. It loads once per page view, so repeated downloads don't refresh it.
+  - **No waiting:** nothing waits for the ad, and there is no countdown.
+  - **No popup, new tab or redirect:** none opens on Download; the pop-up is an on-page card the visitor can close.
+  - **Counts:** the pop-up's ad is in addition to the page's two.
 - **Never used:** Popunder, Smartlink, Social Bar.
 - **Empty slots** collapse completely.
 
