@@ -14,7 +14,7 @@ pass=0; fail=0
 expect() { # expect <ok|stop> <label> <dir> <commit> [extra args]
   local want="$1" label="$2"; shift 2
   local out rc; out="$(bash "$script" "$@" --dry-run 2>&1)"; rc=$?
-  if { [ "$want" = ok ] && [ $rc = 0 ] && grep -q "DRY RUN: guards passed" <<<"$out"; } || { [ "$want" = stop ] && [ $rc != 0 ] && grep "^STOP:" <<<"$out" | grep -qF -- "${WHY:-STOP:}"; }; then
+  if { [ "$want" = ok ] && [ $rc = 0 ] && grep -q "DRY RUN: guards passed, nothing deployed" <<<"$out"; } || { [ "$want" = stop ] && [ $rc != 0 ] && grep "^STOP:" <<<"$out" | grep -qF -- "${WHY:-STOP:}"; }; then
     echo "  PASS  $label"; pass=$((pass+1))
   else
     echo "  FAIL  $label (exit $rc)"; sed 's/^/        /' <<<"$out" | tail -5; fail=$((fail+1))
@@ -31,6 +31,14 @@ mk() { # a fresh clone at main with production-like untracked config
 d="$(mk ok)"; main="$(git -C "$d" rev-parse origin/main)"; merged="$(git -C "$d" rev-parse --verify -q 'origin/main~1^{commit}')"
 expect ok   "approved commit (main) passes all guards"            "$d" "$main"
 expect ok   "an older commit merged into main passes"              "$d" "$merged"
+# A real deployment needs the explicit --deploy flag: no flag, or a mistyped one, runs nothing.
+for flag in "" --dryrun --dry-run=1 deploy --DEPLOY; do
+  # shellcheck disable=SC2086  # an empty flag must really be absent
+  out="$(bash "$script" "$d" "$main" $flag 2>&1)"; rc=$?
+  if [ $rc != 0 ] && grep -q "^STOP: say what to do" <<<"$out" && ! grep -q "Guard 1" <<<"$out"; then echo "  PASS  refused before any guard: flag '${flag:-none}'"; pass=$((pass+1)); else echo "  FAIL  flag '${flag:-none}' (exit $rc)"; fail=$((fail+1)); fi
+done
+out="$(bash "$script" "$d" "$main" --dry-run --deploy 2>&1)"; rc=$?
+if [ $rc != 0 ] && grep -q "^STOP: too many arguments" <<<"$out"; then echo "  PASS  both flags together refused"; pass=$((pass+1)); else echo "  FAIL  both flags together (exit $rc)"; fail=$((fail+1)); fi
 WHY="full 40-character sha" expect stop "short sha refused"                                    "$d" "${main:0:7}"
 WHY="not found on origin" expect stop "unknown commit refused"                               "$d" 0000000000000000000000000000000000000000
 git -C "$d" -c user.email=t@t -c user.name=t commit -q --allow-empty -m "unmerged"; unmerged="$(git -C "$d" rev-parse HEAD)"

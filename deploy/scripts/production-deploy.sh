@@ -2,7 +2,9 @@
 # Production deployment of ONE approved commit, run ON THE SERVER (piped over SSH by
 # .github/workflows/deploy.yml, or by hand). Every guard runs before anything changes.
 #
-#   bash production-deploy.sh <checkout-dir> <full-commit-sha> [--dry-run]
+#   bash production-deploy.sh <checkout-dir> <full-commit-sha> --dry-run   # guards only
+#   bash production-deploy.sh <checkout-dir> <full-commit-sha> --deploy    # real deployment
+# One of the two flags is REQUIRED: without it nothing runs, so a forgotten flag can never deploy.
 #
 # Guards (each one stops the deploy):
 #  1. <checkout-dir> is the YoniXTools checkout: origin is yonixnetwork/yonixtools, the compose project
@@ -20,7 +22,8 @@
 #   GOOGLE_SITE_VERIFICATION=<code>
 #   BING_SITE_VERIFICATION=<code>
 # Any other line in it stops the deploy.
-# --dry-run: run guards 1–4 and print the plan; change nothing.
+# --dry-run: run guards 1–4 and print the plan. It changes no files, containers or images; it only
+# fetches from GitHub into this checkout's .git.
 set -euo pipefail
 DIR="${1:?checkout directory}"; COMMIT="${2:?commit sha}"; MODE="${3:-}"
 REPO_RE='^(https://github[.]com/|ssh://git@github[.]com/|git@github[.]com:|(git@)?github-yonixtools:)yonixnetwork/yonixtools([.]git)?/?$'
@@ -29,7 +32,8 @@ AD_ORIGIN=https://ads.yonixtools.com
 stop() { echo "STOP: $*" >&2; exit 1; }
 
 [[ "$COMMIT" =~ ^[0-9a-f]{40}$ ]] || stop "commit must be a full 40-character sha (got '$COMMIT')"
-[ -z "$MODE" ] || [ "$MODE" = --dry-run ] || stop "unknown option '$MODE'"
+[ "$MODE" = --dry-run ] || [ "$MODE" = --deploy ] || stop "say what to do: --dry-run (guards only) or --deploy (real deployment); got '${MODE:-nothing}'"
+[ "$#" -le 3 ] || stop "too many arguments"
 
 echo "==> Guard 1: this is the YoniXTools checkout, nothing else"
 case "$DIR" in *[Yy]onix[Aa]lpha*) stop "refusing a YonixAlpha path: $DIR";; esac
@@ -67,7 +71,7 @@ fi
 current="$(git rev-parse --short=7 HEAD)"
 echo "Plan: $current -> $short ($(git log -1 --format=%s "$COMMIT"))"
 echo "      site $SITE_URL, ads $AD_ORIGIN, Monetag off; only the 'yonixtools' compose project"
-if [ "$MODE" = --dry-run ]; then echo "DRY RUN: guards passed, nothing changed."; exit 0; fi
+if [ "$MODE" = --dry-run ]; then echo "DRY RUN: guards passed, nothing deployed (only this checkout's .git was updated by the fetch)."; exit 0; fi
 [ "$current" != "$short" ] || stop "$short is already checked out; nothing to deploy"
 
 echo "==> Backup (config, previous commit, image ids) and permanent rollback tags"

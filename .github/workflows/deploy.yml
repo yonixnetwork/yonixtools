@@ -91,7 +91,7 @@ jobs:
           USER: ${{ secrets.DEPLOY_USER }}
           DIR: ${{ secrets.DEPLOY_PATH }}
           SHA: ${{ needs.approve.outputs.sha }}
-        run: ssh -i ~/.ssh/id_deploy -o BatchMode=yes "$USER@$HOST" bash -s -- "$DIR" "$SHA" < deploy/scripts/production-deploy.sh
+        run: ssh -i ~/.ssh/id_deploy -o BatchMode=yes "$USER@$HOST" bash -s -- "$DIR" "$SHA" --deploy < deploy/scripts/production-deploy.sh
       - name: Verify the public site
         run: |
           set -uo pipefail

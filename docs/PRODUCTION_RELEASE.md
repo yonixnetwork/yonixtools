@@ -219,5 +219,10 @@ Then it:
 ```bash
 cd /opt/yonixtools && bash deploy/scripts/production-deploy.sh /opt/yonixtools "$(git rev-parse HEAD)" --dry-run
 ```
+The script requires either `--dry-run` or `--deploy`. Without one of them it does nothing, so a forgotten flag can never deploy. The dry run updates only this checkout's `.git` (a fetch from GitHub).
+```bash
+# real deployment by hand (the GitHub workflow passes --deploy itself):
+# bash deploy/scripts/production-deploy.sh /opt/yonixtools <full-commit-sha> --deploy
+```
 
-**Tests:** `deploy/tests/production-deploy-guards.sh` runs in CI and checks each refusal offline (21 cases).
+**Tests:** `deploy/tests/production-deploy-guards.sh` runs in CI and checks each refusal offline (27 cases).
