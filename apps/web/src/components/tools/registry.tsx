@@ -1,6 +1,7 @@
 "use client";
 import dynamic from "next/dynamic";
 import { useEffect, type ComponentType } from "react";
+import { useT } from "@/i18n/client";
 import type { toolComponentSlugs } from "./slugs";
 
 // Each category is its own chunk, so a tool page only downloads its own group's code.
@@ -19,7 +20,11 @@ const video = () => import("./VideoTools");
 const conv = () => import("./ConvertTools");
 const util = () => import("./UtilityTools");
 
-const loading = () => <div className="muted" style={{ padding: "48px 0", textAlign: "center" }}>Loading tool…</div>;
+function LoadingTool() {
+  const t = useT("tools-ui");
+  return <div className="muted" style={{ padding: "48px 0", textAlign: "center" }}>{t("loadingTool")}</div>;
+}
+const loading = () => <LoadingTool />;
 // Marks <html data-tool-ready> once the tool has hydrated and is interactive
 // (used by end-to-end tests; harmless otherwise).
 function withReady(C: ComponentType): ComponentType {

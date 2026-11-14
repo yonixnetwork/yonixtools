@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { contrast, convertBase, formatColor, formatInZone, offsetLabel, parseColor, parseTimestamp, wallTimeToInstant, zoneOffsetMinutes } from "@/lib/tools/convert";
+import { contrast, convertBase, displayDateLocale, formatColor, formatInZone, offsetLabel, parseColor, parseTimestamp, relativeTime, wallTimeToInstant, zoneOffsetMinutes } from "@/lib/tools/convert";
 import { aspectRatio, encodeWav, formatBytes, formatClock, randomIntegers } from "@/lib/tools/media";
 
 describe("colour converter", () => {
@@ -66,6 +66,18 @@ describe("time zone converter", () => {
     expect(wallTimeToInstant("2026-01-15T09:00", "Asia/Tokyo")!.toISOString()).toBe("2026-01-15T00:00:00.000Z");
     expect(formatInZone(new Date("2026-01-15T00:00:00Z"), "Europe/London")).toContain("00:00");
     expect(wallTimeToInstant("bad", "UTC")).toBeNull();
+  });
+  it("formats human-readable dates in the given locale", () => {
+    const d = new Date("2026-07-15T13:00:00Z");
+    expect(formatInZone(d, "Asia/Kolkata")).toContain("15 Jul 2026, 18:30"); // English keeps the British order
+    expect(formatInZone(d, "Asia/Kolkata", "en")).toBe(formatInZone(d, "Asia/Kolkata"));
+    expect(formatInZone(d, "Asia/Kolkata", "de")).toContain("18:30");
+    expect(formatInZone(d, "Asia/Kolkata", "de")).not.toBe(formatInZone(d, "Asia/Kolkata"));
+    expect(displayDateLocale("en")).toBe("en-GB");
+    expect(displayDateLocale("fr")).toBe("fr");
+    const now = Date.UTC(2026, 0, 10);
+    expect(relativeTime(new Date(now + 3 * 86400000), now)).toBe("in 3 days");
+    expect(relativeTime(new Date(now - 86400000), now, "es")).toBe("ayer");
   });
 });
 

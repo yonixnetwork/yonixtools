@@ -104,12 +104,13 @@ export function parseTimestamp(input: string): { date: Date; unit: "seconds" | "
   return Number.isNaN(d.getTime()) ? null : { date: d, unit: "date" };
 }
 
-export function relativeTime(d: Date, now = Date.now()): string {
+/** "in 3 days" / "2 hours ago", in `locale` (default English). */
+export function relativeTime(d: Date, now = Date.now(), locale = "en"): string {
   const diff = Math.round((d.getTime() - now) / 1000);
   const abs = Math.abs(diff);
   const units: Array<[Intl.RelativeTimeFormatUnit, number]> = [["year", 31536000], ["month", 2592000], ["day", 86400], ["hour", 3600], ["minute", 60], ["second", 1]];
   const [unit, size] = units.find(([, sz]) => abs >= sz) ?? ["second", 1];
-  return new Intl.RelativeTimeFormat("en", { numeric: "auto" }).format(Math.round(diff / size), unit);
+  return new Intl.RelativeTimeFormat(locale, { numeric: "auto" }).format(Math.round(diff / size), unit);
 }
 
 // ── Number bases ─────────────────────────────────────────────────────────────
@@ -159,8 +160,15 @@ export function wallTimeToInstant(local: string, zone: string): Date | null {
   return new Date(t);
 }
 
-export function formatInZone(instant: Date, zone: string): string {
-  return new Intl.DateTimeFormat("en-GB", { timeZone: zone, weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(instant);
+/**
+ * Locale for human-readable date displays: English uses British day-month order ("15 Jul 2026, 18:30"),
+ * every other locale uses its own conventions.
+ */
+export const displayDateLocale = (locale = "en") => (locale === "en" ? "en-GB" : locale);
+
+/** Human-readable date and time of `instant` in `zone`, for display (not parsing). */
+export function formatInZone(instant: Date, zone: string, locale = "en"): string {
+  return new Intl.DateTimeFormat(displayDateLocale(locale), { timeZone: zone, weekday: "short", day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(instant);
 }
 
 export function offsetLabel(minutes: number): string {

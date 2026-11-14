@@ -2,6 +2,9 @@
 import { Download, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { downloadBlob, Field, Notice, NumberInput, Segmented } from "./ui";
+import { useFormat, useT } from "@/i18n/client";
+import { isUserError, UserError } from "@/i18n/errors";
+import type { Vars } from "@/i18n/format";
 
 type Mode = "compress" | "resize" | "convert";
 type OutType = "image/jpeg" | "image/png" | "image/webp";
@@ -25,7 +28,7 @@ interface Result {
   requested: OutType;
 }
 
-const fmtBytes = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(2)} MB` : `${(n / 1000).toFixed(1)} kB`);
+type Err = { key: string; vars?: Vars } | null;
 
 async function decode(file: File): Promise<Source> {
   const url = URL.createObjectURL(file);
@@ -41,7 +44,7 @@ async function decode(file: File): Promise<Source> {
   img.decoding = "async";
   img.src = url;
   await img.decode().catch(() => {
-    throw new Error("This file couldn't be opened as an image in your browser.");
+    throw new UserError("image.errorDecode");
   });
   return { file, bitmap: img, width: img.naturalWidth, height: img.naturalHeight, url };
 }
@@ -51,7 +54,7 @@ function encode(src: Source, w: number, h: number, type: OutType, quality: numbe
   canvas.width = w;
   canvas.height = h;
   const ctx = canvas.getContext("2d");
-  if (!ctx) throw new Error("Your browser couldn't create a drawing canvas.");
+  if (!ctx) throw new UserError("image.errorCanvas");
   if (type === "image/jpeg") {
     ctx.fillStyle = background;
     ctx.fillRect(0, 0, w, h);
@@ -59,7 +62,7 @@ function encode(src: Source, w: number, h: number, type: OutType, quality: numbe
   ctx.imageSmoothingEnabled = true;
   ctx.imageSmoothingQuality = "high";
   ctx.drawImage(src.bitmap, 0, 0, w, h);
-  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new Error("The browser failed to encode the image."))), type, quality));
+  return new Promise((resolve, reject) => canvas.toBlob((b) => (b ? resolve(b) : reject(new UserError("image.errorEncode"))), type, quality));
 }
 
 function defaultType(file: File, mode: Mode): OutType {
@@ -69,8 +72,10 @@ function defaultType(file: File, mode: Mode): OutType {
 }
 
 export function ImageTool({ mode }: { mode: Mode }) {
+  const t = useT("tools-image");
+  const f = useFormat();
   const [src, setSrc] = useState<Source | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState<Err>(null);
   const [drag, setDrag] = useState(false);
   const [type, setType] = useState<OutType>("image/jpeg");
   const [quality, setQuality] = useState(mode === "compress" ? 75 : 92);
@@ -83,23 +88,23 @@ export function ImageTool({ mode }: { mode: Mode }) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   const load = async (file?: File | null) => {
-    setError("");
+    setError(null);
     setResult(null);
     if (!file) return;
     if (!file.type.startsWith("image/") && !/\.(heic|heif|avif)$/i.test(file.name)) {
-      setError("That file isn't an image. Choose a JPG, PNG, WebP, GIF or BMP file.");
+      setError({ key: "image.errorNotImage" });
       return;
     }
     try {
       const s = await decode(file);
-      if (s.width * s.height > MAX_PIXELS) throw new Error(`This image is ${s.width}×${s.height} pixels, which is too large to process safely in a browser.`);
+      if (s.width * s.height > MAX_PIXELS) throw new UserError("image.errorTooLarge", { width: String(s.width), height: String(s.height) });
       if (src) URL.revokeObjectURL(src.url);
       setSrc(s);
       setType(defaultType(file, mode));
       setWidth(String(s.width));
       setHeight(String(s.height));
     } catch (e) {
-      setError(/HEIC|heif/i.test(file.name) ? "Your browser can't open HEIC images. Try Safari, or convert on your phone first." : (e as Error).message || "This image couldn't be opened.");
+      setError(/HEIC|heif/i.test(file.name) ? { key: "image.errorHeic" } : isUserError(e) ? { key: e.key, vars: e.vars } : { key: "image.errorOpen" });
     }
   };
 
@@ -113,7 +118,7 @@ export function ImageTool({ mode }: { mode: Mode }) {
     }
     let alive = true;
     setBusy(true);
-    const t = setTimeout(async () => {
+    const timer = setTimeout(async () => {
       try {
         const blob = await encode(src, w, h, type, type === "image/png" ? undefined : quality / 100, background);
         if (!alive) return;
@@ -121,16 +126,16 @@ export function ImageTool({ mode }: { mode: Mode }) {
           if (prev) URL.revokeObjectURL(prev.url);
           return { blob, url: URL.createObjectURL(blob), width: w, height: h, requested: type };
         });
-        setError("");
+        setError(null);
       } catch (e) {
-        if (alive) setError((e as Error).message);
+        if (alive) setError(isUserError(e) ? { key: e.key, vars: e.vars } : { key: "image.errorEncode" });
       } finally {
         if (alive) setBusy(false);
       }
     }, 250);
     return () => {
       alive = false;
-      clearTimeout(t);
+      clearTimeout(timer);
     };
   }, [src, width, height, type, quality, background]);
 
@@ -172,33 +177,33 @@ export function ImageTool({ mode }: { mode: Mode }) {
         }}
       >
         <Upload aria-hidden />
-        <strong>{src ? src.file.name : "Choose an image or drop it here"}</strong>
+        <strong>{src ? src.file.name : t("image.choose")}</strong>
         <span className="muted" style={{ fontSize: "0.88rem" }}>
-          {src ? `${src.width}×${src.height} · ${fmtBytes(src.file.size)} · click to change` : "JPG, PNG, WebP, GIF, BMP. Processed on your device, never uploaded."}
+          {src ? t("image.sourceInfo", { width: String(src.width), height: String(src.height), size: f.bytes(src.file.size) }) : t("image.chooseHint")}
         </span>
         <input ref={inputRef} type="file" accept="image/*" hidden onChange={(e) => load(e.target.files?.[0])} data-testid="image-input" />
       </div>
 
-      {error && <Notice kind="error">{error}</Notice>}
+      {error && <Notice kind="error">{t(error.key, error.vars)}</Notice>}
 
       {src && (
         <>
           <div className="form-grid cols-2">
-            <Field label="Output format">
+            <Field label={t("image.outputFormat")}>
               <Segmented
-                label="Output format"
+                label={t("image.outputFormat")}
                 value={type}
                 onChange={setType}
-                options={(mode === "compress" ? (["image/jpeg", "image/webp"] as OutType[]) : (["image/jpeg", "image/png", "image/webp"] as OutType[])).map((t) => ({ value: t, label: EXT[t].toUpperCase() }))}
+                options={(mode === "compress" ? (["image/jpeg", "image/webp"] as OutType[]) : (["image/jpeg", "image/png", "image/webp"] as OutType[])).map((o) => ({ value: o, label: EXT[o].toUpperCase() }))}
               />
             </Field>
             {type !== "image/png" && (
-              <Field label={`Quality: ${quality}%`} htmlFor="img-q" hint={mode === "compress" ? "70–85% is a good balance between size and quality." : undefined}>
+              <Field label={t("image.quality", { quality })} htmlFor="img-q" hint={mode === "compress" ? t("image.qualityHint") : undefined}>
                 <input id="img-q" type="range" min={10} max={100} value={quality} onChange={(e) => setQuality(+e.target.value)} />
               </Field>
             )}
             {type === "image/jpeg" && (mode === "convert" || src.file.type === "image/png") && (
-              <Field label="Background for transparent areas" htmlFor="img-bg">
+              <Field label={t("image.background")} htmlFor="img-bg">
                 <input id="img-bg" type="color" value={background} onChange={(e) => setBackground(e.target.value)} />
               </Field>
             )}
@@ -207,54 +212,54 @@ export function ImageTool({ mode }: { mode: Mode }) {
           {(mode === "resize" || mode === "compress") && (
             <div className="stack">
               <div className="form-grid cols-3" style={{ alignItems: "end" }}>
-                <Field label="Width (px)" htmlFor="img-w">
+                <Field label={t("image.width")} htmlFor="img-w">
                   <NumberInput id="img-w" value={width} onChange={setW} min={1} max={16384} step={1} />
                 </Field>
-                <Field label="Height (px)" htmlFor="img-h">
+                <Field label={t("image.height")} htmlFor="img-h">
                   <NumberInput id="img-h" value={height} onChange={setH} min={1} max={16384} step={1} />
                 </Field>
                 <label className="check" style={{ height: 44 }}>
-                  <input type="checkbox" checked={lock} onChange={(e) => setLock(e.target.checked)} /> Keep aspect ratio
+                  <input type="checkbox" checked={lock} onChange={(e) => setLock(e.target.checked)} /> {t("image.keepAspect")}
                 </label>
               </div>
               <div className="row" style={{ gap: 6 }}>
                 {[25, 50, 75, 100].map((p) => (
                   <button key={p} type="button" className="chip" onClick={() => scale(p)}>
-                    {p}%
+                    {f.number(p / 100, { style: "percent" })}
                   </button>
                 ))}
               </div>
             </div>
           )}
 
-          {encoderFallback && <Notice kind="warn">Your browser can&apos;t encode {EXT[result!.requested].toUpperCase()}, so the output is {result!.blob.type.replace("image/", "").toUpperCase()}.</Notice>}
+          {encoderFallback && <Notice kind="warn">{t("image.encoderFallback", { requested: EXT[result!.requested].toUpperCase(), actual: result!.blob.type.replace("image/", "").toUpperCase() })}</Notice>}
 
           <div className="stat-grid">
             <div className="stat">
-              <div className="v">{fmtBytes(src.file.size)}</div>
-              <div className="k">Original</div>
+              <div className="v">{f.bytes(src.file.size)}</div>
+              <div className="k">{t("image.original")}</div>
             </div>
             <div className="stat">
-              <div className="v" data-testid="output-size">{result ? fmtBytes(result.blob.size) : busy ? "…" : "—"}</div>
-              <div className="k">Result</div>
+              <div className="v" data-testid="output-size">{result ? f.bytes(result.blob.size) : busy ? "…" : "—"}</div>
+              <div className="k">{t("image.result")}</div>
             </div>
             <div className="stat">
-              <div className="v" style={{ color: saving > 0 ? "var(--success)" : undefined }}>{result ? `${saving >= 0 ? "−" : "+"}${Math.abs(saving * 100).toFixed(0)}%` : "—"}</div>
-              <div className="k">Size change</div>
+              <div className="v" style={{ color: saving > 0 ? "var(--success)" : undefined }}>{result ? `${saving >= 0 ? "−" : "+"}${f.number(Math.abs(saving), { style: "percent", maximumFractionDigits: 0 })}` : "—"}</div>
+              <div className="k">{t("image.sizeChange")}</div>
             </div>
             <div className="stat">
               <div className="v">{result ? `${result.width}×${result.height}` : "—"}</div>
-              <div className="k">Dimensions</div>
+              <div className="k">{t("image.dimensions")}</div>
             </div>
           </div>
-          {result && saving < 0 && mode === "compress" && <Notice kind="info">The result is larger than the original, which was already well compressed. Lower the quality or the dimensions, or keep the original.</Notice>}
+          {result && saving < 0 && mode === "compress" && <Notice kind="info">{t("image.largerThanOriginal")}</Notice>}
 
           {result && (
             <div className="row" style={{ justifyContent: "space-between" }}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={result.url} alt="Processed image preview" style={{ maxHeight: 220, width: "auto", borderRadius: 10, border: "1px solid var(--border)" }} />
+              <img src={result.url} alt={t("image.previewAlt")} style={{ maxHeight: 220, width: "auto", borderRadius: 10, border: "1px solid var(--border)" }} />
               <button type="button" className="btn btn-primary" onClick={() => downloadBlob(result.blob, outName)}>
-                <Download aria-hidden /> Download {EXT[(result.blob.type as OutType)] ? EXT[result.blob.type as OutType].toUpperCase() : ""}
+                <Download aria-hidden /> {t("image.download", { format: EXT[result.blob.type as OutType] ? EXT[result.blob.type as OutType].toUpperCase() : "" })}
               </button>
             </div>
           )}

@@ -1,9 +1,11 @@
+import type { Translator } from "@/i18n/translator";
 import type { Job } from "./client";
 
 /** What one clicked quality is doing, as shown next to it. */
 export type Phase = "queued" | "downloading" | "processing" | "starting" | "started" | "requested" | "failed" | "cancelled";
 export const ACTIVE_PHASES: readonly Phase[] = ["queued", "downloading", "processing", "starting"];
 
+/** English (logs/tests); the UI uses phaseLabel. */
 export function phaseText(t: { phase: Phase; progress?: number }): string {
   switch (t.phase) {
     case "queued":
@@ -22,6 +24,23 @@ export function phaseText(t: { phase: Phase; progress?: number }): string {
       return "Cancelled";
     default:
       return "Failed";
+  }
+}
+
+/** phaseText in the visitor's language, with a translator for the "downloader" namespace. */
+export function phaseLabel(tr: Translator, t: { phase: Phase; progress?: number }): string {
+  switch (t.phase) {
+    case "downloading":
+      return t.progress != null && t.progress > 0 ? tr("phase.downloadingPercent", { percent: Math.round(t.progress) }) : tr("phase.downloading");
+    case "queued":
+    case "processing":
+    case "starting":
+    case "started":
+    case "requested":
+    case "cancelled":
+      return tr(`phase.${t.phase}`);
+    default:
+      return tr("phase.failed");
   }
 }
 

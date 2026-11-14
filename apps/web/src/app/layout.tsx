@@ -6,6 +6,9 @@ import { Header, type NavCategory } from "@/components/Header";
 import { InstallPrompt } from "@/components/InstallPrompt";
 import { categories, toolsInCategory } from "@/lib/registry";
 import { ThemeScript } from "@/components/ThemeScript";
+import { I18nProvider } from "@/i18n/client";
+import { clientMessages } from "@/i18n/server";
+import { NAMESPACES } from "@/i18n/namespaces";
 import { OG_IMAGE } from "@/lib/seo";
 import { categoryPath, site, toolPath } from "@/lib/site";
 
@@ -52,6 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <ThemeScript />
       </head>
       <body>
+        <I18nProvider locale="en" messages={clientMessages("en", NAMESPACES.filter((n) => n.client).map((n) => n.id))}>
         <a href="#main" className="skip-link">
           Skip to content
         </a>
@@ -59,6 +63,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <main id="main">{children}</main>
         <Footer />
         <InstallPrompt version={BUILD_VERSION} />
+        </I18nProvider>
       </body>
     </html>
   );

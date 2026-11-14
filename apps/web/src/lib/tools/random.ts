@@ -1,3 +1,5 @@
+import { UserError } from "@/i18n/errors";
+
 type RandomSource = (buf: Uint32Array) => Uint32Array;
 const defaultSource: RandomSource = (buf) => crypto.getRandomValues(buf);
 
@@ -39,7 +41,7 @@ export function passwordSets(o: PasswordOptions): string[] {
 
 export function generatePassword(o: PasswordOptions, source: RandomSource = defaultSource): string {
   const sets = passwordSets(o);
-  if (!sets.length) throw new Error("Select at least one character type.");
+  if (!sets.length) throw new UserError("password.noCharTypes", undefined, "Select at least one character type.");
   const length = Math.max(sets.length, Math.min(256, Math.floor(o.length)));
   const all = sets.join("");
   const chars = sets.map((s) => s[randomInt(s.length, source)]);
@@ -57,6 +59,10 @@ export function passwordEntropyBits(o: PasswordOptions): number {
   return pool ? o.length * Math.log2(pool) : 0;
 }
 
+/**
+ * Strength of a password. `level` is the stable identifier to translate in the UI (0 weak … 3 very strong);
+ * `label` is the English text, kept for compatibility and logs.
+ */
 export function strengthLabel(bits: number): { label: string; level: 0 | 1 | 2 | 3 } {
   if (bits < 50) return { label: "Weak", level: 0 };
   if (bits < 75) return { label: "Fair", level: 1 };
