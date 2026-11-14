@@ -2,15 +2,19 @@
 import { Camera, ExternalLink, Upload } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { CopyButton, Notice, Segmented } from "./ui";
+import { useT } from "@/i18n/client";
 
 type JsQR = typeof import("jsqr").default;
 let jsqrPromise: Promise<JsQR> | null = null;
 const loadJsQR = () => (jsqrPromise ??= import("jsqr").then((m) => m.default));
 
-function describe(text: string): { kind: string; detail?: string; url?: string } {
+type Kind = "link" | "wifi" | "contact" | "email" | "phone" | "text";
+
+/** `kind` is a stable id; the UI shows tools-scan "scan.kind.<kind>". */
+function describe(text: string): { kind: Kind; detail?: string; url?: string } {
   if (/^https?:\/\//i.test(text)) {
     try {
-      return { kind: "Link", url: new URL(text).toString(), detail: new URL(text).hostname };
+      return { kind: "link", url: new URL(text).toString(), detail: new URL(text).hostname };
     } catch {
       /* fall through */
     }
@@ -18,12 +22,12 @@ function describe(text: string): { kind: string; detail?: string; url?: string }
   if (/^WIFI:/i.test(text)) {
     const ssid = /S:((?:\\.|[^;])*)/.exec(text)?.[1]?.replace(/\\(.)/g, "$1");
     const type = /T:([^;]*)/.exec(text)?.[1];
-    return { kind: "Wi-Fi network", detail: `${ssid ?? "?"}${type ? ` (${type})` : ""}` };
+    return { kind: "wifi", detail: `${ssid ?? "?"}${type ? ` (${type})` : ""}` };
   }
-  if (/^BEGIN:VCARD/i.test(text)) return { kind: "Contact card", detail: /FN:(.*)/.exec(text)?.[1]?.trim() };
-  if (/^mailto:/i.test(text)) return { kind: "Email address", detail: text.slice(7) };
-  if (/^tel:/i.test(text)) return { kind: "Phone number", detail: text.slice(4) };
-  return { kind: "Text" };
+  if (/^BEGIN:VCARD/i.test(text)) return { kind: "contact", detail: /FN:(.*)/.exec(text)?.[1]?.trim() };
+  if (/^mailto:/i.test(text)) return { kind: "email", detail: text.slice(7) };
+  if (/^tel:/i.test(text)) return { kind: "phone", detail: text.slice(4) };
+  return { kind: "text" };
 }
 
 function decodeCanvas(jsQR: JsQR, canvas: HTMLCanvasElement): string | null {
@@ -33,9 +37,10 @@ function decodeCanvas(jsQR: JsQR, canvas: HTMLCanvasElement): string | null {
 }
 
 export function QrScanner() {
+  const t = useT("tools-scan");
   const [mode, setMode] = useState<"image" | "camera">("image");
   const [result, setResult] = useState<string | null>(null);
-  const [error, setError] = useState("");
+  const [error, setError] = useState(""); // translation key, "" = none
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -55,7 +60,7 @@ export function QrScanner() {
     setError("");
     setResult(null);
     if (!file) return;
-    if (!file.type.startsWith("image/")) return setError("Choose an image file (PNG, JPG, screenshot…).");
+    if (!file.type.startsWith("image/")) return setError("scan.errorNotImage");
     try {
       const [jsQR, bitmap] = await Promise.all([loadJsQR(), createImageBitmap(file)]);
       // Try the original size, then downscaled copies (helps with very large photos).
@@ -68,16 +73,16 @@ export function QrScanner() {
         const text = decodeCanvas(jsQR, c);
         if (text !== null) return setResult(text);
       }
-      setError("No QR code was found in this image. Try a sharper, closer or better-lit picture.");
+      setError("scan.errorNotFound");
     } catch {
-      setError("This image couldn't be opened.");
+      setError("scan.errorOpen");
     }
   };
 
   const startCamera = async () => {
     setError("");
     setResult(null);
-    if (!navigator.mediaDevices?.getUserMedia) return setError("Your browser doesn't support camera access here. Upload an image instead.");
+    if (!navigator.mediaDevices?.getUserMedia) return setError("scan.errorNoCameraSupport");
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" }, audio: false });
       streamRef.current = stream;
@@ -107,46 +112,46 @@ export function QrScanner() {
     } catch (e) {
       stop();
       const name = (e as { name?: string }).name;
-      setError(name === "NotAllowedError" ? "Camera permission was denied. Allow camera access in your browser settings, or upload an image." : name === "NotFoundError" ? "No camera was found. Upload an image instead." : "The camera couldn't be started. Upload an image instead.");
+      setError(name === "NotAllowedError" ? "scan.errorPermission" : name === "NotFoundError" ? "scan.errorNoCamera" : "scan.errorCamera");
     }
   };
 
   const info = result !== null ? describe(result) : null;
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <Segmented label="Source" value={mode} onChange={(m) => (setMode(m), setResult(null), setError(""))} options={[{ value: "image", label: "Upload image" }, { value: "camera", label: "Use camera" }]} />
+      <Segmented label={t("scan.source")} value={mode} onChange={(m) => (setMode(m), setResult(null), setError(""))} options={[{ value: "image", label: t("scan.upload") }, { value: "camera", label: t("scan.useCamera") }]} />
       {mode === "image" ? (
         <label className="dropzone">
           <Upload aria-hidden />
-          <strong>Choose an image with a QR code</strong>
-          <span className="muted" style={{ fontSize: "0.88rem" }}>Screenshots and photos work. Decoded on your device.</span>
+          <strong>{t("scan.choose")}</strong>
+          <span className="muted" style={{ fontSize: "0.88rem" }}>{t("scan.chooseHint")}</span>
           <input ref={inputRef} type="file" accept="image/*" hidden data-testid="qr-input" onChange={(e) => fromFile(e.target.files?.[0])} />
         </label>
       ) : (
         <div className="stack">
-          <video ref={videoRef} className="scanner-video" muted playsInline style={{ display: scanning ? "block" : "none" }} aria-label="Camera preview" />
+          <video ref={videoRef} className="scanner-video" muted playsInline style={{ display: scanning ? "block" : "none" }} aria-label={t("scan.cameraPreview")} />
           <div className="row">
             {!scanning ? (
-              <button type="button" className="btn btn-primary" onClick={startCamera}><Camera aria-hidden /> Start camera</button>
+              <button type="button" className="btn btn-primary" onClick={startCamera}><Camera aria-hidden /> {t("scan.startCamera")}</button>
             ) : (
-              <button type="button" className="btn" onClick={stop}>Stop camera</button>
+              <button type="button" className="btn" onClick={stop}>{t("scan.stopCamera")}</button>
             )}
-            {scanning && <span className="muted">Point the camera at a QR code…</span>}
+            {scanning && <span className="muted">{t("scan.pointCamera")}</span>}
           </div>
         </div>
       )}
-      {error && <Notice kind="error">{error}</Notice>}
+      {error && <Notice kind="error">{t(error)}</Notice>}
       {info && result !== null && (
         <div className="card card-pad stack" style={{ boxShadow: "none" }} aria-live="polite">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <strong>{info.kind}{info.detail ? `: ${info.detail}` : ""}</strong>
+            <strong>{info.detail ? t("scan.kindDetail", { kind: t(`scan.kind.${info.kind}`), detail: info.detail }) : t(`scan.kind.${info.kind}`)}</strong>
             <CopyButton text={result} />
           </div>
           <pre className="mono" style={{ margin: 0, whiteSpace: "pre-wrap", wordBreak: "break-all", fontSize: "0.9rem" }} data-testid="qr-result">{result}</pre>
           {info.url && (
             <div>
-              <a className="btn btn-sm" href={info.url} target="_blank" rel="noopener noreferrer nofollow"><ExternalLink aria-hidden /> Open link</a>
-              <p className="muted" style={{ fontSize: "0.82rem", marginTop: 6 }}>Check the address before opening links from QR codes you don&apos;t trust.</p>
+              <a className="btn btn-sm" href={info.url} target="_blank" rel="noopener noreferrer nofollow"><ExternalLink aria-hidden /> {t("scan.openLink")}</a>
+              <p className="muted" style={{ fontSize: "0.82rem", marginTop: 6 }}>{t("scan.linkWarning")}</p>
             </div>
           )}
         </div>

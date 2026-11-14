@@ -16,6 +16,7 @@
   "meta.siteName": "Site name",
   "meta.titlePlaceholder": "Free QR Code Generator – PNG & SVG",
   "meta.twitterHandle": "X / Twitter handle",
+  "meta.twitterPlaceholder": "@yourbrand",
   "meta.website": "Website",
   "robots.addRule": "Add crawler rule",
   "robots.allCrawlers": "All crawlers (User-agent: *)",

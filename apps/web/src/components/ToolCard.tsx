@@ -1,14 +1,17 @@
+"use client";
 import { Clock } from "lucide-react";
 import { ToolIcon } from "./Icon";
 import { toolPath } from "@/lib/site";
 import type { ToolCardData } from "@/lib/registry/cards";
 import { isAvailable } from "@/lib/registry/availability";
+import { useT } from "@/i18n/client";
 
 export function StatusBadge({ tool }: { tool: Pick<ToolCardData, "status"> }) {
+  const t = useT("common");
   if (!isAvailable(tool))
     return (
       <span className="badge badge-pending">
-        <Clock aria-hidden /> Coming soon
+        <Clock aria-hidden /> {t("card.comingSoon")}
       </span>
     );
   return null;
@@ -17,7 +20,7 @@ export function StatusBadge({ tool }: { tool: Pick<ToolCardData, "status"> }) {
 export function ToolCard({ tool, headingLevel = 3 }: { tool: ToolCardData; headingLevel?: 2 | 3 }) {
   const H = `h${headingLevel}` as "h2" | "h3";
   return (
-    <a className="tool-card" href={toolPath(tool.slug)}>
+    <a className="tool-card" href={tool.href ?? toolPath(tool.slug)}>
       <ToolIcon tool={tool} />
       <div style={{ minWidth: 0 }}>
         <H>{tool.name}</H>

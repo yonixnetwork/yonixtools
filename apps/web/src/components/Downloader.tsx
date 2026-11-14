@@ -6,7 +6,6 @@ import { detectUrl, PLATFORMS } from "@/lib/downloader/detect";
 import { useFormat, useT } from "@/i18n/client";
 import { isUserError } from "@/i18n/errors";
 import type { Vars } from "@/i18n/format";
-import type { Translator } from "@/i18n/translator";
 import { DownloadPanel } from "./DownloadPanel";
 import { errorMessageKey } from "@/lib/downloader/error-message";
 import { createJob, createZipJob, describeMediaText, DownloaderError, extractMedia, getJob, jobReady, resolveDownloadUrl, type ExtractResult, type MediaFormat, type MediaItem } from "@/lib/downloader/client";

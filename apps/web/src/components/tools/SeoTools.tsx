@@ -39,7 +39,7 @@ export function MetaTagGenerator() {
           <input id="mt-site" className="input" value={m.siteName} onChange={set("siteName")} />
         </Field>
         <Field label={t("meta.twitterHandle")} htmlFor="mt-tw">
-          <input id="mt-tw" className="input" value={m.twitterHandle} onChange={set("twitterHandle")} placeholder="@yourbrand" />
+          <input id="mt-tw" className="input" value={m.twitterHandle} onChange={set("twitterHandle")} placeholder={t("meta.twitterPlaceholder")} />
         </Field>
       </div>
       <div className="row">

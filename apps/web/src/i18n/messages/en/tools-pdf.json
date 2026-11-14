@@ -1,1 +1,119 @@
-{}
+{
+  "common.clear": "Clear",
+  "common.download": "Download",
+  "common.downloadZip": "Download all (ZIP)",
+  "common.dropLabel": "Choose a PDF or drop it here",
+  "common.pagesChange": {
+    "one": "{count} page · click to change",
+    "other": "{count} pages · click to change"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} page · {size} · click to change",
+    "other": "{count} pages · {size} · click to change"
+  },
+  "common.processedLocally": "Processed on your device",
+  "common.renderingPage": "Rendering page {page} of {total}…",
+  "compressor.building": "Building PDF…",
+  "compressor.change": "Change",
+  "compressor.compress": "Compress",
+  "compressor.compressed": "Compressed",
+  "compressor.download": "Download compressed PDF",
+  "compressor.lossless": "Lossless (keeps text)",
+  "compressor.mode": "Compression",
+  "compressor.notSmallerLossless": "The file couldn't be made meaningfully smaller with this setting. Try strong compression for scanned or image-heavy PDFs.",
+  "compressor.notSmallerStrong": "The file couldn't be made meaningfully smaller with this setting. Lower the quality or resolution, or keep the original.",
+  "compressor.optimising": "Optimising…",
+  "compressor.original": "Original",
+  "compressor.quality": "JPEG quality: {value}%",
+  "compressor.resolution": "Resolution: {value} DPI",
+  "compressor.strong": "Strong (pages become images)",
+  "compressor.strongWarn": "Strong compression turns each page into an image, so text will no longer be selectable or searchable.",
+  "errors.addImage": "Add at least one image.",
+  "errors.encodeFailed": "Encoding failed.",
+  "errors.encrypted": "This PDF is password-protected. Remove the password first, then try again.",
+  "errors.encryptedShort": "This PDF is password-protected. Remove the password first.",
+  "errors.generic": "Something went wrong. Please try again.",
+  "errors.imageOpen": "{name} couldn't be opened as an image.",
+  "errors.mergeTwo": "Add at least two PDFs to merge.",
+  "errors.notPdf": "That file isn't a PDF.",
+  "errors.pageTooLarge": "A page is too large to render at this resolution. Choose a lower DPI.",
+  "errors.rangeBackwards": "“{part}” goes backwards.",
+  "errors.rangeEmpty": "Enter at least one page or range, e.g. 1-3, 5.",
+  "errors.rangeInvalid": "“{part}” isn't a valid page or range.",
+  "errors.rangeOutside": {
+    "one": "“{part}” is outside the document (it has {count} page).",
+    "other": "“{part}” is outside the document (it has {count} pages)."
+  },
+  "errors.renderFailed": "Rendering failed.",
+  "errors.tooBig": "{name} is larger than {size} MB, which is too large to process in a browser.",
+  "errors.unreadable": "This file couldn't be read as a PDF. It may be damaged or not a PDF.",
+  "errors.unreadableShort": "This file couldn't be read as a PDF.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "Create PDF",
+  "imageToPdf.done": {
+    "one": "Created a {count}-page PDF ({size}). Your download has started.",
+    "other": "Created a {count}-page PDF ({size}). Your download has started."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. One image per page.",
+  "imageToPdf.dropLabel": "Choose images or drop them here",
+  "imageToPdf.imageSize": "Image size",
+  "imageToPdf.large": "Large",
+  "imageToPdf.letter": "Letter",
+  "imageToPdf.margin": "Margin",
+  "imageToPdf.noMargin": "No margin",
+  "imageToPdf.pageSize": "Page size",
+  "imageToPdf.skipped": "Some files were skipped because they aren't images.",
+  "imageToPdf.small": "Small",
+  "merger.done": {
+    "one": "Merged {count} page into merged.pdf ({size}). Your download has started.",
+    "other": "Merged {count} pages into merged.pdf ({size}). Your download has started."
+  },
+  "merger.dropHint": "Add two or more. Files never leave your device.",
+  "merger.dropLabel": "Choose PDF files or drop them here",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "Merge PDFs",
+  "merger.mergeCount": "Merge {count} PDFs",
+  "merger.pageNote": {
+    "one": "{count} page",
+    "other": "{count} pages"
+  },
+  "merger.skipped": "Some files were skipped because they aren't PDFs.",
+  "rotate.all": "All pages",
+  "rotate.angle": "Angle",
+  "rotate.done": "Rotated PDF downloaded.",
+  "rotate.half": "180°",
+  "rotate.hint": "Example: 1, 3-4",
+  "rotate.left": "90° left",
+  "rotate.pages": "Pages",
+  "rotate.pagesLabel": "Pages to rotate",
+  "rotate.right": "90° right",
+  "rotate.run": "Rotate & download",
+  "rotate.some": "Selected pages",
+  "splitter.every": {
+    "one": "Every page ({count} file)",
+    "other": "Every page ({count} files)"
+  },
+  "splitter.mode": "Split mode",
+  "splitter.ranges": "Page ranges",
+  "splitter.rangesHint": "Example: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Ranges (one output file per range)",
+  "splitter.ready": {
+    "one": "{count} file ready",
+    "other": "{count} files ready"
+  },
+  "splitter.split": "Split PDF",
+  "toImage.convert": {
+    "one": "Convert {count} page",
+    "other": "Convert {count} pages"
+  },
+  "toImage.count": {
+    "one": "{count} image",
+    "other": "{count} images"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "Rendered on your device with pdf.js",
+  "toImage.format": "Format",
+  "toImage.memoryWarn": "Rendering many pages at 300 DPI uses a lot of memory and can be slow.",
+  "toImage.page": "Page {page}",
+  "toImage.resolution": "Resolution"
+}

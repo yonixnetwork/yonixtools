@@ -197,3 +197,25 @@ describe("formats", () => {
     expect(runRegex("(", "", "a").ok).toBe(false);
   });
 });
+
+describe("i18n helpers for calculators and media", () => {
+  it("gives stable BMI category ids and locale-aware unit numbers", async () => {
+    const { bmiCategoryId } = await import("@/lib/tools/calc");
+    expect(bmiCategoryId(17)).toBe("underweight");
+    expect(bmiCategoryId(22.86)).toBe("healthy");
+    expect(bmiCategoryId(31)).toBe("obesity");
+    expect(formatNumber(1234.5)).toBe("1,234.5");
+    expect(formatNumber(1234.5, "de")).toBe("1.234,5");
+  });
+  it("throws UserError keys from randomIntegers", async () => {
+    const { randomIntegers } = await import("@/lib/tools/media");
+    const { isUserError } = await import("@/i18n/errors");
+    try {
+      randomIntegers(1, 3, 4, true);
+      throw new Error("expected a throw");
+    } catch (e) {
+      expect(isUserError(e) && e.key).toBe("random.errorNotEnough");
+      expect(isUserError(e) && e.vars).toEqual({ count: 3 });
+    }
+  });
+});

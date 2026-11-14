@@ -124,7 +124,7 @@
 | Kenya | Gambling Control Act 2025 (No. 14 of 2025). Ads need **Gambling Regulatory Authority approval**, 20% responsible-gambling messaging and broadcast time limits. 2026 regulations add KFCB classification | Kenya Law https://new.kenyalaw.org/akn/ke/act/2025/14/eng@2025-08-12 (2025-08-12); Bowmans https://bowmanslaw.com/insights/kenya-the-gambling-control-act-2025-key-provisions/ | **yes** |
 | Spain, Italy, Netherlands, Tanzania | **Not researched in this session** | n/a | **yes** |
 
-Platform-level references (not law): Meta gambling ad policy and its unsupported-countries list: https://transparency.meta.com/policies/ad-standards/restricted-goods-services/gambling-games/ . Google Ads Gambling & Games policy (country tables): https://support.google.com/adspolicy/answer/6018017 (main policy page; the per-country tables must be read directly). Google expanded offline-gambling ad bans from 12 to 35 countries on 19 Nov 2025 (PPC Land, above).
+Platform-level references (not law): Meta gambling ad policy and its unsupported-countries list: https://transparency.meta.com/policies/ad-standards/restricted-goods-services/gambling-games/ . Google "Gambling and games policy" (Authorized Buyers version found in search): https://support.google.com/authorizedbuyers/answer/7450776 (per-country tables must be read directly). Google expanded offline-gambling ad bans from 12 to 35 countries on 19 Nov 2025 (PPC Land, above).
 
 ---
 

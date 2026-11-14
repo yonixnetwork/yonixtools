@@ -1,5 +1,6 @@
 // Pure helpers for the Video tools and Other utilities categories (unit-tested).
 import { randomInt } from "./random";
+import { UserError } from "@/i18n/errors";
 
 /** Encode PCM channels as a 16-bit little-endian WAV file. */
 export function encodeWav(channels: Float32Array[], sampleRate: number): ArrayBuffer {
@@ -62,13 +63,16 @@ export function aspectRatio(w: number, h: number): string {
   return `${w / d}:${h / d}`;
 }
 
-/** Cryptographically random integers in [min, max], optionally without repeats. */
+/**
+ * Cryptographically random integers in [min, max], optionally without repeats.
+ * Throws UserError with keys for the tools-util namespace (random.*); `message` keeps the English text.
+ */
 export function randomIntegers(min: number, max: number, count: number, unique: boolean, rand: (n: number) => number = randomInt): number[] {
-  if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min > max) throw new RangeError("Enter whole numbers with the minimum not above the maximum.");
+  if (!Number.isSafeInteger(min) || !Number.isSafeInteger(max) || min > max) throw new UserError("random.errorInvalidRange", undefined, "Enter whole numbers with the minimum not above the maximum.");
   const span = max - min + 1;
-  if (span > 2 ** 32) throw new RangeError("The range is too large (maximum 4,294,967,296 values).");
-  if (!Number.isInteger(count) || count < 1 || count > 10000) throw new RangeError("Choose between 1 and 10,000 numbers.");
-  if (unique && count > span) throw new RangeError(`Only ${span} different numbers exist in that range.`);
+  if (span > 2 ** 32) throw new UserError("random.errorRangeTooLarge", { max: 2 ** 32 }, "The range is too large (maximum 4,294,967,296 values).");
+  if (!Number.isInteger(count) || count < 1 || count > 10000) throw new UserError("random.errorCount", { min: 1, max: 10000 }, "Choose between 1 and 10,000 numbers.");
+  if (unique && count > span) throw new UserError("random.errorNotEnough", { count: span }, `Only ${span} different numbers exist in that range.`);
   if (!unique) return Array.from({ length: count }, () => min + rand(span));
   // Partial Fisher-Yates over a sparse map: exact, and fine for huge ranges.
   const swaps = new Map<number, number>();

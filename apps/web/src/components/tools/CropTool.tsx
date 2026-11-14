@@ -3,7 +3,7 @@ import { Download } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { baseName, FileDrop } from "./files";
 import { downloadBlob, Field, Notice, NumberInput, Segmented } from "./ui";
-import { useFormat, useT } from "@/i18n/client";
+import { useT } from "@/i18n/client";
 import { centeredAspect, clampRect, resizeFromCorner, type Rect } from "@/lib/tools/crop";
 
 const RATIOS = [
@@ -18,7 +18,6 @@ type RatioKey = (typeof RATIOS)[number]["value"];
 
 export function ImageCropper() {
   const t = useT("tools-crop");
-  const f = useFormat();
   const [src, setSrc] = useState<{ url: string; file: File; w: number; h: number } | null>(null);
   const [rect, setRect] = useState<Rect>({ x: 0, y: 0, w: 0, h: 0 });
   const [ratio, setRatio] = useState<RatioKey>("free");

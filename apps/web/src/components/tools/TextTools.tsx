@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { CopyButton, Field, Notice, Output, Segmented } from "./ui";
 import { convertCase, diffLines, lorem, textStats, topKeywords, type CaseStyle } from "@/lib/tools/text";
 import { useFormat, useT } from "@/i18n/client";
+import { isUserError } from "@/i18n/errors";
 import type { Translator } from "@/i18n/translator";
 import { generatePassword, passwordEntropyBits, strengthLabel, type PasswordOptions } from "@/lib/tools/random";
 
@@ -88,10 +89,9 @@ export function PasswordGenerator() {
     try {
       setPw(generatePassword(o));
       setError("");
-    } catch {
-      // The only reachable failure: no character type selected.
+    } catch (e) {
       setPw("");
-      setError("password.noCharset");
+      setError(isUserError(e) && e.key === "password.noCharTypes" ? e.key : "password.error");
     }
   };
   // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,1 +1,27 @@
-{}
+{
+  "scan.cameraPreview": "Camera preview",
+  "scan.choose": "Choose an image with a QR code",
+  "scan.chooseHint": "Screenshots and photos work. Decoded on your device.",
+  "scan.errorCamera": "The camera couldn't be started. Upload an image instead.",
+  "scan.errorNoCamera": "No camera was found. Upload an image instead.",
+  "scan.errorNoCameraSupport": "Your browser doesn't support camera access here. Upload an image instead.",
+  "scan.errorNotFound": "No QR code was found in this image. Try a sharper, closer or better-lit picture.",
+  "scan.errorNotImage": "Choose an image file (PNG, JPG, screenshot…).",
+  "scan.errorOpen": "This image couldn't be opened.",
+  "scan.errorPermission": "Camera permission was denied. Allow camera access in your browser settings, or upload an image.",
+  "scan.kind.contact": "Contact card",
+  "scan.kind.email": "Email address",
+  "scan.kind.link": "Link",
+  "scan.kind.phone": "Phone number",
+  "scan.kind.text": "Text",
+  "scan.kind.wifi": "Wi-Fi network",
+  "scan.kindDetail": "{kind}: {detail}",
+  "scan.linkWarning": "Check the address before opening links from QR codes you don't trust.",
+  "scan.openLink": "Open link",
+  "scan.pointCamera": "Point the camera at a QR code…",
+  "scan.source": "Source",
+  "scan.startCamera": "Start camera",
+  "scan.stopCamera": "Stop camera",
+  "scan.upload": "Upload image",
+  "scan.useCamera": "Use camera"
+}
