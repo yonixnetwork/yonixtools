@@ -1,0 +1,11 @@
+{
+  "minify.button": "Perkecil {lang}",
+  "minify.errorAt": "Baris {line}, kolom {column}: {message}",
+  "minify.failed": "Kode ini tidak dapat di-minify.",
+  "minify.input": "Input {lang}",
+  "minify.keepComments": "Pertahankan komentar",
+  "minify.keepLicenceComments": "Pertahankan komentar lisensi",
+  "minify.mangle": "Persingkat nama (mangle)",
+  "minify.output": "Hasil minify",
+  "minify.stats": "{before} → {after} byte ({percent}% lebih kecil)"
+}

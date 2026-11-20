@@ -1,0 +1,37 @@
+{
+  "clock.done": "Temps écoulé.",
+  "clock.lap": "Tour",
+  "clock.lapNumber": "Tour {n}",
+  "clock.lapTotal": "total {time}",
+  "clock.minutes": "Minutes",
+  "clock.mode": "Mode",
+  "clock.note": "Gardez cet onglet ouvert : les navigateurs ralentissent les minuteurs dans les onglets en arrière-plan, mais le temps affiché reste exact.",
+  "clock.pause": "Pause",
+  "clock.reset": "Réinitialiser",
+  "clock.resume": "Reprendre",
+  "clock.seconds": "Secondes",
+  "clock.start": "Démarrer",
+  "clock.stopwatch": "Chronomètre",
+  "clock.timer": "Compte à rebours",
+  "random.count": "Combien",
+  "random.errorCount": "Choisissez entre {min} et {max} nombres.",
+  "random.errorGeneric": "Vérifiez les nombres.",
+  "random.errorRange": "Saisissez des nombres entiers, avec un minimum qui ne dépasse pas le maximum.",
+  "random.errorTooLarge": "La plage est trop grande ({max} valeurs maximum).",
+  "random.errorUnique": {
+    "one": "Il n’existe que {count} nombre différent dans cette plage.",
+    "many": "Il n’existe que {count} de nombres différents dans cette plage.",
+    "other": "Il n’existe que {count} nombres différents dans cette plage."
+  },
+  "random.generate": "Générer",
+  "random.max": "Maximum",
+  "random.min": "Minimum",
+  "random.note": "Utilise le générateur aléatoire cryptographique de votre navigateur, sans biais.",
+  "random.result": {
+    "one": "Votre nombre",
+    "many": "{count} de nombres",
+    "other": "{count} nombres"
+  },
+  "random.sorted": "Trier les résultats",
+  "random.unique": "Sans doublons"
+}

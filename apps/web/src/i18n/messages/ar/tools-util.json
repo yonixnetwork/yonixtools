@@ -1,0 +1,43 @@
+{
+  "clock.done": "انتهى الوقت.",
+  "clock.lap": "لفة",
+  "clock.lapNumber": "اللفة {n}",
+  "clock.lapTotal": "الإجمالي {time}",
+  "clock.minutes": "الدقائق",
+  "clock.mode": "الوضع",
+  "clock.note": "أبقِ علامة التبويب هذه مفتوحة: تُبطئ المتصفحات المؤقتات في علامات التبويب الخلفية، لكن الوقت المعروض يبقى دقيقًا.",
+  "clock.pause": "إيقاف مؤقت",
+  "clock.reset": "إعادة الضبط",
+  "clock.resume": "استئناف",
+  "clock.seconds": "الثواني",
+  "clock.start": "بدء",
+  "clock.stopwatch": "ساعة إيقاف",
+  "clock.timer": "مؤقت تنازلي",
+  "random.count": "العدد المطلوب",
+  "random.errorCount": "اختر عددًا من الأرقام بين {min} و{max}.",
+  "random.errorGeneric": "تحقق من الأرقام.",
+  "random.errorRange": "أدخل أعدادًا صحيحة، على ألا يتجاوز الحد الأدنى الحد الأقصى.",
+  "random.errorTooLarge": "النطاق كبير جدًا (الحد الأقصى {max} قيمة).",
+  "random.errorUnique": {
+    "zero": "لا يوجد أي رقم مختلف في هذا النطاق ({count}).",
+    "one": "يوجد رقم واحد مختلف فقط في هذا النطاق ({count}).",
+    "two": "يوجد رقمان مختلفان فقط في هذا النطاق ({count}).",
+    "few": "توجد {count} أرقام مختلفة فقط في هذا النطاق.",
+    "many": "يوجد {count} رقمًا مختلفًا فقط في هذا النطاق.",
+    "other": "يوجد {count} رقم مختلف فقط في هذا النطاق."
+  },
+  "random.generate": "توليد",
+  "random.max": "الحد الأقصى",
+  "random.min": "الحد الأدنى",
+  "random.note": "يستخدم مولّد الأرقام العشوائية التشفيري في متصفحك، دون أي تحيّز.",
+  "random.result": {
+    "zero": "لا توجد أرقام",
+    "one": "رقمك",
+    "two": "رقمان",
+    "few": "{count} أرقام",
+    "many": "{count} رقمًا",
+    "other": "{count} رقم"
+  },
+  "random.sorted": "ترتيب النتائج",
+  "random.unique": "دون تكرار"
+}

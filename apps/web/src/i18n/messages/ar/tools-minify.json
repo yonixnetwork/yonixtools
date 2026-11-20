@@ -1,0 +1,11 @@
+{
+  "minify.button": "تصغير {lang}",
+  "minify.errorAt": "السطر {line}، العمود {column}: {message}",
+  "minify.failed": "تعذّر تصغير هذه الشيفرة.",
+  "minify.input": "مدخلات {lang}",
+  "minify.keepComments": "الإبقاء على التعليقات",
+  "minify.keepLicenceComments": "الإبقاء على تعليقات الترخيص",
+  "minify.mangle": "تقصير الأسماء",
+  "minify.output": "الشيفرة المصغّرة",
+  "minify.stats": "{before} → {after} بايت (أصغر بنسبة {percent}%)"
+}

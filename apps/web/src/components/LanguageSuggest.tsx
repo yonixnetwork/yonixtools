@@ -23,14 +23,13 @@ export interface SuggestText {
   no: string;
 }
 
-/** Best built language for the browser's preferences: exact tag, then same language (pt → pt-BR). */
+/** Best built language for the browser's preferences. */
 export function matchBrowserLanguage(prefs: readonly string[], codes: string[]): string | undefined {
   const lower = codes.map((c) => c.toLowerCase());
+  // In the visitor's order of preference: the exact tag, else the same base language (es-MX → es).
   for (const p of prefs) {
-    const i = lower.indexOf(p.toLowerCase());
-    if (i >= 0) return codes[i];
-  }
-  for (const p of prefs) {
+    const exact = lower.indexOf(p.toLowerCase());
+    if (exact >= 0) return codes[exact];
     const base = p.toLowerCase().split("-")[0];
     const i = lower.findIndex((c) => c.split("-")[0] === base);
     if (i >= 0) return codes[i];

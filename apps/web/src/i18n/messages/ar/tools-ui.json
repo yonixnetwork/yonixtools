@@ -1,0 +1,19 @@
+{
+  "copied": "تم النسخ",
+  "copy": "نسخ",
+  "copyFailed": "تعذّر النسخ",
+  "download": "تنزيل",
+  "downloadPanel.checkDownloads": "تحقق من قائمة التنزيلات في متصفحك.",
+  "downloadPanel.close": "إغلاق",
+  "downloadPanel.closeAria": "إغلاق اللوحة",
+  "downloadPanel.started": "بدأ التنزيل",
+  "files.dropMany": "اختر الملفات أو اسحبها وأفلتها هنا",
+  "files.dropOne": "اختر ملفًا أو اسحبه وأفلته هنا",
+  "files.listLabel": "الملفات",
+  "files.moveDown": "نقل {name} إلى الأسفل",
+  "files.moveUp": "نقل {name} إلى الأعلى",
+  "files.remove": "إزالة {name}",
+  "loadingTool": "جارٍ تحميل الأداة…",
+  "outputPlaceholder": "تظهر النتيجة هنا",
+  "processedOnDevice": "تمت المعالجة على جهازك"
+}

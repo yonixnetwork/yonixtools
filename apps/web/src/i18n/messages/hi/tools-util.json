@@ -1,0 +1,35 @@
+{
+  "clock.done": "समय पूरा हुआ।",
+  "clock.lap": "लैप",
+  "clock.lapNumber": "लैप {n}",
+  "clock.lapTotal": "कुल {time}",
+  "clock.minutes": "मिनट",
+  "clock.mode": "मोड",
+  "clock.note": "यह टैब खुला रखें: ब्राउज़र बैकग्राउंड टैब में टाइमर धीमे कर देते हैं, लेकिन दिखाया गया समय सटीक रहता है।",
+  "clock.pause": "रोकें",
+  "clock.reset": "रीसेट करें",
+  "clock.resume": "फिर से शुरू करें",
+  "clock.seconds": "सेकंड",
+  "clock.start": "शुरू करें",
+  "clock.stopwatch": "स्टॉपवॉच",
+  "clock.timer": "काउंटडाउन टाइमर",
+  "random.count": "कितनी",
+  "random.errorCount": "{min} से {max} के बीच संख्याएँ चुनें।",
+  "random.errorGeneric": "संख्याएँ जाँचें।",
+  "random.errorRange": "पूर्ण संख्याएँ दर्ज करें, और न्यूनतम मान अधिकतम से ज़्यादा न हो।",
+  "random.errorTooLarge": "रेंज बहुत बड़ी है (अधिकतम {max} मान)।",
+  "random.errorUnique": {
+    "one": "इस रेंज में केवल {count} अलग संख्या मौजूद है।",
+    "other": "इस रेंज में केवल {count} अलग-अलग संख्याएँ मौजूद हैं।"
+  },
+  "random.generate": "जनरेट करें",
+  "random.max": "अधिकतम",
+  "random.min": "न्यूनतम",
+  "random.note": "आपके ब्राउज़र के क्रिप्टोग्राफ़िक रैंडम जनरेटर का उपयोग करता है, बिना किसी पक्षपात के।",
+  "random.result": {
+    "one": "आपकी संख्या",
+    "other": "{count} संख्याएँ"
+  },
+  "random.sorted": "परिणाम क्रम से लगाएँ",
+  "random.unique": "कोई दोहराव नहीं"
+}

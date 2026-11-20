@@ -47,6 +47,8 @@ jobs:
         run: |
           npm ci
           npm run typecheck
+          # Translations: English source in sync, every published locale complete and valid (also part of npm test).
+          npm run i18n:check
           npm test
           npm audit --omit=dev --audit-level=high
           # Production-like build first (real, UNVERIFIED ad policy): no ad slot, no ad code anywhere.

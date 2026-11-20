@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Format",
+  "crop.choose": "Choisissez une image ou déposez-la ici",
+  "crop.chooseHint": "Rognée sur votre appareil, jamais envoyée en ligne",
+  "crop.download": "Télécharger {width}×{height}",
+  "crop.errorNotImage": "Ce fichier n’est pas une image.",
+  "crop.errorOpen": "Votre navigateur n’a pas pu ouvrir cette image.",
+  "crop.free": "Libre",
+  "crop.height": "Hauteur (px)",
+  "crop.imageAlt": "Image en cours de rognage",
+  "crop.left": "Gauche (px)",
+  "crop.sourceInfo": "{width}×{height} · cliquez pour changer",
+  "crop.top": "Haut (px)",
+  "crop.width": "Largeur (px)"
+}

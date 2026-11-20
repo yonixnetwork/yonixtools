@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "نسبة العرض إلى الارتفاع",
+  "crop.choose": "اختر صورة أو اسحبها وأفلتها هنا",
+  "crop.chooseHint": "يتم القص على جهازك، ولا تُرفع الصورة أبدًا",
+  "crop.download": "تنزيل {width}×{height}",
+  "crop.errorNotImage": "هذا الملف ليس صورة.",
+  "crop.errorOpen": "تعذّر فتح هذه الصورة في متصفحك.",
+  "crop.free": "حر",
+  "crop.height": "الارتفاع (px)",
+  "crop.imageAlt": "الصورة الجاري قصها",
+  "crop.left": "من اليسار (px)",
+  "crop.sourceInfo": "{width}×{height} · انقر للتغيير",
+  "crop.top": "من الأعلى (px)",
+  "crop.width": "العرض (px)"
+}
