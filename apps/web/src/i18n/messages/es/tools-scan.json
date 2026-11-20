@@ -1,7 +1,7 @@
 {
   "scan.cameraPreview": "Vista previa de la cámara",
   "scan.choose": "Elija una imagen con un código QR",
-  "scan.chooseHint": "Funciona con capturas de pantalla y fotos. Se descodifica en su dispositivo.",
+  "scan.chooseHint": "Funciona con capturas de pantalla y fotos. Se decodifica en su dispositivo.",
   "scan.errorCamera": "No se ha podido iniciar la cámara. Suba una imagen en su lugar.",
   "scan.errorNoCamera": "No se ha encontrado ninguna cámara. Suba una imagen en su lugar.",
   "scan.errorNoCameraSupport": "Su navegador no permite acceder a la cámara aquí. Suba una imagen en su lugar.",

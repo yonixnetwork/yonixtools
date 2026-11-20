@@ -73,9 +73,9 @@ export function PdfMerger() {
 2. Copy every `messages/en/*.json` file (run `npm run i18n:sync` first) to `messages/<code>/` and translate it.
    - `registry` and `guides` contain `…slug` keys. Latin-script locales give ASCII kebab-case slugs from keyword research. Other scripts copy the English slug.
    - `common` contains `route.*` URL segments under the same rule.
-3. Run `npm run i18n:check`.
-   - **A complete catalogue** (no missing, extra or invalid keys) is built under `/<prefix>/`.
-   - **An incomplete catalogue is never built.**
+3. Add the locale to `PUBLISHED_LOCALES` and run `npm run i18n:check`.
+   - **A published, complete catalogue** (no missing, extra, invalid or untranslated keys) is built under `/<prefix>/`.
+   - **A published, incomplete catalogue** fails the check and the build.
 4. **Translation status:**
    - Everything starts as `machine` or `unreviewed`, and those pages are `noindex`.
    - A reviewer records approval with `npm run i18n:review -- <locale> <key-pattern> "<Reviewer name>"`. The review stores hashes of the English source and of the translation.
@@ -86,5 +86,9 @@ export function PdfMerger() {
 ## Translating a new feature
 
 1. Add the English keys.
-2. CI fails for every built locale that is missing them, so the locale stops building until it's translated. Release the feature together with its translations, or wait.
-3. Reviews of changed keys become stale, and the affected pages drop back to `noindex` until re-reviewed.
+2. `PUBLISHED_LOCALES` (in `src/i18n/config.ts`) lists the locales meant to be live. **For each of them, a missing, invalid or untranslated key fails CI and fails the build.**
+   - This is deliberate: an incomplete locale can never be published, and it never silently shows English.
+   - So translate the new keys for every published locale in the same change. Alternatively, remove a locale from `PUBLISHED_LOCALES` until it is translated, which removes its pages.
+3. Reviews of keys whose English or translation changed become stale. The affected pages drop back to `noindex` until they are reviewed again.
+
+**Local development only:** `I18N_ALLOW_INCOMPLETE=1` builds the complete locales and skips the rest. CI and production never set it.

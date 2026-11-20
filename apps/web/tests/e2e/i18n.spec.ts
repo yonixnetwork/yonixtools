@@ -157,7 +157,7 @@ test.describe("browser-language suggestion", () => {
 function htmlFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((e) => {
     const p = path.join(dir, e.name);
-    if (e.isDirectory()) return e.name === "_next" || e.name === "admin" || e.name === "_none" ? [] : htmlFiles(p);
+    if (e.isDirectory()) return ["_next", "admin", "_none", "404", "_not-found"].includes(e.name) ? [] : htmlFiles(p);
     return e.name === "index.html" ? [p] : [];
   });
 }
