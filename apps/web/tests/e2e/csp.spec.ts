@@ -1,6 +1,8 @@
 import { readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
+import { readFileSync as readPolicy } from "node:fs";
 import { expect, test } from "@playwright/test";
+const policy = JSON.parse(readPolicy(new URL("../../src/lib/ads/ads-policy.json", import.meta.url), "utf8")) as { version: number };
 
 // Runs only against the REAL nginx config (scripts/nginx-local.sh, REAL_NGINX=1), where the
 // production CSP and headers apply. Visits every built page and fails on any CSP violation.
@@ -22,6 +24,9 @@ test("no Content-Security-Policy violation on any page", async ({ page }) => {
   test.setTimeout(240_000);
   for (const host of ["https://n6wxm.com/**", "https://nap5k.com/**", "https://bellnewyork.org/**"])
     await page.route(host, (r) => r.fulfill({ contentType: "application/javascript", body: "" }));
+  // No backend behind this nginx: answer the per-page-view ad eligibility check so the (test-override)
+  // ad frames are really embedded and covered by the CSP check.
+  await page.route("**/api/v1/ad-eligibility", (r) => r.fulfill({ json: { eligible: true, reason: "eligible", country: null, policyVersion: policy.version } }));
   await page.addInitScript(() => {
     (window as unknown as { __csp: string[] }).__csp = [];
     document.addEventListener("securitypolicyviolation", (e) => (window as unknown as { __csp: string[] }).__csp.push(`${e.effectiveDirective} ${e.blockedURI}`));

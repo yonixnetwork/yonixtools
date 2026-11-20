@@ -60,8 +60,15 @@ describe("ads need a separate ad origin", () => {
       expect(c.AD_ORIGIN, o).toBe("");
     }
   });
-  it("an https ad origin enables ads (http only for local tests)", async () => {
-    expect((await load("https://ads.yonixtools.com")).ADS_ENABLED).toBe(true);
+  it("an https ad origin is accepted (http only for local tests), but ads stay off while the policy is unverified", async () => {
+    const prod = await load("https://ads.yonixtools.com");
+    expect(prod.AD_ORIGIN).toBe("https://ads.yonixtools.com");
+    expect(prod.ADS_ENABLED).toBe(false); // config/ads-policy.json: provider UNVERIFIED
     expect((await load("http://localhost:4175")).AD_ORIGIN).toBe("http://localhost:4175");
+  });
+  it("the local test override (e2e builds only) enables the slots with a local ad origin", async () => {
+    vi.stubEnv("NEXT_PUBLIC_ADS_POLICY_OVERRIDE", "test-verified");
+    expect((await load("http://localhost:4175")).ADS_ENABLED).toBe(true);
+    await expect(load("https://ads.yonixtools.com")).rejects.toThrow(/local http test ad origin/);
   });
 });

@@ -9,6 +9,9 @@ const nextConfig: NextConfig = {
   images: { unoptimized: true },
   poweredByHeader: false,
   reactStrictMode: true,
+  // One 404 page for the whole site: there are two root layouts (English at the original URLs,
+  // and /[slug]/ for tool pages and the localized sites).
+  experimental: { globalNotFound: true },
 };
 
 export default nextConfig;
