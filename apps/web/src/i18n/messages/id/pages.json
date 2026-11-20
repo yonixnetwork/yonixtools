@@ -57,7 +57,7 @@
   "category.guidesH": "Panduan",
   "category.otherH": "Kategori lainnya",
   "crumb.home": "Beranda",
-  "crumb.label": "Breadcrumb",
+  "crumb.label": "Navigasi breadcrumb",
   "guide.firstPublished": " · pertama kali diterbitkan {date}",
   "guide.more": "Panduan lainnya →",
   "guide.reviewed": "Ditinjau {date}",
