@@ -7,8 +7,8 @@
         "unir pdf online gratis",
         "unir pdf gratis",
         "unir pdf online combina tus archivos pdf en uno",
-        "unir pdf love",
-        "unir pdf en uno"
+        "unir pdf en uno",
+        "unir pdf y jpg"
       ],
       "slug_suggestion": "unir-pdf",
       "evidence": "google-suggest gl=es hl=es 2026-11-14"
@@ -72,8 +72,8 @@
         "rotar pdf gratis",
         "rotar pdf online gratis",
         "rotar pdf pagina por pagina",
-        "rotar pdf love",
-        "rotar pdf de vertical a horizontal"
+        "rotar pdf de vertical a horizontal",
+        "rotar pdf por hoja"
       ],
       "slug_suggestion": "rotar-pdf",
       "evidence": "google-suggest gl=es hl=es 2026-11-14"
@@ -1094,7 +1094,8 @@
         "wörter zählen online",
         "wörter zählen pages",
         "wörter zählen pdf",
-        "wörter zählen text"
+        "wörter zählen text",
+        "wörter zählen indesign"
       ],
       "slug_suggestion": "woerter-zaehlen",
       "evidence": "google-suggest gl=de hl=de 2026-11-14"
@@ -3542,7 +3543,7 @@
         "pdf sıkıştırma küçültme",
         "pdf sıkıştırma nasıl yapılır",
         "pdf sıkıştırma programı ücretsiz",
-        "pdf sıkıştırma love"
+        "pdf sıkıştırma ücretsiz online"
       ],
       "slug_suggestion": "pdf-sikistirma",
       "evidence": "google-suggest gl=tr hl=tr 2026-11-14"
@@ -4122,10 +4123,12 @@
     "age-calculator": {
       "primary": "tính tuổi",
       "alternatives": [
+        "tính tuổi thai",
         "tính tuổi chó",
         "tính tuổi nghỉ hưu",
-        "tính tuổi mèo",
-        "tính tuổi online"
+        "tính tuổi thai theo ngày dự sinh",
+        "tính tuổi thai online",
+        "tính tuổi mèo"
       ],
       "slug_suggestion": "tinh-tuoi",
       "evidence": "google-suggest gl=vn hl=vi 2026-11-14"
@@ -4937,7 +4940,8 @@
       "alternatives": [
         "woorden tellen online",
         "woorden tellen pages",
-        "woorden tellen pdf"
+        "woorden tellen pdf",
+        "woorden tellen indesign"
       ],
       "slug_suggestion": "woorden-tellen",
       "evidence": "google-suggest gl=nl hl=nl 2026-11-14"
@@ -5774,7 +5778,9 @@
         "qr code generator free",
         "qr code generator free no expiration",
         "qr code generator free online",
-        "qr code generator monkey"
+        "qr code generator free no sign up",
+        "qr code generator monkey",
+        "qr code generator no sign up"
       ],
       "slug_suggestion": null,
       "evidence": "google-suggest gl=us hl=en 2026-11-14"

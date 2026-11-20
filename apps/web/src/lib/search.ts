@@ -76,7 +76,7 @@ export function normalize(s: string): string {
     .replace(/[̀-ͯ]/g, "")
     .replace(/wi-fi/g, "wifi")
     .replace(/robots\.txt/g, "robots txt")
-    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/[^\p{L}\p{N}\p{M}]+/gu, " ")
     .trim();
 }
 
@@ -123,27 +123,46 @@ function field(weight: number, texts: string[]): Field {
   return { weight, tokens: [...new Set(texts.flatMap(tokenize))], phrases: texts.map(normalize) };
 }
 
-const index: IndexedTool[] = tools.map((tool) => {
-  const cat = categories.find((c) => c.id === tool.category)!;
-  return {
-    tool,
-    fields: [
-      field(10, [tool.name, tool.slug.replace(/-/g, " ")]),
-      field(7, tool.keywords),
-      field(6, tool.synonyms),
-      field(3, [cat.name]),
-      field(2, [tool.tagline]),
-      field(1, [tool.seo.description]),
-    ],
-  };
-});
+/** A tool's name and tagline in the page's language, plus its localized category name. */
+export type LocalizedToolText = Record<string, { name: string; tagline: string; category?: string }>;
+
+function buildIndex(localized?: LocalizedToolText): IndexedTool[] {
+  return tools.map((tool) => {
+    const cat = categories.find((c) => c.id === tool.category)!;
+    const l = localized?.[tool.slug];
+    // English keywords and synonyms always stay searchable; localized text is added on top.
+    return {
+      tool: l ? { ...tool, name: l.name, tagline: l.tagline } : tool,
+      fields: [
+        field(10, [tool.name, tool.slug.replace(/-/g, " "), ...(l ? [l.name] : [])]),
+        field(7, tool.keywords),
+        field(6, tool.synonyms),
+        field(3, [cat.name, ...(l?.category ? [l.category] : [])]),
+        field(2, [tool.tagline, ...(l ? [l.tagline] : [])]),
+        field(1, [tool.seo.description]),
+      ],
+    };
+  });
+}
+const index: IndexedTool[] = buildIndex();
+const localizedIndexes = new WeakMap<LocalizedToolText, IndexedTool[]>();
+function indexFor(localized?: LocalizedToolText): IndexedTool[] {
+  if (!localized) return index;
+  let i = localizedIndexes.get(localized);
+  if (!i) localizedIndexes.set(localized, (i = buildIndex(localized)));
+  return i;
+}
+/** Scripts written without spaces (CJK, Thai…) or with complex shaping match by substring. */
+const NON_ASCII = /[^\x00-\x7f]/;
 
 /** Quality of the best match of `term` within `tokens`: 1 exact, 0.85 prefix, 0.6 typo. */
 function termQuality(term: string, tokens: string[], allowPrefix: boolean): number {
   let best = 0;
   const typos = allowedTypos(term.length);
+  const sub = NON_ASCII.test(term);
   for (const tok of tokens) {
     if (tok === term) return 1;
+    if (sub && tok.includes(term)) best = Math.max(best, 0.8);
     if (tok === term + "s" || term === tok + "s") best = Math.max(best, 0.95);
     if (allowPrefix && term.length >= 2 && tok.startsWith(term)) best = Math.max(best, 0.85);
     else if (term.length >= 4 && tok.length > term.length && tok.startsWith(term)) best = Math.max(best, 0.75);
@@ -155,6 +174,8 @@ function termQuality(term: string, tokens: string[], allowPrefix: boolean): numb
 export interface SearchOptions {
   category?: CategoryId;
   limit?: number;
+  /** Page-language names/taglines (results then carry the localized name and tagline). */
+  localized?: LocalizedToolText;
 }
 
 export interface SearchResult {
@@ -179,7 +200,8 @@ function queryTerms(query: string): string[][] {
 }
 
 export function searchTools(query: string, opts: SearchOptions = {}): SearchResponse {
-  const { category, limit = 20 } = opts;
+  const { category, limit = 20, localized } = opts;
+  const index = indexFor(localized);
   const terms = queryTerms(query);
   const nq = normalize(query);
   const pool = category ? index.filter((i) => i.tool.category === category) : index;

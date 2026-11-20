@@ -14,7 +14,7 @@ import { useT } from "@/i18n/client";
  *    downloads never reload (refresh) the ad.
  */
 export function ToolDownloadPanel({ ad }: { ad: ReactNode }) {
-  const t = useT("downloader");
+  const t = useT("tools-ui");
   const [file, setFile] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
 
@@ -37,19 +37,19 @@ export function ToolDownloadPanel({ ad }: { ad: ReactNode }) {
   return (
     <div className="dl-panel" role="dialog" aria-modal="false" aria-labelledby="tool-dl-title" data-testid="tool-download-panel" hidden={!open}>
       <div className="dl-panel-head">
-        <strong id="tool-dl-title">{t("panel.started")}</strong>
-        <button type="button" className="icon-button" aria-label={t("panel.closeAria")} onClick={() => setOpen(false)}>
+        <strong id="tool-dl-title">{t("downloadPanel.started")}</strong>
+        <button type="button" className="icon-button" aria-label={t("downloadPanel.closeAria")} onClick={() => setOpen(false)}>
           <X aria-hidden />
         </button>
       </div>
       {file && <p className="dl-panel-file">{file}</p>}
       <div className="dl-panel-status" role="status" aria-live="polite">
         <CircleCheck aria-hidden className="ok" />
-        <span>{t("transfer.checkDownloads")}</span>
+        <span>{t("downloadPanel.checkDownloads")}</span>
       </div>
       {ad}
       <div className="dl-panel-actions">
-        <button type="button" className="btn btn-sm" onClick={() => setOpen(false)}>{t("panel.close")}</button>
+        <button type="button" className="btn btn-sm" onClick={() => setOpen(false)}>{t("downloadPanel.close")}</button>
       </div>
     </div>
   );

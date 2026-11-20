@@ -9,6 +9,7 @@ playwright-report/
 .env.*
 !.env.example
 out-integrated/
+out-prodlike/
 public/ad-frame.html
 public/ad-test.html
 public/admin/

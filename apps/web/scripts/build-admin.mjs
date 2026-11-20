@@ -8,7 +8,22 @@
 // creative exists, otherwise EMPTY (no fill) or BLOCKED. The public frame carries no
 // diagnostics; full diagnostics (scripts, network requests, errors, framed vs top-level)
 // are on the ad origin's own password-protected /ad-test.html, linked from here.
-import { mkdirSync, writeFileSync } from "node:fs";
+//
+// Advertising policy (src/lib/ads/policy-core.mjs): while it is not satisfied, the public frame has no
+// ad code and every format reports SUPPRESSED BY POLICY; a banner at the top says why.
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { providerStatus, resolveOverride } from "../src/lib/ads/policy-core.mjs";
+
+const policy = JSON.parse(readFileSync(new URL("../src/lib/ads/ads-policy.json", import.meta.url), "utf8"));
+let OVERRIDE;
+try {
+  OVERRIDE = resolveOverride({ override: process.env.NEXT_PUBLIC_ADS_POLICY_OVERRIDE, siteUrl: process.env.NEXT_PUBLIC_SITE_URL, adOrigin: process.env.NEXT_PUBLIC_AD_ORIGIN });
+} catch (e) {
+  console.error("build-admin: " + e.message);
+  process.exit(1);
+}
+const POLICY = OVERRIDE ? { ok: true, reason: "test_override" } : providerStatus(policy);
+const esc = (t) => String(t).replace(/[<>&"]/g, "");
 
 const raw = (process.env.NEXT_PUBLIC_AD_ORIGIN || "").replace(/\/$/, "");
 const AD_ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(raw) || /^http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?$/i.test(raw) ? raw : "";
@@ -35,6 +50,7 @@ h1{font-size:1.3rem;margin:.2em 0}.m{color:var(--m)}section{border:1px solid var
 pre{white-space:pre-wrap;font-size:12px;background:rgba(127,127,127,.12);padding:10px;border-radius:8px;max-height:320px;overflow:auto}
 button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b);cursor:pointer}
 </style></head><body>
+${POLICY.ok ? "" : `<p id="policy" style="background:#b3261e;color:#fff;padding:10px;border-radius:8px;font-weight:700">Public ads suppressed by policy: ${esc(POLICY.reason)}${POLICY.detail ? " (" + esc(POLICY.detail) + ")" : ""}. No ad slot renders on the site and the public ad frame contains no ad code until Adsterra's written confirmation is recorded in config/ads-policy.json (docs/ADVERTISING_SAFETY_REPORT.md).</p>`}
 <h1>Ad delivery test (admin only)</h1>
 <p class="m">Each format loads the public ad frame from the ad origin, exactly like a real ad slot. <b>AD RENDERED</b> means a visible creative exists; a loaded script alone never counts. Don't click the ads.</p>
 <p>Ad origin: <code id="origin"></code></p>
@@ -55,6 +71,7 @@ button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b)
   function verdict(r) {
     if (!r || r.state === "loading") return ["loading…", "wait"];
     if (r.state === "filled") return ["AD RENDERED (after " + r.ms + " ms)", "ok"];
+    if (r.reason === "policy") return ["SUPPRESSED BY POLICY: the public ad frame contains no ad code", "m"];
     if (r.reason === "blocked") return ["BLOCKED: the ad script couldn't be loaded (ad blocker, network)", "bad"];
     return ["EMPTY: no creative returned (no fill, not approved, or refused in a frame): see the ad-origin test page", "bad"];
   }
