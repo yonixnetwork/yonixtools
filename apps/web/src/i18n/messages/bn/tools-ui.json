@@ -1,0 +1,19 @@
+{
+  "copied": "কপি হয়েছে",
+  "copy": "কপি করুন",
+  "copyFailed": "কপি করা যায়নি",
+  "download": "ডাউনলোড করুন",
+  "downloadPanel.checkDownloads": "আপনার ব্রাউজারের ডাউনলোড তালিকা দেখুন।",
+  "downloadPanel.close": "বন্ধ করুন",
+  "downloadPanel.closeAria": "প্যানেল বন্ধ করুন",
+  "downloadPanel.started": "ডাউনলোড শুরু হয়েছে",
+  "files.dropMany": "ফাইল বেছে নিন বা এখানে ছেড়ে দিন",
+  "files.dropOne": "একটি ফাইল বেছে নিন বা এখানে ছেড়ে দিন",
+  "files.listLabel": "ফাইলসমূহ",
+  "files.moveDown": "{name} নিচে সরান",
+  "files.moveUp": "{name} উপরে সরান",
+  "files.remove": "{name} সরিয়ে দিন",
+  "loadingTool": "টুল লোড হচ্ছে…",
+  "outputPlaceholder": "ফলাফল এখানে দেখাবে",
+  "processedOnDevice": "আপনার ডিভাইসেই প্রক্রিয়া করা হয়েছে"
+}

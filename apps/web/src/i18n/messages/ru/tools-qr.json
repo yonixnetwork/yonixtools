@@ -2,9 +2,9 @@
   "qr.appearance": "Внешний вид и коррекция ошибок",
   "qr.background": "Фон",
   "qr.characters": {
-    "one": "{count} символ",
     "few": "{count} символа",
     "many": "{count} символов",
+    "one": "{count} символ",
     "other": "{count} символа"
   },
   "qr.eclHigh": "Высокая",

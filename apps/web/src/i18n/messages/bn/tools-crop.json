@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "আকৃতির অনুপাত",
+  "crop.choose": "একটি ছবি বেছে নিন বা এখানে ছেড়ে দিন",
+  "crop.chooseHint": "আপনার ডিভাইসেই ক্রপ হয়, কখনো আপলোড হয় না",
+  "crop.download": "{width}×{height} ডাউনলোড করুন",
+  "crop.errorNotImage": "ফাইলটি কোনো ছবি নয়।",
+  "crop.errorOpen": "আপনার ব্রাউজারে এই ছবিটি খোলা যায়নি।",
+  "crop.free": "মুক্ত",
+  "crop.height": "উচ্চতা (px)",
+  "crop.imageAlt": "ক্রপ করা হচ্ছে এমন ছবি",
+  "crop.left": "বাম (px)",
+  "crop.sourceInfo": "{width}×{height} · পরিবর্তন করতে ক্লিক করুন",
+  "crop.top": "উপর (px)",
+  "crop.width": "প্রস্থ (px)"
+}
