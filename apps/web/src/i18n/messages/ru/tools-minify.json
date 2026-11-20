@@ -1,0 +1,11 @@
+{
+  "minify.button": "Минифицировать {lang}",
+  "minify.errorAt": "Строка {line}, столбец {column}: {message}",
+  "minify.failed": "Не удалось минифицировать этот код.",
+  "minify.input": "Исходный код {lang}",
+  "minify.keepComments": "Сохранять комментарии",
+  "minify.keepLicenceComments": "Сохранять лицензионные комментарии",
+  "minify.mangle": "Сокращать имена",
+  "minify.output": "Результат",
+  "minify.stats": "{before} → {after} байт (меньше на {percent}%)"
+}
