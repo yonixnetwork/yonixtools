@@ -1,0 +1,33 @@
+{
+  "clock.done": "时间到。",
+  "clock.lap": "计次",
+  "clock.lapNumber": "第 {n} 圈",
+  "clock.lapTotal": "累计 {time}",
+  "clock.minutes": "分钟",
+  "clock.mode": "模式",
+  "clock.note": "请保持此标签页打开：浏览器会降低后台标签页中计时器的运行频率，但显示的时间始终准确。",
+  "clock.pause": "暂停",
+  "clock.reset": "重置",
+  "clock.resume": "继续",
+  "clock.seconds": "秒",
+  "clock.start": "开始",
+  "clock.stopwatch": "秒表",
+  "clock.timer": "倒计时器",
+  "random.count": "数量",
+  "random.errorCount": "请选择 {min} 到 {max} 个数字。",
+  "random.errorGeneric": "请检查输入的数字。",
+  "random.errorRange": "请输入整数，且最小值不能大于最大值。",
+  "random.errorTooLarge": "范围过大（最多 {max} 个值）。",
+  "random.errorUnique": {
+    "other": "该范围内只有 {count} 个不同的数字。"
+  },
+  "random.generate": "生成",
+  "random.max": "最大值",
+  "random.min": "最小值",
+  "random.note": "使用浏览器内置的加密级随机数生成器，结果无偏差。",
+  "random.result": {
+    "other": "{count} 个数字"
+  },
+  "random.sorted": "结果排序",
+  "random.unique": "不重复"
+}

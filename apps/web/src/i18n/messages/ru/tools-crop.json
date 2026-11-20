@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Соотношение сторон",
+  "crop.choose": "Выберите изображение или перетащите его сюда",
+  "crop.chooseHint": "Обрезка выполняется на вашем устройстве, файл никуда не загружается",
+  "crop.download": "Скачать {width}×{height}",
+  "crop.errorNotImage": "Этот файл не является изображением.",
+  "crop.errorOpen": "Не удалось открыть это изображение в вашем браузере.",
+  "crop.free": "Свободно",
+  "crop.height": "Высота (px)",
+  "crop.imageAlt": "Обрезаемое изображение",
+  "crop.left": "Слева (px)",
+  "crop.sourceInfo": "{width}×{height} · нажмите, чтобы заменить",
+  "crop.top": "Сверху (px)",
+  "crop.width": "Ширина (px)"
+}

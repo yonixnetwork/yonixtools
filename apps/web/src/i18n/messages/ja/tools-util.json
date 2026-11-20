@@ -1,0 +1,33 @@
+{
+  "clock.done": "時間になりました。",
+  "clock.lap": "ラップ",
+  "clock.lapNumber": "ラップ {n}",
+  "clock.lapTotal": "合計 {time}",
+  "clock.minutes": "分",
+  "clock.mode": "モード",
+  "clock.note": "このタブは開いたままにしてください。ブラウザはバックグラウンドのタブでタイマーの動作を遅くしますが、表示される時間は正確なままです。",
+  "clock.pause": "一時停止",
+  "clock.reset": "リセット",
+  "clock.resume": "再開",
+  "clock.seconds": "秒",
+  "clock.start": "スタート",
+  "clock.stopwatch": "ストップウォッチ",
+  "clock.timer": "カウントダウンタイマー",
+  "random.count": "個数",
+  "random.errorCount": "{min}〜{max} 個の範囲で選んでください。",
+  "random.errorGeneric": "数値を確認してください。",
+  "random.errorRange": "整数を入力し、最小値が最大値を超えないようにしてください。",
+  "random.errorTooLarge": "範囲が大きすぎます（最大 {max} 個の値）。",
+  "random.errorUnique": {
+    "other": "この範囲には異なる数値が {count} 個しかありません。"
+  },
+  "random.generate": "生成",
+  "random.max": "最大値",
+  "random.min": "最小値",
+  "random.note": "ブラウザの暗号論的乱数生成器を使用しており、偏りはありません。",
+  "random.result": {
+    "other": "{count} 個の数値"
+  },
+  "random.sorted": "結果を並べ替える",
+  "random.unique": "重複なし"
+}

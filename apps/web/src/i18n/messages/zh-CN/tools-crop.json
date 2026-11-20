@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "宽高比",
+  "crop.choose": "选择图片或拖放到此处",
+  "crop.chooseHint": "在您的设备上裁剪，绝不上传",
+  "crop.download": "下载 {width}×{height}",
+  "crop.errorNotImage": "该文件不是图片。",
+  "crop.errorOpen": "无法在您的浏览器中打开此图片。",
+  "crop.free": "自由",
+  "crop.height": "高度（px）",
+  "crop.imageAlt": "正在裁剪的图片",
+  "crop.left": "左边距（px）",
+  "crop.sourceInfo": "{width}×{height} · 点击更换",
+  "crop.top": "上边距（px）",
+  "crop.width": "宽度（px）"
+}

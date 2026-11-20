@@ -1,0 +1,19 @@
+{
+  "copied": "已复制",
+  "copy": "复制",
+  "copyFailed": "复制失败",
+  "download": "下载",
+  "downloadPanel.checkDownloads": "请查看浏览器的下载列表。",
+  "downloadPanel.close": "关闭",
+  "downloadPanel.closeAria": "关闭面板",
+  "downloadPanel.started": "已开始下载",
+  "files.dropMany": "选择文件或拖放到此处",
+  "files.dropOne": "选择一个文件或拖放到此处",
+  "files.listLabel": "文件",
+  "files.moveDown": "下移 {name}",
+  "files.moveUp": "上移 {name}",
+  "files.remove": "移除 {name}",
+  "loadingTool": "正在加载工具…",
+  "outputPlaceholder": "结果将显示在这里",
+  "processedOnDevice": "在您的设备上处理"
+}
