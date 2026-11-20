@@ -1,0 +1,19 @@
+{
+  "copied": "کاپی ہو گیا",
+  "copy": "کاپی کریں",
+  "copyFailed": "کاپی نہیں ہو سکا",
+  "download": "ڈاؤن لوڈ کریں",
+  "downloadPanel.checkDownloads": "اپنے براؤزر کے ڈاؤن لوڈز دیکھیں۔",
+  "downloadPanel.close": "بند کریں",
+  "downloadPanel.closeAria": "پینل بند کریں",
+  "downloadPanel.started": "ڈاؤن لوڈ شروع ہو گیا",
+  "files.dropMany": "فائلیں منتخب کریں یا یہاں ڈراپ کریں",
+  "files.dropOne": "فائل منتخب کریں یا یہاں ڈراپ کریں",
+  "files.listLabel": "فائلیں",
+  "files.moveDown": "{name} کو نیچے کریں",
+  "files.moveUp": "{name} کو اوپر کریں",
+  "files.remove": "{name} ہٹائیں",
+  "loadingTool": "ٹول لوڈ ہو رہا ہے…",
+  "outputPlaceholder": "نتیجہ یہاں ظاہر ہوگا",
+  "processedOnDevice": "آپ کے آلے پر پروسیس کیا گیا"
+}

@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} کو منیفائی کریں",
+  "minify.errorAt": "سطر {line}، کالم {column}: {message}",
+  "minify.failed": "یہ کوڈ منیفائی نہیں ہو سکا۔",
+  "minify.input": "{lang} ان پٹ",
+  "minify.keepComments": "تبصرے برقرار رکھیں",
+  "minify.keepLicenceComments": "لائسنس والے تبصرے برقرار رکھیں",
+  "minify.mangle": "نام مختصر کریں (mangle)",
+  "minify.output": "منیفائیڈ",
+  "minify.stats": "{before} → {after} بائٹس ({percent}% چھوٹا)"
+}
