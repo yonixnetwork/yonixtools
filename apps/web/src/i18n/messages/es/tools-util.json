@@ -1,0 +1,37 @@
+{
+  "clock.done": "Se acabó el tiempo.",
+  "clock.lap": "Vuelta",
+  "clock.lapNumber": "Vuelta {n}",
+  "clock.lapTotal": "total: {time}",
+  "clock.minutes": "Minutos",
+  "clock.mode": "Modo",
+  "clock.note": "Mantenga esta pestaña abierta: los navegadores ralentizan los temporizadores en las pestañas en segundo plano, pero el tiempo mostrado sigue siendo exacto.",
+  "clock.pause": "Pausar",
+  "clock.reset": "Reiniciar",
+  "clock.resume": "Reanudar",
+  "clock.seconds": "Segundos",
+  "clock.start": "Iniciar",
+  "clock.stopwatch": "Cronómetro",
+  "clock.timer": "Temporizador",
+  "random.count": "Cantidad",
+  "random.errorCount": "Elija entre {min} y {max} números.",
+  "random.errorGeneric": "Revise los números.",
+  "random.errorRange": "Introduzca números enteros y un mínimo que no supere el máximo.",
+  "random.errorTooLarge": "El rango es demasiado amplio (máximo {max} valores).",
+  "random.errorUnique": {
+    "one": "En ese rango solo existe {count} número distinto.",
+    "many": "En ese rango solo existen {count} de números distintos.",
+    "other": "En ese rango solo existen {count} números distintos."
+  },
+  "random.generate": "Generar",
+  "random.max": "Máximo",
+  "random.min": "Mínimo",
+  "random.note": "Usa el generador aleatorio criptográfico de su navegador, sin sesgos.",
+  "random.result": {
+    "one": "Su número",
+    "many": "{count} de números",
+    "other": "{count} números"
+  },
+  "random.sorted": "Ordenar resultados",
+  "random.unique": "Sin repeticiones"
+}

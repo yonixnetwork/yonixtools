@@ -30,3 +30,6 @@ deploy/state/
 
 # Server-only search-engine verification codes (deploy/scripts/production-deploy.sh)
 deploy/production.env
+
+# DB-IP Lite country database, downloaded on the server (deploy/scripts/update-geoip.sh)
+deploy/geoip/

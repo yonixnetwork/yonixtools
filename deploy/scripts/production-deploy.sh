@@ -97,7 +97,7 @@ EXPECT_COMMIT="$short" bash deploy/scripts/release-check.sh || { git checkout --
 
 echo "==> Deploy $short"
 # Production settings are fixed here; nothing from the caller's environment can change them.
-env -u MONETAG -u ADS -u AD_FRAME_PARENT -u GOOGLE_SITE_VERIFICATION -u BING_SITE_VERIFICATION \
+env -u MONETAG -u ADS -u AD_FRAME_PARENT -u GOOGLE_SITE_VERIFICATION -u BING_SITE_VERIFICATION -u NEXT_PUBLIC_ADS_POLICY_OVERRIDE -u ADS_ELIGIBILITY_STUB \
   SITE_URL="$SITE_URL" AD_ORIGIN="$AD_ORIGIN" MONETAG=off "${verify_env[@]}" \
   bash deploy/scripts/deploy.sh || stop "deploy failed. Roll back: cd $DIR && bash deploy/scripts/rollback.sh && git checkout --detach $current"
 echo "DEPLOYED $short (previous $current; backup $B)"

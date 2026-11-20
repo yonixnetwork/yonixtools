@@ -51,6 +51,7 @@ pre{white-space:pre-wrap;font-size:12px;background:rgba(127,127,127,.12);padding
 button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--b);cursor:pointer}
 </style></head><body>
 ${POLICY.ok ? "" : `<p id="policy" style="background:#b3261e;color:#fff;padding:10px;border-radius:8px;font-weight:700">Public ads suppressed by policy: ${esc(POLICY.reason)}${POLICY.detail ? " (" + esc(POLICY.detail) + ")" : ""}. No ad slot renders on the site and the public ad frame contains no ad code until Adsterra's written confirmation is recorded in config/ads-policy.json (docs/ADVERTISING_SAFETY_REPORT.md).</p>`}
+<p><a href="/admin/translations/">Translation status (all locales)</a></p>
 <h1>Ad delivery test (admin only)</h1>
 <p class="m">Each format loads the public ad frame from the ad origin, exactly like a real ad slot. <b>AD RENDERED</b> means a visible creative exists; a loaded script alone never counts. Don't click the ads.</p>
 <p>Ad origin: <code id="origin"></code></p>

@@ -1,8 +1,11 @@
 """HTTP API for the YoniXTools downloader."""
 from __future__ import annotations
 
+import hashlib
+import hmac
 import json
 import logging
+import secrets
 import re
 import shutil
 import sys
@@ -15,6 +18,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse, Response
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from .adeligibility import AdEligibility
 from .adstats import AdStats
 from .config import Settings, load_settings
 from .errors import ApiError
@@ -55,6 +59,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
     poll_rl = RateLimiter(240, settings.rate_window_seconds)
     ad_rl = RateLimiter(30, settings.rate_window_seconds)
     ad_stats = AdStats()
+    ad_eligibility = AdEligibility(settings.ads_policy_path, settings.geoip_db_path)
+    eligibility_rl = RateLimiter(60, settings.rate_window_seconds)
+    # The eligibility limiter is keyed by a keyed hash of the address (random key per process), so
+    # not even the in-memory rate-limit table holds a raw IP for this endpoint.
+    eligibility_key = secrets.token_bytes(32)
 
     @asynccontextmanager
     async def lifespan(app: FastAPI):
@@ -192,6 +201,17 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             # attribute, so a sibling host (e.g. the ad origin) can't set or overwrite it.
             resp.set_cookie(f"{'__Host-' if secure else ''}ytx_dl_{token}", "1", max_age=120, path="/", samesite="lax", secure=secure)
         return resp
+
+    @app.get("/v1/ad-eligibility")
+    async def ad_eligibility_view(request: Request):
+        ip = client_key(request, settings)
+        ok, _ = eligibility_rl.hit(hmac.new(eligibility_key, ip.encode("utf-8", "replace"), hashlib.sha256).hexdigest())
+        if not ok:
+            body = {"eligible": False, "reason": "rate_limited", "country": None, "policyVersion": None}
+            return JSONResponse(body, status_code=429, headers={"Cache-Control": "private, no-store", "Retry-After": "60"})
+        body = ad_eligibility.decide(ip)
+        del ip
+        return JSONResponse(body, headers={"Cache-Control": "private, no-store", "Vary": "*"})
 
     @app.post("/v1/ad-events")
     async def ad_events(request: Request):

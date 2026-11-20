@@ -1,4 +1,5 @@
 "use client";
+import { useT } from "@/i18n/client";
 import { useEffect, useId, useRef, useState } from "react";
 import { reportAd } from "@/lib/ads/report";
 import { adsEligible } from "@/lib/ads/eligibility";
@@ -40,6 +41,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
 }
 
 export function AdSlot({ unit, responsive, className, duplicate, placement }: Props) {
+  const t = useT("common");
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -147,7 +149,7 @@ export function AdSlot({ unit, responsive, className, duplicate, placement }: Pr
     const fixed = unit ? AD_UNITS[unit] : null;
     return (
       <aside ref={ref} className={`ad-slot ad-reserve${responsive ? " ad-leaderboard" : ""}${unit ? ` ad-${unit}` : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
-        <span className="ad-label">Advertisement</span>
+        <span className="ad-label">{t("ads.label")}</span>
         <div className="ad-box" style={fixed ? { width: fixed.fluid ? "100%" : fixed.width, maxWidth: "100%", height: fixed.height } : undefined} />
       </aside>
     );
@@ -156,13 +158,13 @@ export function AdSlot({ unit, responsive, className, duplicate, placement }: Pr
   const fluid = u.fluid;
   const h = fluid ? (height ?? u.height) : u.height;
   return (
-    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state} data-ad-placement={placement}>
-      <span className="ad-label">Advertisement</span>
+    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label={t("ads.label")} data-ad-unit={chosen} data-ad-state={state} data-ad-placement={placement}>
+      <span className="ad-label">{t("ads.label")}</span>
       <div className="ad-box" style={{ width: fluid ? "100%" : u.width, maxWidth: "100%", height: h }}>
         {near && (
           <iframe
             ref={frame}
-            title="Advertisement"
+            title={t("ads.label")}
             className="ad-frame"
             width={fluid ? "100%" : u.width}
             height={h}

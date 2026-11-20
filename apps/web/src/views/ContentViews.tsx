@@ -11,6 +11,7 @@ import { getTool, isIndexable } from "@/lib/registry";
 import { articleLd, breadcrumbLd, faqLd, pageMetadata } from "@/lib/seo";
 import { absoluteUrl } from "@/lib/site";
 import { MONETAG_ENABLED } from "@/lib/ads/monetag";
+import { ADS_POLICY_OK } from "@/lib/ads/policy";
 import { formatDate } from "@/i18n/format";
 import { getLocale } from "@/i18n/locales";
 import { localizeHref } from "@/i18n/routes";
@@ -250,7 +251,7 @@ export function PrivacyView({ locale }: { locale: string }) {
           </section>
           <section>
             <h2>{t("privacy.adsH")}</h2>
-            <p>{t.rich("privacy.adsSuppressed", { strong })}</p>
+            {!ADS_POLICY_OK && <p>{t.rich("privacy.adsSuppressed", { strong })}</p>}
             <p>{t.rich("privacy.adsP1", { strong, link: ext("https://adsterra.com/privacy-policy/") })}</p>
             {MONETAG_ENABLED && <p>{t.rich("privacy.monetagP", { strong, link: ext("https://monetag.com/privacy-policy/") })}</p>}
             <p>{t("privacy.adsP2")}</p>

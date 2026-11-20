@@ -3,7 +3,8 @@
 #   deploy/scripts/smoke-test.sh https://yonixtools.com
 # Options (env): SITE_HOST=yonixtools.com (when BASE is an IP), RESOLVE="yonixtools.com:443:1.2.3.4" (test before DNS switch),
 #                INSECURE=1 (self-signed certs), SAMPLE_URL=<public post to download>,
-#                AD_HOST=ads.yonixtools.com (check the ad origin through the same address, by Host header).
+#                AD_HOST=ads.yonixtools.com (check the ad origin through the same address, by Host header),
+#                EXPECT_ADS=yes|no (default: from config/ads-policy.json; UNVERIFIED = no ad code anywhere).
 set -uo pipefail
 BASE="${1:-https://yonixtools.com}"
 # Hostname that canonical URLs use (differs when testing via 127.0.0.1).
@@ -55,6 +56,12 @@ case "$adm" in 401) ok "admin page requires a password (401)";; 500) note "admin
 [ "$(code "$BASE/api/internal/stats")" = 404 ] && ok "internal API not exposed" || bad "internal API exposed"
 
 echo "Advertising documents"
+policy_file="$(dirname "$0")/../../config/ads-policy.json"
+expect_ads="${EXPECT_ADS:-}"
+if [ -z "$expect_ads" ]; then
+  if python3 -c 'import json,sys; sys.exit(0 if json.load(open(sys.argv[1]))["provider"]["verification"]["status"]=="VERIFIED" else 1)' "$policy_file" 2>/dev/null; then expect_ads=yes; else expect_ads=no; fi
+fi
+note "advertising policy: $([ "$expect_ads" = yes ] && echo "VERIFIED (ads may run where eligible)" || echo "UNVERIFIED: every public ad must be suppressed")"
 # The site's own origin never serves the ad documents, under any spelling or query.
 for p in /ad-frame.html /ad-test.html "/ad-frame.html?u=native&s=x" "/ad-test.html?u=monetagPush" /ad-frame.html/ /ad-test; do check 404 "site origin: $p" "$BASE$p"; done
 # The ad origin (AD_HOST=ads.yonixtools.com, sent as the Host header) serves its two documents and nothing else.
@@ -63,17 +70,31 @@ if [ -n "${AD_HOST:-}" ]; then
   check 200 "ad origin: GET /ad-frame.html" "${ah[@]}" "$BASE/ad-frame.html"
   afh="$(curl "${args[@]}" "${ah[@]}" -D - -o /dev/null "$BASE/ad-frame.html")"
   echo "$afh" | grep -i "^content-security-policy:" | grep -Eq "frame-ancestors 'self'( https?://[A-Za-z0-9.:-]+)?;" && ok "ad frame has its own CSP (framable by this site only)" || bad "ad frame CSP"
-  has "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" "${ah[@]}" "$BASE/ad-frame.html" && ok "ad frame contains the publisher units" || bad "ad frame units"
   afb="$(curl "${args[@]}" "${ah[@]}" "$BASE/ad-frame.html")"
+  # Advertising policy (config/ads-policy.json): until Adsterra's written confirmation is recorded
+  # (VERIFIED), the public frame must contain NO ad code at all. EXPECT_ADS=yes|no overrides the file.
+  if [ "$expect_ads" = yes ]; then
+    grep -q "bellnewyork.org/22/620b3190e30ed523091b51770aea0b40" <<<"$afb" && ok "ad frame contains the publisher units (policy VERIFIED)" || bad "ad frame units"
+  elif grep -q "ytx-ads-policy: suppressed" <<<"$afb" && ! grep -Eq "620b3190e30ed523091b51770aea0b40|087c1ea1a028c67071c19090b33ca01b|184daaa0dde35a067c7494257f37cd70|cdabddda1b7a8e769299c93b91d77822|bellnewyork|atOptions" <<<"$afb"; then
+    ok "public ad frame contains no ad code while the policy is unverified"
+  else bad "public ad frame: expected the policy-suppressed frame with no ad code"; fi
+  grep -Eq "nap5k|n6wxm|12218944|12218952" <<<"$afb" && bad "Monetag code in the public ad frame" || ok "Monetag disabled (no Monetag code in the ad frame)"
   if grep -Eq "data-ytx-ui|__ytxReport|admin-top|requests\(\)" <<<"$afb"; then bad "public ad frame contains diagnostics"; else ok "public ad frame has no diagnostics"; fi
   for p in /ad-test.html "/ad-test.html?u=monetagPush"; do
     t="$(curl "${noauth[@]}" "${ah[@]}" -o /dev/null -w '%{http_code}' "$BASE$p")"
     [ "$t" = 401 ] && ok "ad origin: $p requires the admin password (401)" || bad "ad origin: $p without password ($t)"
   done
-  for p in / /admin/ads/ /api/healthz /tools/ /sw.js; do check 404 "ad origin serves nothing else: $p" "${ah[@]}" "$BASE$p"; done
+  for p in / /admin/ads/ /api/healthz /api/v1/ad-eligibility /tools/ /sw.js; do check 404 "ad origin serves nothing else: $p" "${ah[@]}" "$BASE$p"; done
 else
   note "AD_HOST not set (no ad origin configured): ad-origin checks skipped"
 fi
+
+echo "Ad eligibility (per page view; fails closed)"
+elig="$(curl "${args[@]}" -D - "$BASE/api/v1/ad-eligibility")"
+grep -qi "^cache-control: private, no-store" <<<"$elig" && ok "eligibility answer is private, never cached" || bad "eligibility cache-control"
+if [ "$expect_ads" = yes ]; then grep -q '"eligible":' <<<"$elig" && ok "eligibility endpoint answers" || bad "eligibility endpoint"
+else grep -q '"eligible":false' <<<"$elig" && grep -q '"reason":"provider_unverified"' <<<"$elig" && ok "eligibility: not eligible (provider_unverified)" || bad "eligibility must be false while the policy is unverified: $(tail -1 <<<"$elig" | head -c 200)"; fi
+check 403 "eligibility is GET only" -X POST -H 'content-type: application/json' -d '{}' "$BASE/api/v1/ad-eligibility"
 
 echo "PWA"
 check 200 "GET /manifest.webmanifest" "$BASE/manifest.webmanifest"

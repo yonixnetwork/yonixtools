@@ -58,6 +58,17 @@ echo "Configuration"
 [ -s deploy/admin-auth/htpasswd ] && ok "admin password file present (/admin/ and /ad-test.html)" || note "no admin password file: /admin/ and /ad-test.html stay locked (bash deploy/scripts/admin-password.sh)"
 [ -f services/downloader/.env ] && grep -q '^APP_ENV=production' services/downloader/.env && ok "downloader .env present, APP_ENV=production" || bad "services/downloader/.env missing or not APP_ENV=production"
 
+echo "Advertising policy (config/ads-policy.json; docs/ADVERTISING_SAFETY_REPORT.md)"
+if python3 -c 'import json,sys; v=json.load(open("config/ads-policy.json"))["provider"]["verification"]; sys.exit(0 if v["status"]=="VERIFIED" else 1)' 2>/dev/null; then
+  note "Adsterra policy VERIFIED: ads may run where eligible (check the evidence reference in config/ads-policy.json)"
+else note "Adsterra policy UNVERIFIED: every public ad stays suppressed (expected until written confirmation)"; fi
+cmp -s config/ads-policy.json apps/web/src/lib/ads/ads-policy.json && cmp -s config/ads-policy.json services/downloader/app/ads_policy.json \
+  && ok "policy copies match config/ads-policy.json" || bad "policy copies differ from config/ads-policy.json (bash scripts/sync-ads-policy.sh)"
+if [ -s deploy/geoip/dbip-country-lite.mmdb ]; then
+  age=$(( ( $(date +%s) - $(stat -c %Y deploy/geoip/dbip-country-lite.mmdb) ) / 86400 ))
+  [ "$age" -le 45 ] && ok "DB-IP Lite database present (${age} days old)" || note "DB-IP Lite database is ${age} days old: bash deploy/scripts/update-geoip.sh"
+else note "no DB-IP Lite database (deploy/geoip): ad eligibility fails closed (no ads). bash deploy/scripts/update-geoip.sh"; fi
+
 echo "Data and other projects (listed only; the deploy never touches them)"
 docker volume ls --format '{{.Name}}' | sed 's/^/        volume: /'
 others="$(docker ps --format '{{.Names}}' | grep -v '^yonixtools-' | tr '\n' ' ')"

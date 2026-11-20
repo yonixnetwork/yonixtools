@@ -16,7 +16,12 @@ COPY diagnostics ./diagnostics
 RUN mkdir -p /var/lib/yonixtools/tmp && chown -R app:app /var/lib/yonixtools
 USER app
 ENV APP_ENV=production TEMP_ROOT=/var/lib/yonixtools/tmp HOME=/tmp YTX_IPV4_ONLY=1
+# Advertising safety: the policy ships in the image (copy of config/ads-policy.json); the DB-IP Lite
+# database is mounted read-only from the host (deploy/geoip, see docker-compose.yml). Missing = no ads.
+ENV ADS_POLICY_PATH=/app/app/ads_policy.json GEOIP_DB_PATH=/var/lib/yonixtools/geoip/dbip-country-lite.mmdb
 EXPOSE 8787
 HEALTHCHECK --interval=30s --timeout=5s --retries=3 CMD python -c "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://127.0.0.1:8787/healthz', timeout=3).status == 200 else 1)"
 # One process only: job state lives in memory (see docs/ARCHITECTURE.md).
-CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8787", "--workers", "1", "--no-server-header"]
+# --no-access-log: uvicorn's own access line has the peer address and the full query string; the
+# app logs its own access line without either (main.py, guard middleware).
+CMD ["uvicorn", "app.asgi:app", "--host", "0.0.0.0", "--port", "8787", "--workers", "1", "--no-server-header", "--no-access-log"]
