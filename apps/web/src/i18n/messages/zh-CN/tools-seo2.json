@@ -43,7 +43,7 @@
   "schema.field.imageUrls": "图片 URL",
   "schema.field.imageUrlsLines": "图片 URL，每行一个",
   "schema.field.jobTitle": "职位",
-  "schema.field.logoUrl": "Logo URL",
+  "schema.field.logoUrl": "Logo 图片 URL",
   "schema.field.modified": "修改日期",
   "schema.field.name": "名称",
   "schema.field.onlineEvent": "线上活动？（yes/no）",
