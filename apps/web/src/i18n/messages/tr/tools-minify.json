@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} kodunu küçült",
+  "minify.errorAt": "Satır {line}, sütun {column}: {message}",
+  "minify.failed": "Bu kod küçültülemedi.",
+  "minify.input": "{lang} girdisi",
+  "minify.keepComments": "Yorumları koru",
+  "minify.keepLicenceComments": "Lisans yorumlarını koru",
+  "minify.mangle": "Adları kısalt",
+  "minify.output": "Küçültülmüş",
+  "minify.stats": "{before} → {after} bayt (%{percent} daha küçük)"
+}

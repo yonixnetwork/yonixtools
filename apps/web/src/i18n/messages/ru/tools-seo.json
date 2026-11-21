@@ -7,9 +7,9 @@
   "meta.imageHint": "Рекомендуется 1200×630 px",
   "meta.imageUrl": "URL изображения для соцсетей",
   "meta.lengthHint": {
-    "one": "{count} символ · рекомендуется {min}–{max}",
     "few": "{count} символа · рекомендуется {min}–{max}",
     "many": "{count} символов · рекомендуется {min}–{max}",
+    "one": "{count} символ · рекомендуется {min}–{max}",
     "other": "{count} символа · рекомендуется {min}–{max}"
   },
   "meta.noindex": "Скрыть от поисковых систем (noindex)",
@@ -35,15 +35,15 @@
   "robots.sitemaps": "URL карты сайта (Sitemap)",
   "robots.userAgent": "User-agent",
   "serp.descLength": {
-    "one": "{count} символ",
     "few": "{count} символа",
     "many": "{count} символов",
+    "one": "{count} символ",
     "other": "{count} символа"
   },
   "serp.descLengthTruncated": {
-    "one": "{count} символ · будет обрезано",
     "few": "{count} символа · будет обрезано",
     "many": "{count} символов · будет обрезано",
+    "one": "{count} символ · будет обрезано",
     "other": "{count} символа · будет обрезано"
   },
   "serp.description": "Мета-описание",

@@ -1,0 +1,19 @@
+{
+  "copied": "Kopyalandı",
+  "copy": "Kopyala",
+  "copyFailed": "Kopyalanamadı",
+  "download": "İndir",
+  "downloadPanel.checkDownloads": "Tarayıcınızın indirilenler bölümünü kontrol edin.",
+  "downloadPanel.close": "Kapat",
+  "downloadPanel.closeAria": "Paneli kapat",
+  "downloadPanel.started": "İndirme başladı",
+  "files.dropMany": "Dosyaları seçin veya buraya bırakın",
+  "files.dropOne": "Bir dosya seçin veya buraya bırakın",
+  "files.listLabel": "Dosyalar",
+  "files.moveDown": "Aşağı taşı: {name}",
+  "files.moveUp": "Yukarı taşı: {name}",
+  "files.remove": "Kaldır: {name}",
+  "loadingTool": "Araç yükleniyor…",
+  "outputPlaceholder": "Çıktı burada görünür",
+  "processedOnDevice": "Cihazınızda işlendi"
+}

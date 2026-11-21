@@ -1,0 +1,109 @@
+{
+  "common.clear": "クリア",
+  "common.download": "ダウンロード",
+  "common.downloadZip": "すべてダウンロード（ZIP）",
+  "common.dropLabel": "PDF を選択するか、ここにドロップしてください",
+  "common.pagesChange": {
+    "other": "{count} ページ · クリックして変更"
+  },
+  "common.pagesSizeChange": {
+    "other": "{count} ページ · {size} · クリックして変更"
+  },
+  "common.processedLocally": "お使いの端末上で処理しました",
+  "common.renderingPage": "{total} ページ中 {page} ページ目を描画しています…",
+  "compressor.building": "PDF を作成しています…",
+  "compressor.change": "変化",
+  "compressor.compress": "圧縮",
+  "compressor.compressed": "圧縮後",
+  "compressor.download": "圧縮した PDF をダウンロード",
+  "compressor.lossless": "劣化なし（テキストを維持）",
+  "compressor.mode": "圧縮方法",
+  "compressor.notSmallerLossless": "この設定ではファイルサイズをほとんど小さくできませんでした。スキャンした PDF や画像の多い PDF には、強力な圧縮をお試しください。",
+  "compressor.notSmallerStrong": "この設定ではファイルサイズをほとんど小さくできませんでした。画質や解像度を下げるか、元のファイルをそのままお使いください。",
+  "compressor.optimising": "最適化しています…",
+  "compressor.original": "元のファイル",
+  "compressor.quality": "JPEG の画質：{value}%",
+  "compressor.resolution": "解像度：{value} DPI",
+  "compressor.strong": "強力（ページを画像に変換）",
+  "compressor.strongWarn": "強力な圧縮では各ページが画像に変換されるため、テキストの選択や検索ができなくなります。",
+  "errors.addImage": "画像を 1 枚以上追加してください。",
+  "errors.encodeFailed": "エンコードに失敗しました。",
+  "errors.encrypted": "この PDF はパスワードで保護されています。先にパスワードを解除してから、もう一度お試しください。",
+  "errors.encryptedShort": "この PDF はパスワードで保護されています。先にパスワードを解除してください。",
+  "errors.generic": "問題が発生しました。もう一度お試しください。",
+  "errors.imageOpen": "{name} を画像として開けませんでした。",
+  "errors.mergeTwo": "結合するには PDF を 2 つ以上追加してください。",
+  "errors.notPdf": "このファイルは PDF ではありません。",
+  "errors.pageTooLarge": "ページが大きすぎて、この解像度では描画できません。より低い DPI を選択してください。",
+  "errors.rangeBackwards": "「{part}」は範囲が逆になっています。",
+  "errors.rangeEmpty": "ページまたは範囲を 1 つ以上入力してください（例：1-3, 5）。",
+  "errors.rangeInvalid": "「{part}」は有効なページや範囲ではありません。",
+  "errors.rangeOutside": {
+    "other": "「{part}」は文書の範囲外です（この文書は {count} ページです）。"
+  },
+  "errors.renderFailed": "描画に失敗しました。",
+  "errors.tooBig": "{name} は {size} MB を超えており、ブラウザで処理するには大きすぎます。",
+  "errors.unreadable": "このファイルを PDF として読み込めませんでした。破損しているか、PDF ではない可能性があります。",
+  "errors.unreadableShort": "このファイルを PDF として読み込めませんでした。",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF を作成",
+  "imageToPdf.done": {
+    "other": "{count} ページの PDF（{size}）を作成しました。ダウンロードを開始しました。"
+  },
+  "imageToPdf.dropHint": "JPG、PNG、WebP に対応。1 ページに 1 枚の画像を配置します。",
+  "imageToPdf.dropLabel": "画像を選択するか、ここにドロップしてください",
+  "imageToPdf.imageSize": "画像のサイズ",
+  "imageToPdf.large": "大",
+  "imageToPdf.letter": "レター",
+  "imageToPdf.margin": "余白",
+  "imageToPdf.noMargin": "余白なし",
+  "imageToPdf.pageSize": "用紙サイズ",
+  "imageToPdf.skipped": "画像ではないファイルはスキップしました。",
+  "imageToPdf.small": "小",
+  "merger.done": {
+    "other": "{count} ページを merged.pdf（{size}）に結合しました。ダウンロードを開始しました。"
+  },
+  "merger.dropHint": "2 つ以上追加してください。ファイルがお使いの端末の外に送信されることはありません。",
+  "merger.dropLabel": "PDF ファイルを選択するか、ここにドロップしてください",
+  "merger.fileError": "{name}：{message}",
+  "merger.merge": "PDF を結合",
+  "merger.mergeCount": "{count} 個の PDF を結合",
+  "merger.pageNote": {
+    "other": "{count} ページ"
+  },
+  "merger.skipped": "PDF ではないファイルはスキップしました。",
+  "rotate.all": "すべてのページ",
+  "rotate.angle": "角度",
+  "rotate.done": "回転した PDF をダウンロードしました。",
+  "rotate.half": "180°",
+  "rotate.hint": "例：1, 3-4",
+  "rotate.left": "左に 90°",
+  "rotate.pages": "ページ",
+  "rotate.pagesLabel": "回転するページ",
+  "rotate.right": "右に 90°",
+  "rotate.run": "回転してダウンロード",
+  "rotate.some": "選択したページ",
+  "splitter.every": {
+    "other": "1 ページずつ（{count} ファイル）"
+  },
+  "splitter.mode": "分割方法",
+  "splitter.ranges": "ページ範囲",
+  "splitter.rangesHint": "例：1-3, 5, 8-",
+  "splitter.rangesLabel": "範囲（範囲ごとに 1 ファイルを出力）",
+  "splitter.ready": {
+    "other": "{count} 個のファイルの準備ができました"
+  },
+  "splitter.split": "PDF を分割",
+  "toImage.convert": {
+    "other": "{count} ページを変換"
+  },
+  "toImage.count": {
+    "other": "画像 {count} 枚"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "pdf.js を使ってお使いの端末上で描画します",
+  "toImage.format": "形式",
+  "toImage.memoryWarn": "300 DPI で多くのページを描画すると、大量のメモリを使い、時間がかかる場合があります。",
+  "toImage.page": "{page} ページ",
+  "toImage.resolution": "解像度"
+}

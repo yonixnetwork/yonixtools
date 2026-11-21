@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Tỷ lệ khung hình",
+  "crop.choose": "Chọn ảnh hoặc thả ảnh vào đây",
+  "crop.chooseHint": "Cắt ngay trên thiết bị của bạn, không bao giờ tải lên",
+  "crop.download": "Tải xuống {width}×{height}",
+  "crop.errorNotImage": "Tệp này không phải là ảnh.",
+  "crop.errorOpen": "Trình duyệt của bạn không mở được ảnh này.",
+  "crop.free": "Tự do",
+  "crop.height": "Chiều cao (px)",
+  "crop.imageAlt": "Ảnh đang được cắt",
+  "crop.left": "Trái (px)",
+  "crop.sourceInfo": "{width}×{height} · nhấn để thay đổi",
+  "crop.top": "Trên (px)",
+  "crop.width": "Chiều rộng (px)"
+}

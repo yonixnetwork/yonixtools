@@ -1,0 +1,35 @@
+{
+  "clock.done": "Süre doldu.",
+  "clock.lap": "Tur",
+  "clock.lapNumber": "Tur {n}",
+  "clock.lapTotal": "toplam {time}",
+  "clock.minutes": "Dakika",
+  "clock.mode": "Mod",
+  "clock.note": "Bu sekmeyi açık tutun: tarayıcılar arka plandaki sekmelerde zamanlayıcıları yavaşlatır, ancak gösterilen süre doğru kalır.",
+  "clock.pause": "Duraklat",
+  "clock.reset": "Sıfırla",
+  "clock.resume": "Devam et",
+  "clock.seconds": "Saniye",
+  "clock.start": "Başlat",
+  "clock.stopwatch": "Kronometre",
+  "clock.timer": "Geri sayım sayacı",
+  "random.count": "Kaç adet",
+  "random.errorCount": "{min} ile {max} arasında bir sayı adedi seçin.",
+  "random.errorGeneric": "Sayıları kontrol edin.",
+  "random.errorRange": "Tam sayılar girin; en küçük değer en büyük değerden büyük olmamalıdır.",
+  "random.errorTooLarge": "Aralık çok büyük (en fazla {max} değer).",
+  "random.errorUnique": {
+    "one": "Bu aralıkta yalnızca {count} farklı sayı var.",
+    "other": "Bu aralıkta yalnızca {count} farklı sayı var."
+  },
+  "random.generate": "Oluştur",
+  "random.max": "En büyük",
+  "random.min": "En küçük",
+  "random.note": "Tarayıcınızın kriptografik rastgele sayı üretecini kullanır, yanlılık olmadan.",
+  "random.result": {
+    "one": "Sayınız",
+    "other": "{count} sayı"
+  },
+  "random.sorted": "Sonuçları sırala",
+  "random.unique": "Tekrar yok"
+}

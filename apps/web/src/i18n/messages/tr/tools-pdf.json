@@ -1,0 +1,119 @@
+{
+  "common.clear": "Temizle",
+  "common.download": "İndir",
+  "common.downloadZip": "Tümünü indir (ZIP)",
+  "common.dropLabel": "Bir PDF seçin veya buraya bırakın",
+  "common.pagesChange": {
+    "one": "{count} sayfa · değiştirmek için tıklayın",
+    "other": "{count} sayfa · değiştirmek için tıklayın"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} sayfa · {size} · değiştirmek için tıklayın",
+    "other": "{count} sayfa · {size} · değiştirmek için tıklayın"
+  },
+  "common.processedLocally": "Cihazınızda işlendi",
+  "common.renderingPage": "Sayfa {page} / {total} işleniyor…",
+  "compressor.building": "PDF oluşturuluyor…",
+  "compressor.change": "Değişim",
+  "compressor.compress": "Sıkıştır",
+  "compressor.compressed": "Sıkıştırılmış",
+  "compressor.download": "Sıkıştırılmış PDF'yi indir",
+  "compressor.lossless": "Kayıpsız (metni korur)",
+  "compressor.mode": "Sıkıştırma",
+  "compressor.notSmallerLossless": "Bu ayarla dosya kayda değer ölçüde küçültülemedi. Taranmış veya çok sayıda görsel içeren PDF'ler için güçlü sıkıştırmayı deneyin.",
+  "compressor.notSmallerStrong": "Bu ayarla dosya kayda değer ölçüde küçültülemedi. Kaliteyi veya çözünürlüğü düşürün ya da orijinali kullanın.",
+  "compressor.optimising": "Optimize ediliyor…",
+  "compressor.original": "Orijinal",
+  "compressor.quality": "JPEG kalitesi: %{value}",
+  "compressor.resolution": "Çözünürlük: {value} DPI",
+  "compressor.strong": "Güçlü (sayfalar görsele dönüşür)",
+  "compressor.strongWarn": "Güçlü sıkıştırma her sayfayı bir görsele dönüştürür; bu nedenle metin artık seçilemez veya aranamaz.",
+  "errors.addImage": "En az bir resim ekleyin.",
+  "errors.encodeFailed": "Kodlama başarısız oldu.",
+  "errors.encrypted": "Bu PDF parola korumalı. Önce parolayı kaldırın, ardından tekrar deneyin.",
+  "errors.encryptedShort": "Bu PDF parola korumalı. Önce parolayı kaldırın.",
+  "errors.generic": "Bir sorun oluştu. Lütfen tekrar deneyin.",
+  "errors.imageOpen": "{name} resim olarak açılamadı.",
+  "errors.mergeTwo": "Birleştirmek için en az iki PDF ekleyin.",
+  "errors.notPdf": "Bu dosya bir PDF değil.",
+  "errors.pageTooLarge": "Bir sayfa bu çözünürlükte işlenemeyecek kadar büyük. Daha düşük bir DPI seçin.",
+  "errors.rangeBackwards": "“{part}” geriye doğru gidiyor.",
+  "errors.rangeEmpty": "En az bir sayfa veya aralık girin, örn. 1-3, 5.",
+  "errors.rangeInvalid": "“{part}” geçerli bir sayfa veya aralık değil.",
+  "errors.rangeOutside": {
+    "one": "“{part}” belgenin dışında (belgede {count} sayfa var).",
+    "other": "“{part}” belgenin dışında (belgede {count} sayfa var)."
+  },
+  "errors.renderFailed": "İşleme başarısız oldu.",
+  "errors.tooBig": "{name} {size} MB'tan büyük; bir tarayıcıda işlenemeyecek kadar büyük.",
+  "errors.unreadable": "Bu dosya PDF olarak okunamadı. Hasarlı olabilir veya bir PDF olmayabilir.",
+  "errors.unreadableShort": "Bu dosya PDF olarak okunamadı.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF oluştur",
+  "imageToPdf.done": {
+    "one": "{count} sayfalık bir PDF oluşturuldu ({size}). İndirme işleminiz başladı.",
+    "other": "{count} sayfalık bir PDF oluşturuldu ({size}). İndirme işleminiz başladı."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. Her sayfaya bir resim.",
+  "imageToPdf.dropLabel": "Resimleri seçin veya buraya bırakın",
+  "imageToPdf.imageSize": "Resim boyutu",
+  "imageToPdf.large": "Büyük",
+  "imageToPdf.letter": "Letter (ABD)",
+  "imageToPdf.margin": "Kenar boşluğu",
+  "imageToPdf.noMargin": "Kenar boşluğu yok",
+  "imageToPdf.pageSize": "Sayfa boyutu",
+  "imageToPdf.skipped": "Bazı dosyalar resim olmadığı için atlandı.",
+  "imageToPdf.small": "Küçük",
+  "merger.done": {
+    "one": "{count} sayfa merged.pdf dosyasında birleştirildi ({size}). İndirme işleminiz başladı.",
+    "other": "{count} sayfa merged.pdf dosyasında birleştirildi ({size}). İndirme işleminiz başladı."
+  },
+  "merger.dropHint": "İki veya daha fazla dosya ekleyin. Dosyalar cihazınızdan asla çıkmaz.",
+  "merger.dropLabel": "PDF dosyalarını seçin veya buraya bırakın",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "PDF'leri birleştir",
+  "merger.mergeCount": "{count} PDF'yi birleştir",
+  "merger.pageNote": {
+    "one": "{count} sayfa",
+    "other": "{count} sayfa"
+  },
+  "merger.skipped": "Bazı dosyalar PDF olmadığı için atlandı.",
+  "rotate.all": "Tüm sayfalar",
+  "rotate.angle": "Açı",
+  "rotate.done": "Döndürülmüş PDF indirildi.",
+  "rotate.half": "180°",
+  "rotate.hint": "Örnek: 1, 3-4",
+  "rotate.left": "90° sola",
+  "rotate.pages": "Sayfalar",
+  "rotate.pagesLabel": "Döndürülecek sayfalar",
+  "rotate.right": "90° sağa",
+  "rotate.run": "Döndür ve indir",
+  "rotate.some": "Seçili sayfalar",
+  "splitter.every": {
+    "one": "Her sayfa ({count} dosya)",
+    "other": "Her sayfa ({count} dosya)"
+  },
+  "splitter.mode": "Bölme modu",
+  "splitter.ranges": "Sayfa aralıkları",
+  "splitter.rangesHint": "Örnek: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Aralıklar (her aralık için bir çıktı dosyası)",
+  "splitter.ready": {
+    "one": "{count} dosya hazır",
+    "other": "{count} dosya hazır"
+  },
+  "splitter.split": "PDF'yi böl",
+  "toImage.convert": {
+    "one": "{count} sayfayı dönüştür",
+    "other": "{count} sayfayı dönüştür"
+  },
+  "toImage.count": {
+    "one": "{count} resim",
+    "other": "{count} resim"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "pdf.js ile cihazınızda işlenir",
+  "toImage.format": "Biçim",
+  "toImage.memoryWarn": "Çok sayıda sayfayı 300 DPI'da işlemek çok fazla bellek kullanır ve yavaş olabilir.",
+  "toImage.page": "Sayfa {page}",
+  "toImage.resolution": "Çözünürlük"
+}

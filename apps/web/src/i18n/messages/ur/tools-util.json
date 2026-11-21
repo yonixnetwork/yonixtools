@@ -1,0 +1,35 @@
+{
+  "clock.done": "وقت ختم ہو گیا۔",
+  "clock.lap": "لیپ",
+  "clock.lapNumber": "لیپ {n}",
+  "clock.lapTotal": "کل {time}",
+  "clock.minutes": "منٹ",
+  "clock.mode": "موڈ",
+  "clock.note": "یہ ٹیب کھلا رکھیں: براؤزر پس منظر کے ٹیبز میں ٹائمر سست کر دیتے ہیں، لیکن دکھایا گیا وقت درست رہتا ہے۔",
+  "clock.pause": "روکیں",
+  "clock.reset": "ری سیٹ کریں",
+  "clock.resume": "دوبارہ شروع کریں",
+  "clock.seconds": "سیکنڈ",
+  "clock.start": "شروع کریں",
+  "clock.stopwatch": "اسٹاپ واچ",
+  "clock.timer": "الٹی گنتی کا ٹائمر",
+  "random.count": "کتنے",
+  "random.errorCount": "{min} سے {max} تک نمبرز منتخب کریں۔",
+  "random.errorGeneric": "نمبرز چیک کریں۔",
+  "random.errorRange": "مکمل اعداد درج کریں، اور کم از کم قدر زیادہ سے زیادہ قدر سے بڑی نہ ہو۔",
+  "random.errorTooLarge": "رینج بہت بڑی ہے (زیادہ سے زیادہ {max} اقدار)۔",
+  "random.errorUnique": {
+    "one": "اس رینج میں صرف {count} مختلف نمبر موجود ہے۔",
+    "other": "اس رینج میں صرف {count} مختلف نمبرز موجود ہیں۔"
+  },
+  "random.generate": "بنائیں",
+  "random.max": "زیادہ سے زیادہ",
+  "random.min": "کم از کم",
+  "random.note": "آپ کے براؤزر کا کرپٹوگرافک رینڈم جنریٹر استعمال کرتا ہے، بغیر کسی جانبداری کے۔",
+  "random.result": {
+    "one": "آپ کا نمبر",
+    "other": "{count} نمبرز"
+  },
+  "random.sorted": "نتائج ترتیب دیں",
+  "random.unique": "کوئی نمبر نہ دہرائیں"
+}

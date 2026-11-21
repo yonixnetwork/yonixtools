@@ -1,0 +1,119 @@
+{
+  "common.clear": "মুছে ফেলুন",
+  "common.download": "ডাউনলোড করুন",
+  "common.downloadZip": "সব ডাউনলোড করুন (ZIP)",
+  "common.dropLabel": "একটি PDF বেছে নিন বা এখানে ছেড়ে দিন",
+  "common.pagesChange": {
+    "one": "{count} পৃষ্ঠা · পরিবর্তন করতে ক্লিক করুন",
+    "other": "{count} পৃষ্ঠা · পরিবর্তন করতে ক্লিক করুন"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} পৃষ্ঠা · {size} · পরিবর্তন করতে ক্লিক করুন",
+    "other": "{count} পৃষ্ঠা · {size} · পরিবর্তন করতে ক্লিক করুন"
+  },
+  "common.processedLocally": "আপনার ডিভাইসেই প্রক্রিয়া করা হয়েছে",
+  "common.renderingPage": "{total}টির মধ্যে {page} নম্বর পৃষ্ঠা রেন্ডার হচ্ছে…",
+  "compressor.building": "PDF তৈরি হচ্ছে…",
+  "compressor.change": "পরিবর্তন",
+  "compressor.compress": "কমপ্রেস করুন",
+  "compressor.compressed": "কমপ্রেস করা",
+  "compressor.download": "কমপ্রেস করা PDF ডাউনলোড করুন",
+  "compressor.lossless": "মান অক্ষুণ্ণ (লেখা ঠিক থাকে)",
+  "compressor.mode": "কমপ্রেশন",
+  "compressor.notSmallerLossless": "এই সেটিংয়ে ফাইলটি উল্লেখযোগ্যভাবে ছোট করা যায়নি। স্ক্যান করা বা ছবি-ভরা PDF-এর জন্য শক্তিশালী কমপ্রেশন ব্যবহার করে দেখুন।",
+  "compressor.notSmallerStrong": "এই সেটিংয়ে ফাইলটি উল্লেখযোগ্যভাবে ছোট করা যায়নি। মান বা রেজোলিউশন কমান, অথবা মূল ফাইলটিই রাখুন।",
+  "compressor.optimising": "অপ্টিমাইজ করা হচ্ছে…",
+  "compressor.original": "মূল",
+  "compressor.quality": "JPEG মান: {value}%",
+  "compressor.resolution": "রেজোলিউশন: {value} DPI",
+  "compressor.strong": "শক্তিশালী (পৃষ্ঠাগুলো ছবিতে পরিণত হয়)",
+  "compressor.strongWarn": "শক্তিশালী কমপ্রেশন প্রতিটি পৃষ্ঠাকে ছবিতে পরিণত করে, তাই লেখা আর সিলেক্ট বা সার্চ করা যাবে না।",
+  "errors.addImage": "অন্তত একটি ছবি যোগ করুন।",
+  "errors.encodeFailed": "এনকোড করা ব্যর্থ হয়েছে।",
+  "errors.encrypted": "এই PDF-টি পাসওয়ার্ড দিয়ে সুরক্ষিত। আগে পাসওয়ার্ডটি সরিয়ে নিন, তারপর আবার চেষ্টা করুন।",
+  "errors.encryptedShort": "এই PDF-টি পাসওয়ার্ড দিয়ে সুরক্ষিত। আগে পাসওয়ার্ডটি সরিয়ে নিন।",
+  "errors.generic": "কিছু একটা সমস্যা হয়েছে। অনুগ্রহ করে আবার চেষ্টা করুন।",
+  "errors.imageOpen": "{name} ছবি হিসেবে খোলা যায়নি।",
+  "errors.mergeTwo": "মার্জ করতে অন্তত দুটি PDF যোগ করুন।",
+  "errors.notPdf": "ফাইলটি PDF নয়।",
+  "errors.pageTooLarge": "একটি পৃষ্ঠা এই রেজোলিউশনে রেন্ডার করার জন্য অনেক বড়। কম DPI বেছে নিন।",
+  "errors.rangeBackwards": "“{part}” উল্টো ক্রমে লেখা হয়েছে।",
+  "errors.rangeEmpty": "অন্তত একটি পৃষ্ঠা বা পরিসর লিখুন, যেমন 1-3, 5।",
+  "errors.rangeInvalid": "“{part}” কোনো বৈধ পৃষ্ঠা বা পরিসর নয়।",
+  "errors.rangeOutside": {
+    "one": "“{part}” ডকুমেন্টের সীমার বাইরে (এতে {count}টি পৃষ্ঠা আছে)।",
+    "other": "“{part}” ডকুমেন্টের সীমার বাইরে (এতে {count}টি পৃষ্ঠা আছে)।"
+  },
+  "errors.renderFailed": "রেন্ডার করা ব্যর্থ হয়েছে।",
+  "errors.tooBig": "{name} {size} MB-এর চেয়ে বড়, যা ব্রাউজারে প্রক্রিয়া করার জন্য অনেক বেশি।",
+  "errors.unreadable": "এই ফাইলটি PDF হিসেবে পড়া যায়নি। এটি হয়তো নষ্ট, অথবা PDF নয়।",
+  "errors.unreadableShort": "এই ফাইলটি PDF হিসেবে পড়া যায়নি।",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF তৈরি করুন",
+  "imageToPdf.done": {
+    "one": "{count} পৃষ্ঠার একটি PDF ({size}) তৈরি হয়েছে। আপনার ডাউনলোড শুরু হয়েছে।",
+    "other": "{count} পৃষ্ঠার একটি PDF ({size}) তৈরি হয়েছে। আপনার ডাউনলোড শুরু হয়েছে।"
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP। প্রতি পৃষ্ঠায় একটি ছবি।",
+  "imageToPdf.dropLabel": "ছবি বেছে নিন বা এখানে ছেড়ে দিন",
+  "imageToPdf.imageSize": "ছবির আকার",
+  "imageToPdf.large": "বড়",
+  "imageToPdf.letter": "লেটার",
+  "imageToPdf.margin": "মার্জিন",
+  "imageToPdf.noMargin": "মার্জিন নেই",
+  "imageToPdf.pageSize": "পৃষ্ঠার আকার",
+  "imageToPdf.skipped": "কিছু ফাইল ছবি না হওয়ায় বাদ দেওয়া হয়েছে।",
+  "imageToPdf.small": "ছোট",
+  "merger.done": {
+    "one": "{count}টি পৃষ্ঠা merged.pdf ফাইলে ({size}) মার্জ করা হয়েছে। আপনার ডাউনলোড শুরু হয়েছে।",
+    "other": "{count}টি পৃষ্ঠা merged.pdf ফাইলে ({size}) মার্জ করা হয়েছে। আপনার ডাউনলোড শুরু হয়েছে।"
+  },
+  "merger.dropHint": "দুই বা তার বেশি যোগ করুন। ফাইল কখনো আপনার ডিভাইস ছেড়ে যায় না।",
+  "merger.dropLabel": "PDF ফাইল বেছে নিন বা এখানে ছেড়ে দিন",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "PDF মার্জ করুন",
+  "merger.mergeCount": "{count}টি PDF মার্জ করুন",
+  "merger.pageNote": {
+    "one": "{count} পৃষ্ঠা",
+    "other": "{count} পৃষ্ঠা"
+  },
+  "merger.skipped": "কিছু ফাইল PDF না হওয়ায় বাদ দেওয়া হয়েছে।",
+  "rotate.all": "সব পৃষ্ঠা",
+  "rotate.angle": "কোণ",
+  "rotate.done": "ঘোরানো PDF ডাউনলোড হয়েছে।",
+  "rotate.half": "180°",
+  "rotate.hint": "উদাহরণ: 1, 3-4",
+  "rotate.left": "বামে 90°",
+  "rotate.pages": "পৃষ্ঠা",
+  "rotate.pagesLabel": "যে পৃষ্ঠাগুলো ঘোরাবেন",
+  "rotate.right": "ডানে 90°",
+  "rotate.run": "ঘুরিয়ে ডাউনলোড করুন",
+  "rotate.some": "নির্বাচিত পৃষ্ঠা",
+  "splitter.every": {
+    "one": "প্রতিটি পৃষ্ঠা ({count}টি ফাইল)",
+    "other": "প্রতিটি পৃষ্ঠা ({count}টি ফাইল)"
+  },
+  "splitter.mode": "ভাগ করার পদ্ধতি",
+  "splitter.ranges": "পৃষ্ঠার পরিসর",
+  "splitter.rangesHint": "উদাহরণ: 1-3, 5, 8-",
+  "splitter.rangesLabel": "পরিসর (প্রতিটি পরিসরের জন্য একটি আউটপুট ফাইল)",
+  "splitter.ready": {
+    "one": "{count}টি ফাইল প্রস্তুত",
+    "other": "{count}টি ফাইল প্রস্তুত"
+  },
+  "splitter.split": "PDF ভাগ করুন",
+  "toImage.convert": {
+    "one": "{count}টি পৃষ্ঠা কনভার্ট করুন",
+    "other": "{count}টি পৃষ্ঠা কনভার্ট করুন"
+  },
+  "toImage.count": {
+    "one": "{count}টি ছবি",
+    "other": "{count}টি ছবি"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "pdf.js দিয়ে আপনার ডিভাইসেই রেন্ডার করা হয়",
+  "toImage.format": "ফরম্যাট",
+  "toImage.memoryWarn": "300 DPI-তে অনেক পৃষ্ঠা রেন্ডার করলে প্রচুর মেমরি লাগে এবং সময়ও বেশি লাগতে পারে।",
+  "toImage.page": "পৃষ্ঠা {page}",
+  "toImage.resolution": "রেজোলিউশন"
+}
