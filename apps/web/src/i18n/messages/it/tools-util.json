@@ -1,0 +1,37 @@
+{
+  "clock.done": "Tempo scaduto.",
+  "clock.lap": "Giro",
+  "clock.lapNumber": "Giro {n}",
+  "clock.lapTotal": "totale {time}",
+  "clock.minutes": "Minuti",
+  "clock.mode": "Modalità",
+  "clock.note": "Tieni aperta questa scheda: i browser rallentano i timer nelle schede in background, ma il tempo mostrato resta preciso.",
+  "clock.pause": "Pausa",
+  "clock.reset": "Azzera",
+  "clock.resume": "Riprendi",
+  "clock.seconds": "Secondi",
+  "clock.start": "Avvia",
+  "clock.stopwatch": "Cronometro",
+  "clock.timer": "Timer con conto alla rovescia",
+  "random.count": "Quanti",
+  "random.errorCount": "Scegli tra {min} e {max} numeri.",
+  "random.errorGeneric": "Controlla i numeri.",
+  "random.errorRange": "Inserisci numeri interi, con il minimo non superiore al massimo.",
+  "random.errorTooLarge": "L'intervallo è troppo ampio (massimo {max} valori).",
+  "random.errorUnique": {
+    "one": "In questo intervallo esiste solo {count} numero diverso.",
+    "many": "In questo intervallo esistono solo {count} numeri diversi.",
+    "other": "In questo intervallo esistono solo {count} numeri diversi."
+  },
+  "random.generate": "Genera",
+  "random.max": "Massimo",
+  "random.min": "Minimo",
+  "random.note": "Usa il generatore casuale crittografico del browser, senza distorsioni.",
+  "random.result": {
+    "one": "Il tuo numero",
+    "many": "{count} numeri",
+    "other": "{count} numeri"
+  },
+  "random.sorted": "Ordina i risultati",
+  "random.unique": "Senza ripetizioni"
+}

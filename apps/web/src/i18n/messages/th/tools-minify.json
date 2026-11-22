@@ -1,0 +1,11 @@
+{
+  "minify.button": "ย่อโค้ด {lang}",
+  "minify.errorAt": "บรรทัด {line} คอลัมน์ {column}: {message}",
+  "minify.failed": "ไม่สามารถย่อโค้ดนี้ได้",
+  "minify.input": "โค้ด {lang} ต้นฉบับ",
+  "minify.keepComments": "เก็บคอมเมนต์ไว้",
+  "minify.keepLicenceComments": "เก็บคอมเมนต์สัญญาอนุญาตไว้",
+  "minify.mangle": "ย่อชื่อตัวแปร",
+  "minify.output": "โค้ดที่ย่อแล้ว",
+  "minify.stats": "{before} → {after} ไบต์ (เล็กลง {percent}%)"
+}

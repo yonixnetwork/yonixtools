@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "อัตราส่วนภาพ",
+  "crop.choose": "เลือกรูปภาพหรือลากมาวางที่นี่",
+  "crop.chooseHint": "ครอปบนอุปกรณ์ของคุณ ไม่มีการอัปโหลดไฟล์",
+  "crop.download": "ดาวน์โหลด {width}×{height}",
+  "crop.errorNotImage": "ไฟล์นี้ไม่ใช่รูปภาพ",
+  "crop.errorOpen": "ไม่สามารถเปิดรูปภาพนี้ในเบราว์เซอร์ของคุณได้",
+  "crop.free": "อิสระ",
+  "crop.height": "ความสูง (px)",
+  "crop.imageAlt": "รูปภาพที่กำลังครอป",
+  "crop.left": "ซ้าย (px)",
+  "crop.sourceInfo": "{width}×{height} · คลิกเพื่อเปลี่ยน",
+  "crop.top": "บน (px)",
+  "crop.width": "ความกว้าง (px)"
+}

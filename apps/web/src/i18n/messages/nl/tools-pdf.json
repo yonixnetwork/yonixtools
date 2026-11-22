@@ -1,0 +1,119 @@
+{
+  "common.clear": "Wissen",
+  "common.download": "Downloaden",
+  "common.downloadZip": "Alles downloaden (ZIP)",
+  "common.dropLabel": "Kies een PDF of sleep die hierheen",
+  "common.pagesChange": {
+    "one": "{count} pagina · klik om te wijzigen",
+    "other": "{count} pagina's · klik om te wijzigen"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} pagina · {size} · klik om te wijzigen",
+    "other": "{count} pagina's · {size} · klik om te wijzigen"
+  },
+  "common.processedLocally": "Verwerkt op uw apparaat",
+  "common.renderingPage": "Pagina {page} van {total} weergeven…",
+  "compressor.building": "PDF samenstellen…",
+  "compressor.change": "Wijzigen",
+  "compressor.compress": "Comprimeren",
+  "compressor.compressed": "Gecomprimeerd",
+  "compressor.download": "Gecomprimeerde PDF downloaden",
+  "compressor.lossless": "Verliesvrij (behoudt tekst)",
+  "compressor.mode": "Compressie",
+  "compressor.notSmallerLossless": "Met deze instelling kon het bestand niet merkbaar kleiner worden gemaakt. Probeer sterke compressie voor gescande PDF's of PDF's met veel afbeeldingen.",
+  "compressor.notSmallerStrong": "Met deze instelling kon het bestand niet merkbaar kleiner worden gemaakt. Verlaag de kwaliteit of resolutie, of houd het origineel.",
+  "compressor.optimising": "Optimaliseren…",
+  "compressor.original": "Origineel",
+  "compressor.quality": "JPEG-kwaliteit: {value}%",
+  "compressor.resolution": "Resolutie: {value} DPI",
+  "compressor.strong": "Sterk (pagina's worden afbeeldingen)",
+  "compressor.strongWarn": "Sterke compressie zet elke pagina om in een afbeelding, waardoor tekst niet meer te selecteren of te doorzoeken is.",
+  "errors.addImage": "Voeg minstens één afbeelding toe.",
+  "errors.encodeFailed": "Coderen mislukt.",
+  "errors.encrypted": "Deze PDF is beveiligd met een wachtwoord. Verwijder eerst het wachtwoord en probeer het dan opnieuw.",
+  "errors.encryptedShort": "Deze PDF is beveiligd met een wachtwoord. Verwijder eerst het wachtwoord.",
+  "errors.generic": "Er is iets misgegaan. Probeer het opnieuw.",
+  "errors.imageOpen": "{name} kon niet als afbeelding worden geopend.",
+  "errors.mergeTwo": "Voeg minstens twee PDF's toe om samen te voegen.",
+  "errors.notPdf": "Dat bestand is geen PDF.",
+  "errors.pageTooLarge": "Een pagina is te groot om op deze resolutie weer te geven. Kies een lagere DPI.",
+  "errors.rangeBackwards": "‘{part}’ loopt achteruit.",
+  "errors.rangeEmpty": "Voer minstens één pagina of bereik in, bijv. 1-3, 5.",
+  "errors.rangeInvalid": "‘{part}’ is geen geldige pagina of geldig bereik.",
+  "errors.rangeOutside": {
+    "one": "‘{part}’ valt buiten het document (dat heeft {count} pagina).",
+    "other": "‘{part}’ valt buiten het document (dat heeft {count} pagina's)."
+  },
+  "errors.renderFailed": "Weergeven mislukt.",
+  "errors.tooBig": "{name} is groter dan {size} MB en daarmee te groot om in een browser te verwerken.",
+  "errors.unreadable": "Dit bestand kon niet als PDF worden gelezen. Het is mogelijk beschadigd of geen PDF.",
+  "errors.unreadableShort": "Dit bestand kon niet als PDF worden gelezen.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF maken",
+  "imageToPdf.done": {
+    "one": "PDF van {count} pagina gemaakt ({size}). Uw download is gestart.",
+    "other": "PDF van {count} pagina's gemaakt ({size}). Uw download is gestart."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. Eén afbeelding per pagina.",
+  "imageToPdf.dropLabel": "Kies afbeeldingen of sleep ze hierheen",
+  "imageToPdf.imageSize": "Afbeeldingsgrootte",
+  "imageToPdf.large": "Groot",
+  "imageToPdf.letter": "Letter (VS)",
+  "imageToPdf.margin": "Marge",
+  "imageToPdf.noMargin": "Geen marge",
+  "imageToPdf.pageSize": "Paginaformaat",
+  "imageToPdf.skipped": "Sommige bestanden zijn overgeslagen omdat het geen afbeeldingen zijn.",
+  "imageToPdf.small": "Klein",
+  "merger.done": {
+    "one": "{count} pagina samengevoegd in merged.pdf ({size}). Uw download is gestart.",
+    "other": "{count} pagina's samengevoegd in merged.pdf ({size}). Uw download is gestart."
+  },
+  "merger.dropHint": "Voeg er twee of meer toe. Bestanden verlaten uw apparaat nooit.",
+  "merger.dropLabel": "Kies PDF-bestanden of sleep ze hierheen",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "PDF's samenvoegen",
+  "merger.mergeCount": "{count} PDF's samenvoegen",
+  "merger.pageNote": {
+    "one": "{count} pagina",
+    "other": "{count} pagina's"
+  },
+  "merger.skipped": "Sommige bestanden zijn overgeslagen omdat het geen PDF's zijn.",
+  "rotate.all": "Alle pagina's",
+  "rotate.angle": "Hoek",
+  "rotate.done": "Gedraaide PDF gedownload.",
+  "rotate.half": "180°",
+  "rotate.hint": "Voorbeeld: 1, 3-4",
+  "rotate.left": "90° naar links",
+  "rotate.pages": "Pagina's",
+  "rotate.pagesLabel": "Te draaien pagina's",
+  "rotate.right": "90° naar rechts",
+  "rotate.run": "Draaien en downloaden",
+  "rotate.some": "Geselecteerde pagina's",
+  "splitter.every": {
+    "one": "Elke pagina ({count} bestand)",
+    "other": "Elke pagina ({count} bestanden)"
+  },
+  "splitter.mode": "Splitsmethode",
+  "splitter.ranges": "Paginabereiken",
+  "splitter.rangesHint": "Voorbeeld: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Bereiken (één uitvoerbestand per bereik)",
+  "splitter.ready": {
+    "one": "{count} bestand klaar",
+    "other": "{count} bestanden klaar"
+  },
+  "splitter.split": "PDF splitsen",
+  "toImage.convert": {
+    "one": "{count} pagina converteren",
+    "other": "{count} pagina's converteren"
+  },
+  "toImage.count": {
+    "one": "{count} afbeelding",
+    "other": "{count} afbeeldingen"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "Weergegeven op uw apparaat met pdf.js",
+  "toImage.format": "Formaat",
+  "toImage.memoryWarn": "Veel pagina's weergeven op 300 DPI kost veel geheugen en kan traag zijn.",
+  "toImage.page": "Pagina {page}",
+  "toImage.resolution": "Resolutie"
+}

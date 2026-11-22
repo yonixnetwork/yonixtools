@@ -1,0 +1,19 @@
+{
+  "copied": "คัดลอกแล้ว",
+  "copy": "คัดลอก",
+  "copyFailed": "คัดลอกไม่สำเร็จ",
+  "download": "ดาวน์โหลด",
+  "downloadPanel.checkDownloads": "ตรวจสอบรายการดาวน์โหลดในเบราว์เซอร์ของคุณ",
+  "downloadPanel.close": "ปิด",
+  "downloadPanel.closeAria": "ปิดแผง",
+  "downloadPanel.started": "เริ่มดาวน์โหลดแล้ว",
+  "files.dropMany": "เลือกไฟล์หรือลากมาวางที่นี่",
+  "files.dropOne": "เลือกไฟล์หรือลากมาวางที่นี่",
+  "files.listLabel": "ไฟล์",
+  "files.moveDown": "ย้าย {name} ลง",
+  "files.moveUp": "ย้าย {name} ขึ้น",
+  "files.remove": "ลบ {name}",
+  "loadingTool": "กำลังโหลดเครื่องมือ…",
+  "outputPlaceholder": "ผลลัพธ์จะแสดงที่นี่",
+  "processedOnDevice": "ประมวลผลบนอุปกรณ์ของคุณ"
+}
