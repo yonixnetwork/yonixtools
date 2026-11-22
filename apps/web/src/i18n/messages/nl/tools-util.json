@@ -1,0 +1,35 @@
+{
+  "clock.done": "De tijd is om.",
+  "clock.lap": "Ronde",
+  "clock.lapNumber": "Ronde {n}",
+  "clock.lapTotal": "totaal {time}",
+  "clock.minutes": "Minuten",
+  "clock.mode": "Modus",
+  "clock.note": "Houd dit tabblad open: browsers vertragen timers in achtergrondtabbladen, maar de getoonde tijd blijft nauwkeurig.",
+  "clock.pause": "Pauzeren",
+  "clock.reset": "Opnieuw instellen",
+  "clock.resume": "Hervatten",
+  "clock.seconds": "Seconden",
+  "clock.start": "Starten",
+  "clock.stopwatch": "Stopwatch",
+  "clock.timer": "Afteltimer",
+  "random.count": "Hoeveel",
+  "random.errorCount": "Kies tussen {min} en {max} getallen.",
+  "random.errorGeneric": "Controleer de getallen.",
+  "random.errorRange": "Voer gehele getallen in, waarbij het minimum niet groter is dan het maximum.",
+  "random.errorTooLarge": "Het bereik is te groot (maximaal {max} waarden).",
+  "random.errorUnique": {
+    "one": "Er bestaat maar {count} verschillend getal in dat bereik.",
+    "other": "Er bestaan maar {count} verschillende getallen in dat bereik."
+  },
+  "random.generate": "Genereren",
+  "random.max": "Maximum",
+  "random.min": "Minimum",
+  "random.note": "Gebruikt de cryptografische willekeurige generator van uw browser, zonder vertekening.",
+  "random.result": {
+    "one": "Uw getal",
+    "other": "{count} getallen"
+  },
+  "random.sorted": "Resultaten sorteren",
+  "random.unique": "Geen herhalingen"
+}

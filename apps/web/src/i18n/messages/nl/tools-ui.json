@@ -1,0 +1,19 @@
+{
+  "copied": "Gekopieerd",
+  "copy": "Kopiëren",
+  "copyFailed": "Kopiëren mislukt",
+  "download": "Downloaden",
+  "downloadPanel.checkDownloads": "Controleer de downloads van uw browser.",
+  "downloadPanel.close": "Sluiten",
+  "downloadPanel.closeAria": "Paneel sluiten",
+  "downloadPanel.started": "Download gestart",
+  "files.dropMany": "Kies bestanden of sleep ze hierheen",
+  "files.dropOne": "Kies een bestand of sleep het hierheen",
+  "files.listLabel": "Bestanden",
+  "files.moveDown": "{name} omlaag verplaatsen",
+  "files.moveUp": "{name} omhoog verplaatsen",
+  "files.remove": "{name} verwijderen",
+  "loadingTool": "Tool laden…",
+  "outputPlaceholder": "Het resultaat verschijnt hier",
+  "processedOnDevice": "Verwerkt op uw apparaat"
+}

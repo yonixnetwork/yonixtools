@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Proporzioni",
+  "crop.choose": "Scegli un'immagine o trascinala qui",
+  "crop.chooseHint": "Ritagliata sul tuo dispositivo, mai caricata online",
+  "crop.download": "Scarica {width}×{height}",
+  "crop.errorNotImage": "Il file non è un'immagine.",
+  "crop.errorOpen": "Non è stato possibile aprire questa immagine nel browser.",
+  "crop.free": "Libere",
+  "crop.height": "Altezza (px)",
+  "crop.imageAlt": "Immagine da ritagliare",
+  "crop.left": "Sinistra (px)",
+  "crop.sourceInfo": "{width}×{height} · fai clic per cambiare",
+  "crop.top": "Alto (px)",
+  "crop.width": "Larghezza (px)"
+}
