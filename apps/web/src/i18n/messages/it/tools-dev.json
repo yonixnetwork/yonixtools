@@ -46,7 +46,7 @@
   "jwt.claimIat": "Emesso (iat)",
   "jwt.claimNbf": "Non prima di (nbf)",
   "jwt.expired": "Scaduto",
-  "jwt.header": "Header",
+  "jwt.header": "Intestazione (header)",
   "jwt.noExp": "Nessun claim di scadenza (exp)",
   "jwt.notExpired": "Non scaduto",
   "jwt.notYetValid": "Non ancora valido (nbf)",
