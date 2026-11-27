@@ -1,8 +1,8 @@
 {
   "meta.article": "บทความ",
-  "meta.canonicalUrl": "Canonical URL",
+  "meta.canonicalUrl": "URL หลัก (Canonical URL)",
   "meta.contentType": "ประเภทเนื้อหา",
-  "meta.description": "Meta description",
+  "meta.description": "คำอธิบายเมตา (Meta description)",
   "meta.descriptionPlaceholder": "สรุปสั้น ๆ หนึ่งถึงสองประโยคที่ทำให้คนอยากคลิก",
   "meta.imageHint": "แนะนำขนาด 1200×630 px",
   "meta.imageUrl": "URL ของรูปภาพสำหรับการแชร์",
@@ -37,7 +37,7 @@
   "serp.descLengthTruncated": {
     "other": "{count} ตัวอักษร · จะถูกตัดทอน"
   },
-  "serp.description": "Meta description",
+  "serp.description": "คำอธิบายเมตา (Meta description)",
   "serp.desktop": "เดสก์ท็อป",
   "serp.device": "อุปกรณ์",
   "serp.mobile": "มือถือ",

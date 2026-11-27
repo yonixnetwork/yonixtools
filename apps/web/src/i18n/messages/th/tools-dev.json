@@ -44,11 +44,11 @@
   "jwt.claimIat": "ออกเมื่อ (iat)",
   "jwt.claimNbf": "ใช้ได้ตั้งแต่ (nbf)",
   "jwt.expired": "หมดอายุแล้ว",
-  "jwt.header": "Header",
+  "jwt.header": "ส่วนหัว (Header)",
   "jwt.noExp": "ไม่มี claim วันหมดอายุ (exp)",
   "jwt.notExpired": "ยังไม่หมดอายุ",
   "jwt.notYetValid": "ยังใช้ไม่ได้ (nbf)",
-  "jwt.payload": "Payload",
+  "jwt.payload": "ข้อมูล (Payload)",
   "jwt.token": "โทเค็น",
   "jwt.unverified": "ยังไม่ได้ตรวจสอบลายเซ็น",
   "regex.count": {
