@@ -1,0 +1,33 @@
+{
+  "method": "machine",
+  "translator": "AI machine translation (Claude); not reviewed by a person",
+  "translatedAt": "2026-11-20",
+  "intentionalSame": [
+    "common:footer.privacy",
+    "common:header.downloader",
+    "common:header.home",
+    "common:header.menu",
+    "downloader:contentType.album",
+    "downloader:contentType.clip",
+    "downloader:contentType.pin",
+    "downloader:contentType.post",
+    "downloader:contentType.reel",
+    "downloader:contentType.short",
+    "downloader:contentType.showAudio",
+    "downloader:format.group.audio",
+    "downloader:item.kind.audio",
+    "downloader:item.label.audio",
+    "downloader:media.single.audio",
+    "pages:about.privacyH",
+    "pages:crumb.home",
+    "pages:privacy.crumb",
+    "pages:privacy.h1",
+    "pages:privacy.metaTitle",
+    "tools-qr:qr.eclQuartile",
+    "tools-qr:vcard.email",
+    "tools-qr:wifi.password",
+    "tools-seo:meta.description",
+    "tools-seo:robots.userAgent"
+  ],
+  "reviews": {}
+}
