@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} मिनिफ़ाई करें",
+  "minify.errorAt": "पंक्ति {line}, कॉलम {column}: {message}",
+  "minify.failed": "यह कोड मिनिफ़ाई नहीं हो सका।",
+  "minify.input": "{lang} इनपुट",
+  "minify.keepComments": "कमेंट रखें",
+  "minify.keepLicenceComments": "लाइसेंस कमेंट रखें",
+  "minify.mangle": "नाम छोटे करें (mangle)",
+  "minify.output": "मिनिफ़ाई किया गया",
+  "minify.stats": "{before} → {after} बाइट ({percent}% छोटा)"
+}

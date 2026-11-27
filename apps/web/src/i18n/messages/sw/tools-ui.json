@@ -1,0 +1,19 @@
+{
+  "copied": "Imenakiliwa",
+  "copy": "Nakili",
+  "copyFailed": "Imeshindwa kunakili",
+  "download": "Pakua",
+  "downloadPanel.checkDownloads": "Angalia vipakuliwa vya kivinjari chako.",
+  "downloadPanel.close": "Funga",
+  "downloadPanel.closeAria": "Funga kidirisha",
+  "downloadPanel.started": "Upakuaji umeanza",
+  "files.dropMany": "Chagua faili au uziburute hapa",
+  "files.dropOne": "Chagua faili au uliburute hapa",
+  "files.listLabel": "Faili",
+  "files.moveDown": "Shusha {name} chini",
+  "files.moveUp": "Pandisha {name} juu",
+  "files.remove": "Ondoa {name}",
+  "loadingTool": "Zana inapakiwa…",
+  "outputPlaceholder": "Matokeo yataonekana hapa",
+  "processedOnDevice": "Imechakatwa kwenye kifaa chako"
+}

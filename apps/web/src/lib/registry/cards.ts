@@ -1,9 +1,12 @@
 import type { Tool } from "./types";
 
 /** The minimum a tool card needs. Passed to client components instead of the full registry entry. */
-export type ToolCardData = Pick<Tool, "slug" | "name" | "tagline" | "icon" | "platform" | "status" | "category" | "related">;
+export type ToolCardData = Pick<Tool, "slug" | "name" | "tagline" | "icon" | "platform" | "status" | "category" | "related"> & {
+  /** Link to the tool page in the current locale (defaults to the English path). */
+  href?: string;
+};
 
-export const toCard = ({ slug, name, tagline, icon, platform, status, category, related }: Tool): ToolCardData => ({ slug, name, tagline, icon, platform, status, category, related });
+export const toCard = ({ slug, name, tagline, icon, platform, status, category, related }: Tool, href?: string): ToolCardData => ({ slug, name, tagline, icon, platform, status, category, related, ...(href ? { href } : {}) });
 
 export function relatedCards(slug: string, cards: ToolCardData[], limit = 4): ToolCardData[] {
   const by = new Map(cards.map((c) => [c.slug, c]));

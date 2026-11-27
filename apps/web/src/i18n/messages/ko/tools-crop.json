@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "가로세로 비율",
+  "crop.choose": "이미지를 선택하거나 여기에 끌어다 놓으세요",
+  "crop.chooseHint": "기기에서 바로 자르며, 업로드되지 않습니다",
+  "crop.download": "{width}×{height} 다운로드",
+  "crop.errorNotImage": "이미지 파일이 아닙니다.",
+  "crop.errorOpen": "브라우저에서 이 이미지를 열 수 없습니다.",
+  "crop.free": "자유 비율",
+  "crop.height": "높이(px)",
+  "crop.imageAlt": "자르는 중인 이미지",
+  "crop.left": "왼쪽(px)",
+  "crop.sourceInfo": "{width}×{height} · 클릭하여 변경",
+  "crop.top": "위쪽(px)",
+  "crop.width": "너비(px)"
+}

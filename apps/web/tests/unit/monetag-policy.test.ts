@@ -1,12 +1,19 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+
+// These tests scan every file of a built site (about 1,700 pages in 20 languages): give them time
+// when the whole suite runs in parallel.
+vi.setConfig({ testTimeout: 120_000 });
 import { allTools } from "@/lib/registry";
 
 describe("Monetag central policy", () => {
   it("denies the homepage, every downloader and the downloader category; allows utility tools", async () => {
     vi.resetModules();
-    vi.stubEnv("NEXT_PUBLIC_AD_ORIGIN", "https://ads.yonixtools.com");
+    // The placement rules themselves (Monetag stays OFF in production: MONETAG=off, and the ad policy
+    // suppresses every ad until verified; see ads-policy.test.ts). Local test override to reach them.
+    vi.stubEnv("NEXT_PUBLIC_AD_ORIGIN", "http://localhost:4175");
+    vi.stubEnv("NEXT_PUBLIC_ADS_POLICY_OVERRIDE", "test-verified");
     vi.stubEnv("NEXT_PUBLIC_MONETAG", "on");
     const { MONETAG_DENIED_PATHS, monetagAllowed } = await import("@/lib/ads/monetag-policy");
     expect(monetagAllowed({ kind: "home" })).toBe(false);

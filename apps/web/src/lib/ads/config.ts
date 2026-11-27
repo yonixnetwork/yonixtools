@@ -24,6 +24,8 @@
  * frame; it is available on the admin test page only).
  */
 
+import { ADS_POLICY_OK } from "./policy";
+
 export type AdUnitId = "native" | "banner300x250" | "banner728x90" | "banner320x50" | "monetagPush";
 
 export interface AdUnit {
@@ -50,8 +52,12 @@ export const AD_UNITS: Record<AdUnitId, AdUnit> = {
 const rawAdOrigin = (process.env.NEXT_PUBLIC_AD_ORIGIN || "").replace(/\/$/, "");
 export const AD_ORIGIN = /^https:\/\/[a-z0-9.-]+(:\d+)?$/i.test(rawAdOrigin) || /^http:\/\/(localhost|127\.0\.0\.1|[a-z0-9-]+\.localhost)(:\d+)?$/i.test(rawAdOrigin) ? rawAdOrigin : "";
 
-/** Ads render only when switched on AND an isolated ad origin is configured. */
-export const ADS_ENABLED = (process.env.NEXT_PUBLIC_ADS || "on") !== "off" && AD_ORIGIN !== "";
+/**
+ * Ads render only when switched on AND an isolated ad origin is configured AND the advertising
+ * policy is satisfied (policy.ts: provider verified in writing for every required category).
+ * While the policy is not satisfied this is false everywhere: no slot, no frame, no reserved space.
+ */
+export const ADS_ENABLED = (process.env.NEXT_PUBLIC_ADS || "on") !== "off" && AD_ORIGIN !== "" && ADS_POLICY_OK;
 
 /**
  * The frame keeps its OWN origin (allow-same-origin refers to the ad origin, not this

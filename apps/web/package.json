@@ -10,10 +10,15 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:e2e": "playwright test --trace off",
-    "build:test": "NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=off npm run build",
-    "build:test:monetag": "NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=on npm run build",
-    "build:integrated": "node scripts/build-ad-frame.mjs && node scripts/build-admin.mjs && NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_DOWNLOADER_API_URL=/api next build && rm -rf out-integrated && mv out out-integrated",
-    "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated --project=integrated-mobile"
+    "build:test": "NEXT_PUBLIC_ADS_POLICY_OVERRIDE=test-verified NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=off npm run build",
+    "build:test:monetag": "NEXT_PUBLIC_ADS_POLICY_OVERRIDE=test-verified NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_MONETAG=on npm run build",
+    "build:integrated": "NEXT_PUBLIC_ADS_POLICY_OVERRIDE=test-verified NEXT_PUBLIC_AD_ORIGIN=http://localhost:4175 NEXT_PUBLIC_DOWNLOADER_API_URL=/api npm run build && rm -rf out-integrated && mv out out-integrated",
+    "build:prodlike": "env -u NEXT_PUBLIC_ADS_POLICY_OVERRIDE NEXT_PUBLIC_SITE_URL=https://yonixtools.com NEXT_PUBLIC_AD_ORIGIN=https://ads.yonixtools.com NEXT_PUBLIC_DOWNLOADER_API_URL=/api NEXT_PUBLIC_MONETAG=off npm run build && rm -rf out-prodlike && mv out out-prodlike",
+    "test:e2e:integrated": "E2E_INTEGRATED=1 playwright test --trace off --project=integrated --project=integrated-mobile",
+    "i18n:sync": "I18N_WRITE=1 vitest run tests/unit/i18n-catalogue.test.ts -t 'generated from the source'",
+    "i18n:check": "vitest run tests/unit/i18n-catalogue.test.ts tests/unit/i18n-report.test.ts",
+    "i18n:report": "I18N_WRITE=1 vitest run tests/unit/i18n-report.test.ts",
+    "i18n:review": "bash scripts/i18n-review.sh"
   },
   "dependencies": {
     "@fontsource-variable/inter": "5.3.0",

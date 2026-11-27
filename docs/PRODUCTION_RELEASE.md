@@ -72,6 +72,15 @@ Category blocking happens in Adsterra's account, not in our code. Altering or fi
 - [MonetizePros](https://realestate.monetizepros.com/ad-network-reviews/adsterra-review-for-publishers/)
 - [Adsterra security blog](https://adsterra.com/blog/security-adsterra/)
 
+### 2a. Policy gate: all public ads suppressed (owner decision, 14 Nov 2026)
+
+Every Adsterra unit (Native, 300×250, 728×90, 320×50) stays **suppressed everywhere** until Adsterra confirms in writing that each required category can be blocked. Full details: [ADVERTISING_SAFETY_REPORT.md](ADVERTISING_SAFETY_REPORT.md).
+- **Source of truth:** `config/ads-policy.json` (provider status `UNVERIFIED`). Copies are synced by `bash scripts/sync-ads-policy.sh`; tests fail if they differ.
+- **Effect on this release:** no ad slot on any page (no frame, no reserved space). The public `https://ads.yonixtools.com/ad-frame.html` contains **no ad code**; it is marked `ytx-ads-policy: suppressed`. `GET /api/v1/ad-eligibility` answers `{"eligible":false,"reason":"provider_unverified",...}`. Monetag stays off.
+- **Admin pages:** `/admin/ads/` and the ad-origin `/ad-test.html` show a red "Public ads suppressed by policy" banner. `/ad-test.html` still runs the codes for manual testing.
+- **GeoIP (for later eligibility):** `bash deploy/scripts/update-geoip.sh` on the server, then monthly (cron line in the script header). A missing database only means "no ads".
+- **Checks in §4/§5:** the smoke test and the deploy workflow now **expect** the ad frame to contain no ad code and eligibility to be false. Seeing Adsterra keys in the public frame while the policy is `UNVERIFIED` is a failure.
+
 ## 3. What the deploy touches and what it doesn't
 
 **`deploy.sh` touches only the `yonixtools` compose project:**
@@ -123,6 +132,8 @@ SITE_HOST=yonixtools.com bash deploy/scripts/smoke-test.sh https://yonixtools.co
 curl -s -o /dev/null -w 'main /ad-frame.html: %{http_code} (expect 404)\n' https://yonixtools.com/ad-frame.html
 curl -s -o /dev/null -w 'ads  /ad-frame.html: %{http_code} (expect 200)\n' https://ads.yonixtools.com/ad-frame.html
 curl -s https://ads.yonixtools.com/ad-frame.html | grep -c 'nap5k\|n6wxm'     # expect 0 (no Monetag)
+curl -s https://ads.yonixtools.com/ad-frame.html | grep -c '620b3190e30ed523091b51770aea0b40\|bellnewyork'   # expect 0 (policy UNVERIFIED: no ad code)
+curl -s https://yonixtools.com/api/v1/ad-eligibility; echo   # expect "eligible":false,"reason":"provider_unverified"
 ```
 
 **Optional, with your separate approval** (production edge change): enable the admin ad test on production.

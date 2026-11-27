@@ -66,6 +66,10 @@ class Settings:
     # Worker process command (overridable for tests; never shell-interpreted)
     worker_command: list[str] = field(default_factory=lambda: [sys.executable, "-m", "app.worker"])
     extract_cache_seconds: int = 10 * 60
+    # Advertising safety (app/adeligibility.py): policy file baked into the image, DB-IP Lite database
+    # mounted read-only from the host (deploy/geoip). Missing or invalid = no ads (fail closed).
+    ads_policy_path: Path = Path(__file__).with_name("ads_policy.json")
+    geoip_db_path: Path = Path("/var/lib/yonixtools/geoip/dbip-country-lite.mmdb")
 
     @property
     def is_production(self) -> bool:
@@ -103,6 +107,8 @@ def load_settings() -> Settings:
         trust_proxy_headers=_bool("TRUST_PROXY_HEADERS", False),
         worker_command=shlex.split(worker) if worker else [sys.executable, "-m", "app.worker"],
         extract_cache_seconds=_int("EXTRACT_CACHE_SECONDS", 600),
+        ads_policy_path=Path(os.environ.get("ADS_POLICY_PATH") or Path(__file__).with_name("ads_policy.json")),
+        geoip_db_path=Path(os.environ.get("GEOIP_DB_PATH") or "/var/lib/yonixtools/geoip/dbip-country-lite.mmdb"),
     )
     if s.is_production and "*" in s.cors_origins:
         raise ValueError("CORS_ORIGINS must not be '*' in production")

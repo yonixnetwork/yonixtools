@@ -20,6 +20,14 @@ jobs:
       - run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
       - run: pip install -r requirements-dev.txt
       - run: pytest -q
+      - name: Real DB-IP Lite database (download with deploy/scripts/update-geoip.sh, then real lookups)
+        # Must FAIL, never skip, if the download or verification fails (set -e; the test asserts the file exists).
+        run: |
+          set -euo pipefail
+          GEOIP_DIR="$RUNNER_TEMP/geoip" PYTHON="$(command -v python)" bash ../../deploy/scripts/update-geoip.sh
+          test -s "$RUNNER_TEMP/geoip/dbip-country-lite.mmdb"
+          GEOIP_TEST_DB="$RUNNER_TEMP/geoip/dbip-country-lite.mmdb" pytest -q -rs tests/test_ad_eligibility.py -k real_dbip_database -p no:cacheprovider | tee /tmp/geoip-test.txt
+          grep -q "1 passed" /tmp/geoip-test.txt
       - run: pip-audit -r requirements.txt
 
   web:
@@ -39,8 +47,13 @@ jobs:
         run: |
           npm ci
           npm run typecheck
+          # Translations: English source in sync, every published locale complete and valid (also part of npm test).
+          npm run i18n:check
           npm test
           npm audit --omit=dev --audit-level=high
+          # Production-like build first (real, UNVERIFIED ad policy): no ad slot, no ad code anywhere.
+          npm run build:prodlike
+          npx vitest run tests/unit/ads-policy.test.ts
           npm run build:integrated
           npm run build:test
           # Build-wide scans (need the built site): nothing internal or ad-related in public pages/bundles.

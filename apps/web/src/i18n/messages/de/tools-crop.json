@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Seitenverhältnis",
+  "crop.choose": "Bild auswählen oder hierher ziehen",
+  "crop.chooseHint": "Wird auf Ihrem Gerät zugeschnitten, nie hochgeladen",
+  "crop.download": "{width}×{height} herunterladen",
+  "crop.errorNotImage": "Diese Datei ist kein Bild.",
+  "crop.errorOpen": "Dieses Bild konnte in Ihrem Browser nicht geöffnet werden.",
+  "crop.free": "Frei",
+  "crop.height": "Höhe (px)",
+  "crop.imageAlt": "Zuzuschneidendes Bild",
+  "crop.left": "Links (px)",
+  "crop.sourceInfo": "{width}×{height} · zum Ändern klicken",
+  "crop.top": "Oben (px)",
+  "crop.width": "Breite (px)"
+}

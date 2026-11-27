@@ -1,0 +1,19 @@
+{
+  "copied": "Đã sao chép",
+  "copy": "Sao chép",
+  "copyFailed": "Sao chép thất bại",
+  "download": "Tải xuống",
+  "downloadPanel.checkDownloads": "Hãy kiểm tra mục tải xuống của trình duyệt.",
+  "downloadPanel.close": "Đóng",
+  "downloadPanel.closeAria": "Đóng bảng",
+  "downloadPanel.started": "Đã bắt đầu tải xuống",
+  "files.dropMany": "Chọn tệp hoặc thả tệp vào đây",
+  "files.dropOne": "Chọn một tệp hoặc thả tệp vào đây",
+  "files.listLabel": "Tệp",
+  "files.moveDown": "Chuyển {name} xuống",
+  "files.moveUp": "Chuyển {name} lên",
+  "files.remove": "Xóa {name}",
+  "loadingTool": "Đang tải công cụ…",
+  "outputPlaceholder": "Kết quả sẽ hiển thị ở đây",
+  "processedOnDevice": "Xử lý trên thiết bị của bạn"
+}

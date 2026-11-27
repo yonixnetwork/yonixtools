@@ -71,11 +71,16 @@ export function convertUnit(categoryId: string, value: number, from: string, to:
   return (value * f.factor) / t.factor;
 }
 
-/** Human-friendly number: up to 10 significant digits, no float noise. */
-export function formatNumber(v: number): string {
+/**
+ * Human-friendly number: up to 10 significant digits, no float noise. `locale` defaults to en-US,
+ * which keeps the output parseable when it is put into an <input>; pass the page locale for text.
+ * Unit/category `name`s are English reference names: the UI shows tools-calc
+ * "unitConverter.unit.<id>" / "unitConverter.category.<id>" instead.
+ */
+export function formatNumber(v: number, locale = "en-US"): string {
   if (!Number.isFinite(v)) return "—";
   if (v === 0) return "0";
   const abs = Math.abs(v);
   if (abs >= 1e15 || abs < 1e-6) return v.toExponential(6).replace(/\.?0+e/, "e");
-  return parseFloat(v.toPrecision(10)).toLocaleString("en-US", { maximumFractionDigits: 10 });
+  return parseFloat(v.toPrecision(10)).toLocaleString(locale, { maximumFractionDigits: 10 });
 }

@@ -1,0 +1,19 @@
+{
+  "copied": "Скопировано",
+  "copy": "Копировать",
+  "copyFailed": "Не удалось скопировать",
+  "download": "Скачать",
+  "downloadPanel.checkDownloads": "Проверьте загрузки в браузере.",
+  "downloadPanel.close": "Закрыть",
+  "downloadPanel.closeAria": "Закрыть панель",
+  "downloadPanel.started": "Загрузка началась",
+  "files.dropMany": "Выберите файлы или перетащите их сюда",
+  "files.dropOne": "Выберите файл или перетащите его сюда",
+  "files.listLabel": "Файлы",
+  "files.moveDown": "Переместить {name} вниз",
+  "files.moveUp": "Переместить {name} вверх",
+  "files.remove": "Удалить {name}",
+  "loadingTool": "Загрузка инструмента…",
+  "outputPlaceholder": "Здесь появится результат",
+  "processedOnDevice": "Обработано на вашем устройстве"
+}

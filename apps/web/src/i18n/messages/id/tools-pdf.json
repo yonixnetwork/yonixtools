@@ -1,0 +1,109 @@
+{
+  "common.clear": "Hapus",
+  "common.download": "Unduh",
+  "common.downloadZip": "Unduh semua (ZIP)",
+  "common.dropLabel": "Pilih PDF atau letakkan di sini",
+  "common.pagesChange": {
+    "other": "{count} halaman · klik untuk mengganti"
+  },
+  "common.pagesSizeChange": {
+    "other": "{count} halaman · {size} · klik untuk mengganti"
+  },
+  "common.processedLocally": "Diproses di perangkat Anda",
+  "common.renderingPage": "Merender halaman {page} dari {total}…",
+  "compressor.building": "Menyusun PDF…",
+  "compressor.change": "Ganti",
+  "compressor.compress": "Kompres",
+  "compressor.compressed": "Terkompresi",
+  "compressor.download": "Unduh PDF terkompresi",
+  "compressor.lossless": "Lossless (teks tetap utuh)",
+  "compressor.mode": "Kompresi",
+  "compressor.notSmallerLossless": "Ukuran file tidak dapat diperkecil secara berarti dengan pengaturan ini. Coba kompresi kuat untuk PDF hasil pindaian atau yang banyak berisi gambar.",
+  "compressor.notSmallerStrong": "Ukuran file tidak dapat diperkecil secara berarti dengan pengaturan ini. Turunkan kualitas atau resolusi, atau gunakan file aslinya saja.",
+  "compressor.optimising": "Mengoptimalkan…",
+  "compressor.original": "Asli",
+  "compressor.quality": "Kualitas JPEG: {value}%",
+  "compressor.resolution": "Resolusi: {value} DPI",
+  "compressor.strong": "Kuat (halaman menjadi gambar)",
+  "compressor.strongWarn": "Kompresi kuat mengubah setiap halaman menjadi gambar, sehingga teks tidak dapat lagi dipilih atau dicari.",
+  "errors.addImage": "Tambahkan setidaknya satu gambar.",
+  "errors.encodeFailed": "Enkode gagal.",
+  "errors.encrypted": "PDF ini dilindungi kata sandi. Hapus kata sandinya terlebih dahulu, lalu coba lagi.",
+  "errors.encryptedShort": "PDF ini dilindungi kata sandi. Hapus kata sandinya terlebih dahulu.",
+  "errors.generic": "Terjadi kesalahan. Silakan coba lagi.",
+  "errors.imageOpen": "{name} tidak dapat dibuka sebagai gambar.",
+  "errors.mergeTwo": "Tambahkan setidaknya dua PDF untuk digabungkan.",
+  "errors.notPdf": "File tersebut bukan PDF.",
+  "errors.pageTooLarge": "Ada halaman yang terlalu besar untuk dirender pada resolusi ini. Pilih DPI yang lebih rendah.",
+  "errors.rangeBackwards": "“{part}” urutannya terbalik.",
+  "errors.rangeEmpty": "Masukkan setidaknya satu halaman atau rentang, mis. 1-3, 5.",
+  "errors.rangeInvalid": "“{part}” bukan halaman atau rentang yang valid.",
+  "errors.rangeOutside": {
+    "other": "“{part}” berada di luar dokumen (dokumen ini memiliki {count} halaman)."
+  },
+  "errors.renderFailed": "Render gagal.",
+  "errors.tooBig": "{name} lebih besar dari {size} MB, terlalu besar untuk diproses di browser.",
+  "errors.unreadable": "File ini tidak dapat dibaca sebagai PDF. File mungkin rusak atau bukan PDF.",
+  "errors.unreadableShort": "File ini tidak dapat dibaca sebagai PDF.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "Buat PDF",
+  "imageToPdf.done": {
+    "other": "PDF {count} halaman telah dibuat ({size}). Unduhan Anda sudah dimulai."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. Satu gambar per halaman.",
+  "imageToPdf.dropLabel": "Pilih gambar atau letakkan di sini",
+  "imageToPdf.imageSize": "Ukuran gambar",
+  "imageToPdf.large": "Besar",
+  "imageToPdf.letter": "Letter (AS)",
+  "imageToPdf.margin": "Margin",
+  "imageToPdf.noMargin": "Tanpa margin",
+  "imageToPdf.pageSize": "Ukuran halaman",
+  "imageToPdf.skipped": "Beberapa file dilewati karena bukan gambar.",
+  "imageToPdf.small": "Kecil",
+  "merger.done": {
+    "other": "{count} halaman telah digabungkan ke merged.pdf ({size}). Unduhan Anda sudah dimulai."
+  },
+  "merger.dropHint": "Tambahkan dua file atau lebih. File tidak pernah keluar dari perangkat Anda.",
+  "merger.dropLabel": "Pilih file PDF atau letakkan di sini",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "Gabungkan PDF",
+  "merger.mergeCount": "Gabungkan {count} PDF",
+  "merger.pageNote": {
+    "other": "{count} halaman"
+  },
+  "merger.skipped": "Beberapa file dilewati karena bukan PDF.",
+  "rotate.all": "Semua halaman",
+  "rotate.angle": "Sudut",
+  "rotate.done": "PDF yang diputar telah diunduh.",
+  "rotate.half": "180°",
+  "rotate.hint": "Contoh: 1, 3-4",
+  "rotate.left": "90° ke kiri",
+  "rotate.pages": "Halaman",
+  "rotate.pagesLabel": "Halaman yang akan diputar",
+  "rotate.right": "90° ke kanan",
+  "rotate.run": "Putar & unduh",
+  "rotate.some": "Halaman tertentu",
+  "splitter.every": {
+    "other": "Setiap halaman ({count} file)"
+  },
+  "splitter.mode": "Mode pemisahan",
+  "splitter.ranges": "Rentang halaman",
+  "splitter.rangesHint": "Contoh: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Rentang (satu file hasil per rentang)",
+  "splitter.ready": {
+    "other": "{count} file siap"
+  },
+  "splitter.split": "Pisahkan PDF",
+  "toImage.convert": {
+    "other": "Konversi {count} halaman"
+  },
+  "toImage.count": {
+    "other": "{count} gambar"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "Dirender di perangkat Anda dengan pdf.js",
+  "toImage.format": "Format",
+  "toImage.memoryWarn": "Merender banyak halaman pada 300 DPI membutuhkan banyak memori dan bisa lambat.",
+  "toImage.page": "Halaman {page}",
+  "toImage.resolution": "Resolusi"
+}

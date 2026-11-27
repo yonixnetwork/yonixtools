@@ -2,6 +2,7 @@
 import { LoaderCircle } from "lucide-react";
 import { useState } from "react";
 import { Notice, Output } from "./ui";
+import { useT } from "@/i18n/client";
 import { minify, type MinifyLang, type MinifyResult } from "@/lib/tools/minify";
 
 const SAMPLES: Record<MinifyLang, string> = {
@@ -12,6 +13,7 @@ const SAMPLES: Record<MinifyLang, string> = {
 const NAMES: Record<MinifyLang, string> = { html: "HTML", css: "CSS", js: "JavaScript" };
 
 function MinifyTool({ lang }: { lang: MinifyLang }) {
+  const t = useT("tools-minify");
   const [input, setInput] = useState(SAMPLES[lang]);
   const [mangle, setMangle] = useState(true);
   const [keepComments, setKeepComments] = useState(false);
@@ -26,7 +28,9 @@ function MinifyTool({ lang }: { lang: MinifyLang }) {
     } catch (e) {
       const err = e as { message?: string; line?: number; col?: number };
       setRes(null);
-      setError(`${err.line ? `Line ${err.line}, column ${(err.col ?? 0) + 1}: ` : ""}${err.message || "Couldn't minify this code."}`);
+      // The parser's own message is technical detail and stays as the minifier reports it.
+      const detail = err.message || t("minify.failed");
+      setError(err.line ? t("minify.errorAt", { line: err.line, column: (err.col ?? 0) + 1, message: detail }) : detail);
     } finally {
       setBusy(false);
     }
@@ -34,21 +38,21 @@ function MinifyTool({ lang }: { lang: MinifyLang }) {
   return (
     <div className="stack" style={{ gap: 16 }}>
       <div className="field">
-        <label htmlFor="min-in">{NAMES[lang]} input</label>
+        <label htmlFor="min-in">{t("minify.input", { lang: NAMES[lang] })}</label>
         <textarea id="min-in" className="textarea mono" value={input} onChange={(e) => (setInput(e.target.value), setRes(null))} spellCheck={false} style={{ minHeight: 220 }} />
       </div>
       <div className="row">
-        {lang === "js" && <label className="check"><input type="checkbox" checked={mangle} onChange={(e) => setMangle(e.target.checked)} /> Mangle names</label>}
-        <label className="check"><input type="checkbox" checked={keepComments} onChange={(e) => setKeepComments(e.target.checked)} /> Keep {lang === "html" ? "" : "licence "}comments</label>
-        <button type="button" className="btn btn-primary" onClick={run} disabled={busy || !input.trim()}>{busy && <LoaderCircle className="spin" aria-hidden />} Minify {NAMES[lang]}</button>
+        {lang === "js" && <label className="check"><input type="checkbox" checked={mangle} onChange={(e) => setMangle(e.target.checked)} /> {t("minify.mangle")}</label>}
+        <label className="check"><input type="checkbox" checked={keepComments} onChange={(e) => setKeepComments(e.target.checked)} /> {t(lang === "html" ? "minify.keepComments" : "minify.keepLicenceComments")}</label>
+        <button type="button" className="btn btn-primary" onClick={run} disabled={busy || !input.trim()}>{busy && <LoaderCircle className="spin" aria-hidden />} {t("minify.button", { lang: NAMES[lang] })}</button>
       </div>
       {error && <Notice kind="error">{error}</Notice>}
       {res && (
         <>
           <p className="muted" data-testid="minify-stats">
-            {res.before.toLocaleString()} → {res.after.toLocaleString()} bytes ({res.before ? Math.round((1 - res.after / res.before) * 100) : 0}% smaller)
+            {t("minify.stats", { before: res.before, after: res.after, percent: res.before ? Math.round((1 - res.after / res.before) * 100) : 0 })}
           </p>
-          <Output label="Minified" text={res.output} filename={`minified.${lang === "js" ? "js" : lang}`} />
+          <Output label={t("minify.output")} text={res.output} filename={`minified.${lang === "js" ? "js" : lang}`} />
         </>
       )}
     </div>

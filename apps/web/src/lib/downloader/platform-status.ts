@@ -1,3 +1,4 @@
+import type { Translator } from "@/i18n/translator";
 import type { PlatformId } from "./detect";
 
 /**
@@ -13,11 +14,13 @@ export interface PlatformStatus {
   state: PlatformState;
   /** What can be downloaded. (Not listed: Reddit and Vimeo refuse our server; Imgur answers the production server with HTTP 429.) */
   content: string;
-  /** Honest, short note for users. */
+  /** Honest, short note for users. English; translated text: platformStatusText / platformStatusKeys ("downloader" namespace). */
   note: string;
 }
 
 export const VERIFIED_ON = "7 November 2026";
+/** VERIFIED_ON as an ISO date, for f.date / formatDate in the visitor's language. */
+export const VERIFIED_ON_DATE = "2026-11-07";
 
 export const PLATFORM_STATUS: PlatformStatus[] = [
   { id: "tiktok", state: "working", content: "Videos, photo posts", note: "Clean (no-watermark) file when TikTok provides one. A few posts are region-locked." },
@@ -38,3 +41,15 @@ export const PLATFORM_STATUS: PlatformStatus[] = [
 ];
 
 export const STATE_LABEL: Record<PlatformState, string> = { working: "Working", limited: "Limited", blocked: "Blocked by platform" };
+
+/** "downloader" namespace keys for STATE_LABEL. */
+export const STATE_LABEL_KEY: Record<PlatformState, string> = { working: "status.state.working", limited: "status.state.limited", blocked: "status.state.blocked" };
+
+/** "downloader" namespace keys of a platform's `content` and `note`. */
+export const platformStatusKeys = (p: Pick<PlatformStatus, "id">) => ({ content: `status.${p.id}.content`, note: `status.${p.id}.note` });
+
+/** A platform's state label, content and note in the visitor's language (translator for the "downloader" namespace). */
+export function platformStatusText(t: Translator, p: Pick<PlatformStatus, "id" | "state">) {
+  const k = platformStatusKeys(p);
+  return { state: t(STATE_LABEL_KEY[p.state]), content: t(k.content), note: t(k.note) };
+}

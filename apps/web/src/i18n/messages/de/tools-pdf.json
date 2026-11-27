@@ -1,0 +1,119 @@
+{
+  "common.clear": "Leeren",
+  "common.download": "Herunterladen",
+  "common.downloadZip": "Alle herunterladen (ZIP)",
+  "common.dropLabel": "PDF auswählen oder hierher ziehen",
+  "common.pagesChange": {
+    "one": "{count} Seite · zum Ändern klicken",
+    "other": "{count} Seiten · zum Ändern klicken"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} Seite · {size} · zum Ändern klicken",
+    "other": "{count} Seiten · {size} · zum Ändern klicken"
+  },
+  "common.processedLocally": "Auf Ihrem Gerät verarbeitet",
+  "common.renderingPage": "Seite {page} von {total} wird gerendert …",
+  "compressor.building": "PDF wird erstellt …",
+  "compressor.change": "Änderung",
+  "compressor.compress": "Komprimieren",
+  "compressor.compressed": "Komprimiert",
+  "compressor.download": "Komprimiertes PDF herunterladen",
+  "compressor.lossless": "Verlustfrei (Text bleibt erhalten)",
+  "compressor.mode": "Komprimierung",
+  "compressor.notSmallerLossless": "Mit dieser Einstellung ließ sich die Datei nicht nennenswert verkleinern. Verwenden Sie für gescannte oder bildlastige PDFs die starke Komprimierung.",
+  "compressor.notSmallerStrong": "Mit dieser Einstellung ließ sich die Datei nicht nennenswert verkleinern. Verringern Sie die Qualität oder Auflösung – oder behalten Sie das Original.",
+  "compressor.optimising": "Wird optimiert …",
+  "compressor.original": "Original",
+  "compressor.quality": "JPEG-Qualität: {value} %",
+  "compressor.resolution": "Auflösung: {value} DPI",
+  "compressor.strong": "Stark (Seiten werden zu Bildern)",
+  "compressor.strongWarn": "Bei starker Komprimierung wird jede Seite in ein Bild umgewandelt. Der Text lässt sich danach nicht mehr markieren oder durchsuchen.",
+  "errors.addImage": "Fügen Sie mindestens ein Bild hinzu.",
+  "errors.encodeFailed": "Die Kodierung ist fehlgeschlagen.",
+  "errors.encrypted": "Dieses PDF ist passwortgeschützt. Entfernen Sie zuerst das Passwort und versuchen Sie es dann erneut.",
+  "errors.encryptedShort": "Dieses PDF ist passwortgeschützt. Entfernen Sie zuerst das Passwort.",
+  "errors.generic": "Etwas ist schiefgelaufen. Bitte versuchen Sie es erneut.",
+  "errors.imageOpen": "{name} konnte nicht als Bild geöffnet werden.",
+  "errors.mergeTwo": "Fügen Sie mindestens zwei PDFs zum Zusammenfügen hinzu.",
+  "errors.notPdf": "Diese Datei ist kein PDF.",
+  "errors.pageTooLarge": "Eine Seite ist zu groß, um sie in dieser Auflösung zu rendern. Wählen Sie einen niedrigeren DPI-Wert.",
+  "errors.rangeBackwards": "„{part}“ ist absteigend.",
+  "errors.rangeEmpty": "Geben Sie mindestens eine Seite oder einen Bereich ein, z. B. 1-3, 5.",
+  "errors.rangeInvalid": "„{part}“ ist keine gültige Seite und kein gültiger Bereich.",
+  "errors.rangeOutside": {
+    "one": "„{part}“ liegt außerhalb des Dokuments (es hat {count} Seite).",
+    "other": "„{part}“ liegt außerhalb des Dokuments (es hat {count} Seiten)."
+  },
+  "errors.renderFailed": "Das Rendern ist fehlgeschlagen.",
+  "errors.tooBig": "{name} ist größer als {size} MB und damit zu groß für die Verarbeitung im Browser.",
+  "errors.unreadable": "Diese Datei konnte nicht als PDF gelesen werden. Sie ist möglicherweise beschädigt oder kein PDF.",
+  "errors.unreadableShort": "Diese Datei konnte nicht als PDF gelesen werden.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF erstellen",
+  "imageToPdf.done": {
+    "one": "PDF mit {count} Seite erstellt ({size}). Der Download hat begonnen.",
+    "other": "PDF mit {count} Seiten erstellt ({size}). Der Download hat begonnen."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. Ein Bild pro Seite.",
+  "imageToPdf.dropLabel": "Bilder auswählen oder hierher ziehen",
+  "imageToPdf.imageSize": "Bildgröße",
+  "imageToPdf.large": "Groß",
+  "imageToPdf.letter": "US Letter",
+  "imageToPdf.margin": "Rand",
+  "imageToPdf.noMargin": "Kein Rand",
+  "imageToPdf.pageSize": "Seitenformat",
+  "imageToPdf.skipped": "Einige Dateien wurden übersprungen, weil sie keine Bilder sind.",
+  "imageToPdf.small": "Klein",
+  "merger.done": {
+    "one": "{count} Seite in merged.pdf zusammengefügt ({size}). Der Download hat begonnen.",
+    "other": "{count} Seiten in merged.pdf zusammengefügt ({size}). Der Download hat begonnen."
+  },
+  "merger.dropHint": "Fügen Sie zwei oder mehr hinzu. Die Dateien verlassen nie Ihr Gerät.",
+  "merger.dropLabel": "PDF-Dateien auswählen oder hierher ziehen",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "PDFs zusammenfügen",
+  "merger.mergeCount": "{count} PDFs zusammenfügen",
+  "merger.pageNote": {
+    "one": "{count} Seite",
+    "other": "{count} Seiten"
+  },
+  "merger.skipped": "Einige Dateien wurden übersprungen, weil sie keine PDFs sind.",
+  "rotate.all": "Alle Seiten",
+  "rotate.angle": "Winkel",
+  "rotate.done": "Gedrehtes PDF heruntergeladen.",
+  "rotate.half": "180°",
+  "rotate.hint": "Beispiel: 1, 3-4",
+  "rotate.left": "90° nach links",
+  "rotate.pages": "Seiten",
+  "rotate.pagesLabel": "Zu drehende Seiten",
+  "rotate.right": "90° nach rechts",
+  "rotate.run": "Drehen & herunterladen",
+  "rotate.some": "Ausgewählte Seiten",
+  "splitter.every": {
+    "one": "Jede Seite einzeln ({count} Datei)",
+    "other": "Jede Seite einzeln ({count} Dateien)"
+  },
+  "splitter.mode": "Teilungsmodus",
+  "splitter.ranges": "Seitenbereiche",
+  "splitter.rangesHint": "Beispiel: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Bereiche (eine Ausgabedatei pro Bereich)",
+  "splitter.ready": {
+    "one": "{count} Datei bereit",
+    "other": "{count} Dateien bereit"
+  },
+  "splitter.split": "PDF teilen",
+  "toImage.convert": {
+    "one": "{count} Seite umwandeln",
+    "other": "{count} Seiten umwandeln"
+  },
+  "toImage.count": {
+    "one": "{count} Bild",
+    "other": "{count} Bilder"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "Wird auf Ihrem Gerät mit pdf.js gerendert",
+  "toImage.format": "Format",
+  "toImage.memoryWarn": "Das Rendern vieler Seiten mit 300 DPI braucht viel Arbeitsspeicher und kann langsam sein.",
+  "toImage.page": "Seite {page}",
+  "toImage.resolution": "Auflösung"
+}

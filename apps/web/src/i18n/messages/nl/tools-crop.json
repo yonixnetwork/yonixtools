@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Beeldverhouding",
+  "crop.choose": "Kies een afbeelding of sleep die hierheen",
+  "crop.chooseHint": "Bijgesneden op uw apparaat, nooit geüpload",
+  "crop.download": "{width}×{height} downloaden",
+  "crop.errorNotImage": "Dat bestand is geen afbeelding.",
+  "crop.errorOpen": "Deze afbeelding kon niet in uw browser worden geopend.",
+  "crop.free": "Vrij",
+  "crop.height": "Hoogte (px)",
+  "crop.imageAlt": "Afbeelding die wordt bijgesneden",
+  "crop.left": "Links (px)",
+  "crop.sourceInfo": "{width}×{height} · klik om te wijzigen",
+  "crop.top": "Boven (px)",
+  "crop.width": "Breedte (px)"
+}

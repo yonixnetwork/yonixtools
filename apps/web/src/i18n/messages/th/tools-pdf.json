@@ -1,0 +1,109 @@
+{
+  "common.clear": "ล้าง",
+  "common.download": "ดาวน์โหลด",
+  "common.downloadZip": "ดาวน์โหลดทั้งหมด (ZIP)",
+  "common.dropLabel": "เลือกไฟล์ PDF หรือลากมาวางที่นี่",
+  "common.pagesChange": {
+    "other": "{count} หน้า · คลิกเพื่อเปลี่ยน"
+  },
+  "common.pagesSizeChange": {
+    "other": "{count} หน้า · {size} · คลิกเพื่อเปลี่ยน"
+  },
+  "common.processedLocally": "ประมวลผลบนอุปกรณ์ของคุณ",
+  "common.renderingPage": "กำลังเรนเดอร์หน้า {page} จาก {total}…",
+  "compressor.building": "กำลังสร้าง PDF…",
+  "compressor.change": "เปลี่ยน",
+  "compressor.compress": "บีบอัด",
+  "compressor.compressed": "บีบอัดแล้ว",
+  "compressor.download": "ดาวน์โหลด PDF ที่บีบอัดแล้ว",
+  "compressor.lossless": "ไม่สูญเสียคุณภาพ (คงข้อความไว้)",
+  "compressor.mode": "การบีบอัด",
+  "compressor.notSmallerLossless": "การตั้งค่านี้ไม่สามารถทำให้ไฟล์เล็กลงได้มากนัก ลองใช้การบีบอัดแบบเข้มข้นสำหรับ PDF ที่สแกนมาหรือมีรูปภาพจำนวนมาก",
+  "compressor.notSmallerStrong": "การตั้งค่านี้ไม่สามารถทำให้ไฟล์เล็กลงได้มากนัก ลองลดคุณภาพหรือความละเอียด หรือใช้ไฟล์ต้นฉบับต่อไป",
+  "compressor.optimising": "กำลังปรับแต่ง…",
+  "compressor.original": "ต้นฉบับ",
+  "compressor.quality": "คุณภาพ JPEG: {value}%",
+  "compressor.resolution": "ความละเอียด: {value} DPI",
+  "compressor.strong": "เข้มข้น (หน้าจะกลายเป็นรูปภาพ)",
+  "compressor.strongWarn": "การบีบอัดแบบเข้มข้นจะเปลี่ยนแต่ละหน้าเป็นรูปภาพ ทำให้เลือกหรือค้นหาข้อความไม่ได้อีกต่อไป",
+  "errors.addImage": "เพิ่มรูปภาพอย่างน้อยหนึ่งรูป",
+  "errors.encodeFailed": "การเข้ารหัสล้มเหลว",
+  "errors.encrypted": "PDF นี้มีการป้องกันด้วยรหัสผ่าน โปรดลบรหัสผ่านก่อน แล้วลองอีกครั้ง",
+  "errors.encryptedShort": "PDF นี้มีการป้องกันด้วยรหัสผ่าน โปรดลบรหัสผ่านก่อน",
+  "errors.generic": "เกิดข้อผิดพลาด โปรดลองอีกครั้ง",
+  "errors.imageOpen": "ไม่สามารถเปิด {name} เป็นรูปภาพได้",
+  "errors.mergeTwo": "เพิ่ม PDF อย่างน้อยสองไฟล์เพื่อรวม",
+  "errors.notPdf": "ไฟล์นี้ไม่ใช่ PDF",
+  "errors.pageTooLarge": "มีหน้าที่ใหญ่เกินกว่าจะเรนเดอร์ที่ความละเอียดนี้ได้ โปรดเลือกค่า DPI ที่ต่ำลง",
+  "errors.rangeBackwards": "“{part}” เรียงย้อนกลับ",
+  "errors.rangeEmpty": "ป้อนอย่างน้อยหนึ่งหน้าหรือหนึ่งช่วง เช่น 1-3, 5",
+  "errors.rangeInvalid": "“{part}” ไม่ใช่หน้าหรือช่วงหน้าที่ถูกต้อง",
+  "errors.rangeOutside": {
+    "other": "“{part}” อยู่นอกเอกสาร (เอกสารมี {count} หน้า)"
+  },
+  "errors.renderFailed": "การเรนเดอร์ล้มเหลว",
+  "errors.tooBig": "{name} มีขนาดใหญ่กว่า {size} MB ซึ่งใหญ่เกินกว่าจะประมวลผลในเบราว์เซอร์ได้",
+  "errors.unreadable": "ไม่สามารถอ่านไฟล์นี้เป็น PDF ได้ ไฟล์อาจเสียหายหรือไม่ใช่ PDF",
+  "errors.unreadableShort": "ไม่สามารถอ่านไฟล์นี้เป็น PDF ได้",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "สร้าง PDF",
+  "imageToPdf.done": {
+    "other": "สร้าง PDF จำนวน {count} หน้าแล้ว ({size}) เริ่มดาวน์โหลดแล้ว"
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP หนึ่งรูปต่อหนึ่งหน้า",
+  "imageToPdf.dropLabel": "เลือกรูปภาพหรือลากมาวางที่นี่",
+  "imageToPdf.imageSize": "ขนาดรูปภาพ",
+  "imageToPdf.large": "ใหญ่",
+  "imageToPdf.letter": "ขนาด Letter",
+  "imageToPdf.margin": "ระยะขอบ",
+  "imageToPdf.noMargin": "ไม่มีระยะขอบ",
+  "imageToPdf.pageSize": "ขนาดหน้า",
+  "imageToPdf.skipped": "ข้ามบางไฟล์ไปเพราะไม่ใช่รูปภาพ",
+  "imageToPdf.small": "เล็ก",
+  "merger.done": {
+    "other": "รวม {count} หน้าเป็น merged.pdf แล้ว ({size}) เริ่มดาวน์โหลดแล้ว"
+  },
+  "merger.dropHint": "เพิ่มตั้งแต่สองไฟล์ขึ้นไป ไฟล์จะไม่ออกจากอุปกรณ์ของคุณ",
+  "merger.dropLabel": "เลือกไฟล์ PDF หรือลากมาวางที่นี่",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "รวมไฟล์ PDF",
+  "merger.mergeCount": "รวม PDF {count} ไฟล์",
+  "merger.pageNote": {
+    "other": "{count} หน้า"
+  },
+  "merger.skipped": "ข้ามบางไฟล์ไปเพราะไม่ใช่ PDF",
+  "rotate.all": "ทุกหน้า",
+  "rotate.angle": "มุม",
+  "rotate.done": "ดาวน์โหลด PDF ที่หมุนแล้ว",
+  "rotate.half": "180°",
+  "rotate.hint": "ตัวอย่าง: 1, 3-4",
+  "rotate.left": "90° ทางซ้าย",
+  "rotate.pages": "หน้า",
+  "rotate.pagesLabel": "หน้าที่จะหมุน",
+  "rotate.right": "90° ทางขวา",
+  "rotate.run": "หมุนและดาวน์โหลด",
+  "rotate.some": "หน้าที่เลือก",
+  "splitter.every": {
+    "other": "ทุกหน้า ({count} ไฟล์)"
+  },
+  "splitter.mode": "โหมดการแยก",
+  "splitter.ranges": "ช่วงหน้า",
+  "splitter.rangesHint": "ตัวอย่าง: 1-3, 5, 8-",
+  "splitter.rangesLabel": "ช่วงหน้า (หนึ่งไฟล์ต่อหนึ่งช่วง)",
+  "splitter.ready": {
+    "other": "พร้อมแล้ว {count} ไฟล์"
+  },
+  "splitter.split": "แยกไฟล์ PDF",
+  "toImage.convert": {
+    "other": "แปลง {count} หน้า"
+  },
+  "toImage.count": {
+    "other": "{count} รูป"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "เรนเดอร์บนอุปกรณ์ของคุณด้วย pdf.js",
+  "toImage.format": "รูปแบบ",
+  "toImage.memoryWarn": "การเรนเดอร์หลายหน้าที่ 300 DPI ใช้หน่วยความจำมากและอาจช้า",
+  "toImage.page": "หน้า {page}",
+  "toImage.resolution": "ความละเอียด"
+}

@@ -1,0 +1,11 @@
+{
+  "minify.button": "Rút gọn {lang}",
+  "minify.errorAt": "Dòng {line}, cột {column}: {message}",
+  "minify.failed": "Không thể rút gọn đoạn mã này.",
+  "minify.input": "Mã {lang} đầu vào",
+  "minify.keepComments": "Giữ lại chú thích",
+  "minify.keepLicenceComments": "Giữ lại chú thích giấy phép",
+  "minify.mangle": "Rút gọn tên biến",
+  "minify.output": "Đã rút gọn",
+  "minify.stats": "{before} → {after} byte (nhỏ hơn {percent}%)"
+}

@@ -1,57 +1,64 @@
 import { Logo } from "./Logo";
-import { categories, getTool, popularSlugs, downloaderTools } from "@/lib/registry";
-import { categoryPath, toolPath } from "@/lib/site";
+import { categories, downloaderTools, popularSlugs } from "@/lib/registry";
+import { getT, loadNamespace } from "@/i18n/server";
+import { localizeCategory, localizeTool } from "@/i18n/source";
+import { getTool } from "@/lib/registry";
+import { pathFor } from "@/i18n/routes";
 
-export function Footer() {
+/** Server component: rendered at build time in the page's language. */
+export function Footer({ locale }: { locale: string }) {
+  const t = getT(locale, "common");
+  const reg = loadNamespace(locale, "registry");
+  const name = (slug: string) => localizeTool(getTool(slug)!, reg).name;
   return (
     <footer className="site-footer">
       <div className="container">
         <div className="footer-grid">
           <div className="about">
-            <Logo />
-            <p>A universal social media downloader and free, private browser tools for everyday tasks. No sign-up required.</p>
+            <Logo href={pathFor(locale, { kind: "home" })} label={t("logo.home")} />
+            <p>{t("footer.about")}</p>
           </div>
           <div>
-            <h2>Downloaders</h2>
+            <h2>{t("footer.downloaders")}</h2>
             <ul>
-              {downloaderTools().slice(0, 6).map((t) => (
-                <li key={t.slug}>
-                  <a href={toolPath(t.slug)}>{t.name.replace(" Video Downloader", " Downloader")}</a>
+              {downloaderTools()
+                .slice(0, 6)
+                .map((tool) => (
+                  <li key={tool.slug}>
+                    <a href={pathFor(locale, { kind: "tool", slug: tool.slug })}>{locale === "en" ? tool.name.replace(" Video Downloader", " Downloader") : name(tool.slug)}</a>
+                  </li>
+                ))}
+            </ul>
+          </div>
+          <div>
+            <h2>{t("footer.popular")}</h2>
+            <ul>
+              {popularSlugs.slice(0, 6).map((s) => (
+                <li key={s}>
+                  <a href={pathFor(locale, { kind: "tool", slug: s })}>{name(s)}</a>
                 </li>
               ))}
             </ul>
           </div>
           <div>
-            <h2>Popular tools</h2>
-            <ul>
-              {popularSlugs.slice(0, 6).map((s) => {
-                const t = getTool(s)!;
-                return (
-                  <li key={s}>
-                    <a href={toolPath(s)}>{t.name}</a>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-          <div>
-            <h2>Categories</h2>
+            <h2>{t("footer.categories")}</h2>
             <ul>
               {categories.map((c) => (
                 <li key={c.id}>
-                  <a href={categoryPath(c.slug)}>{c.name}</a>
+                  <a href={pathFor(locale, { kind: "category", id: c.id })}>{localizeCategory(c, reg).name}</a>
                 </li>
               ))}
               <li>
-                <a href="/tools/">All tools</a>
+                <a href={pathFor(locale, { kind: "tools" })}>{t("footer.allTools")}</a>
               </li>
             </ul>
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} YoniXTools. Download only content you have the right to save.</span>
+          <span>{t("footer.copyright", { year: String(new Date().getFullYear()) })}</span>
           <span>
-            <a href="/guides/">Guides</a> · <a href="/about/">Help</a> · <a href="/privacy/">Privacy</a>
+            <a href={pathFor(locale, { kind: "guides" })}>{t("footer.guides")}</a> · <a href={pathFor(locale, { kind: "about" })}>{t("footer.help")}</a> ·{" "}
+            <a href={pathFor(locale, { kind: "privacy" })}>{t("footer.privacy")}</a>
           </span>
         </div>
       </div>

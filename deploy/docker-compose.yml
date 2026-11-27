@@ -51,12 +51,17 @@ services:
       APP_ENV: production
       TEMP_ROOT: /var/lib/yonixtools/tmp
       TRUST_PROXY_HEADERS: "1"
+      # Ad eligibility (advertising safety): DB-IP Lite country database, refreshed monthly ON THE HOST
+      # by deploy/scripts/update-geoip.sh into deploy/geoip (git-ignored). Missing = ads suppressed.
+      GEOIP_DB_PATH: /var/lib/yonixtools/geoip/dbip-country-lite.mmdb
     expose: ["8787"]
     read_only: true
     tmpfs:
       - /tmp:size=64m
     volumes:
       - downloads:/var/lib/yonixtools/tmp
+      # The directory (not the file), so the script's atomic rename is seen without a restart.
+      - ./geoip:/var/lib/yonixtools/geoip:ro
     security_opt: ["no-new-privileges:true"]
     cap_drop: ["ALL"]
     networks: [stack]

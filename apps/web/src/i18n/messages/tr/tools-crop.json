@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "En boy oranı",
+  "crop.choose": "Bir resim seçin veya buraya bırakın",
+  "crop.chooseHint": "Cihazınızda kırpılır, asla yüklenmez",
+  "crop.download": "{width}×{height} indir",
+  "crop.errorNotImage": "Bu dosya bir resim değil.",
+  "crop.errorOpen": "Bu resim tarayıcınızda açılamadı.",
+  "crop.free": "Serbest",
+  "crop.height": "Yükseklik (px)",
+  "crop.imageAlt": "Kırpılan resim",
+  "crop.left": "Sol (px)",
+  "crop.sourceInfo": "{width}×{height} · değiştirmek için tıklayın",
+  "crop.top": "Üst (px)",
+  "crop.width": "Genişlik (px)"
+}

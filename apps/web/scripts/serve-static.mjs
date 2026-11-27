@@ -13,6 +13,11 @@ const apiProxy = process.env.API_PROXY ? new URL(process.env.API_PROXY) : null;
 // Same origin rule as the production Nginx (web.conf $ytx_wrong_origin): ORIGIN_ROLE=ad serves
 // only the two ad documents; ORIGIN_ROLE=site never serves them. (Unset: everything, for previews.)
 const role = process.env.ORIGIN_ROLE || "";
+// TEST ONLY: ADS_ELIGIBILITY_STUB=eligible|ineligible answers /api/v1/ad-eligibility here (before any
+// API proxy), so e2e tests of the rendered (stubbed) ads don't need a GeoIP database or a verified
+// policy. Production never runs this server; there the backend decides (services/downloader).
+const eligibilityStub = process.env.ADS_ELIGIBILITY_STUB || "";
+const policyVersion = JSON.parse(await readFile(new URL("../src/lib/ads/ads-policy.json", import.meta.url), "utf8")).version;
 const AD_DOC = /^\/(ad-frame|ad-test)\.html$/;
 const types = { ".html": "text/html; charset=utf-8", ".js": "text/javascript", ".css": "text/css", ".json": "application/json", ".svg": "image/svg+xml", ".png": "image/png", ".ico": "image/x-icon", ".woff2": "font/woff2", ".woff": "font/woff", ".txt": "text/plain; charset=utf-8", ".xml": "application/xml", ".webmanifest": "application/manifest+json" };
 
@@ -28,6 +33,10 @@ async function file(p) {
 
 createServer(async (req, res) => {
   const url = new URL(req.url || "/", "http://localhost");
+  if (eligibilityStub && role !== "ad" && url.pathname === "/api/v1/ad-eligibility") {
+    const eligible = eligibilityStub === "eligible";
+    return res.writeHead(200, { "content-type": "application/json", "cache-control": "private, no-store" }).end(JSON.stringify({ eligible, reason: eligible ? "eligible" : "e2e_stub", country: null, policyVersion }));
+  }
   if (apiProxy && url.pathname.startsWith("/api/")) {
     const headers = { ...req.headers, host: apiProxy.host };
     delete headers["x-forwarded-for"];

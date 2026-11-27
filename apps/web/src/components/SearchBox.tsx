@@ -3,18 +3,24 @@ import { ArrowRight, Clock, Search } from "lucide-react";
 import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { ToolIcon } from "./Icon";
 import { getRecent } from "@/lib/recent";
-import { toolPath } from "@/lib/site";
 import type { Tool } from "@/lib/registry";
 import { isAvailable } from "@/lib/registry/availability";
 import type { SearchResponse } from "@/lib/search";
+import { useT } from "@/i18n/client";
+import { useToolIndex } from "@/i18n/tool-index";
 
 type SearchModule = typeof import("@/lib/search-client");
 let modPromise: Promise<SearchModule> | null = null;
 const loadSearch = () => (modPromise ??= import("@/lib/search-client"));
 
+/** Localized popular searches (English pages use lib/search popularSearches). */
+const POPULAR_KEYS = ["search.popular.0", "search.popular.1", "search.popular.2", "search.popular.3", "search.popular.4", "search.popular.5"];
+
 type Option = { id: string; href: string; tool?: Tool; label?: string };
 
-export function SearchBox({ size, autoFocus, placeholder = "Search tools", shortcut }: { size?: "lg"; autoFocus?: boolean; placeholder?: string; shortcut?: boolean }) {
+export function SearchBox({ size, autoFocus, placeholder, shortcut }: { size?: "lg"; autoFocus?: boolean; placeholder?: string; shortcut?: boolean }) {
+  const t = useT("common");
+  const ix = useToolIndex();
   const [q, setQ] = useState("");
   const [open, setOpen] = useState(false);
   const [mod, setMod] = useState<SearchModule | null>(null);
@@ -50,7 +56,7 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
     return () => document.removeEventListener("mousedown", onDown);
   }, []);
 
-  const response: SearchResponse | null = useMemo(() => (mod && q.trim() ? mod.searchTools(q, { limit: 6 }) : null), [mod, q]);
+  const response: SearchResponse | null = useMemo(() => (mod && q.trim() ? mod.searchTools(q, { limit: 6, localized: ix.text }) : null), [mod, q, ix.text]);
 
   const options: Option[] = useMemo(() => {
     if (!mod) return [];
@@ -59,12 +65,13 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
         .map((s) => mod.getTool(s))
         .filter((t): t is Tool => !!t)
         .slice(0, 5)
-        .map((t) => ({ id: `r-${t.slug}`, href: toolPath(t.slug), tool: t }));
+        .map((t) => ({ id: `r-${t.slug}`, href: ix.hrefOf(t.slug), tool: ix.textOf(t) }));
     }
-    const opts: Option[] = (response?.results ?? []).map((r) => ({ id: `t-${r.tool.slug}`, href: toolPath(r.tool.slug), tool: r.tool }));
-    opts.push({ id: "all", href: `/tools/?q=${encodeURIComponent(q.trim())}`, label: `See all results for “${q.trim()}”` });
+    const opts: Option[] = (response?.results ?? []).map((r) => ({ id: `t-${r.tool.slug}`, href: ix.hrefOf(r.tool.slug), tool: r.tool }));
+    opts.push({ id: "all", href: `${ix.toolsPath}?q=${encodeURIComponent(q.trim())}`, label: t("search.seeAll", { query: q.trim() }) });
     return opts;
-  }, [mod, q, recent, response]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mod, q, recent, response, ix.text]);
 
   useEffect(() => setActive(0), [q]);
 
@@ -83,7 +90,7 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
     } else if (e.key === "Enter") {
       e.preventDefault();
       if (options[active]) go(options[active]);
-      else if (q.trim()) go({ id: "all", href: `/tools/?q=${encodeURIComponent(q.trim())}` });
+      else if (q.trim()) go({ id: "all", href: `${ix.toolsPath}?q=${encodeURIComponent(q.trim())}` });
     } else if (e.key === "Escape") {
       setOpen(false);
       inputRef.current?.blur();
@@ -101,8 +108,8 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
         className="input"
         type="search"
         value={q}
-        placeholder={placeholder}
-        aria-label="Search tools"
+        placeholder={placeholder ?? t("search.placeholder")}
+        aria-label={t("search.aria")}
         role="combobox"
         aria-expanded={!!showPanel}
         aria-controls={listId}
@@ -123,9 +130,9 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
       />
       {shortcut && !q && <kbd aria-hidden>/</kbd>}
       {showPanel && (
-        <div className="suggest" id={listId} role="listbox" aria-label="Search suggestions">
-          {!q.trim() && options.length > 0 && <div className="suggest-label">Recently used</div>}
-          {q.trim() && response?.partial && <div className="suggest-label">No exact match: related tools</div>}
+        <div className="suggest" id={listId} role="listbox" aria-label={t("search.suggestions")}>
+          {!q.trim() && options.length > 0 && <div className="suggest-label">{t("search.recent")}</div>}
+          {q.trim() && response?.partial && <div className="suggest-label">{t("search.partial")}</div>}
           {options.map((o, i) => (
             <div
               key={o.id}
@@ -144,7 +151,7 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
                   <span className="s-text">
                     <span className="s-name">{o.tool.name}</span>
                     <span className="s-tag" style={{ display: "block" }}>
-                      {!isAvailable(o.tool) ? "Coming soon · " : ""}
+                      {!isAvailable(o.tool) ? `${t("card.comingSoon")} · ` : ""}
                       {o.tool.tagline}
                     </span>
                   </span>
@@ -162,14 +169,14 @@ export function SearchBox({ size, autoFocus, placeholder = "Search tools", short
           ))}
           {q.trim() && response && response.planned.length > 0 && (
             <div className="suggest-label" style={{ textTransform: "none", letterSpacing: 0, fontWeight: 500 }}>
-              {response.planned.map((p) => p.name).join(", ")} {response.planned.length > 1 ? "are" : "is"} planned but not available yet.
+              {t("search.planned", { count: response.planned.length, names: response.planned.map((p) => p.name).join(", ") })}
             </div>
           )}
           {!q.trim() && (
             <>
-              <div className="suggest-label">Popular searches</div>
+              <div className="suggest-label">{t("search.popular")}</div>
               <div className="row" style={{ gap: 6, padding: "4px 8px 8px" }}>
-                {mod.popularSearches.map((s) => (
+                {(ix.text ? POPULAR_KEYS.map((k) => t(k)) : mod.popularSearches).map((s) => (
                   <button
                     key={s}
                     type="button"

@@ -1,0 +1,33 @@
+{
+  "clock.done": "หมดเวลาแล้ว",
+  "clock.lap": "รอบ",
+  "clock.lapNumber": "รอบที่ {n}",
+  "clock.lapTotal": "รวม {time}",
+  "clock.minutes": "นาที",
+  "clock.mode": "โหมด",
+  "clock.note": "เปิดแท็บนี้ค้างไว้: เบราว์เซอร์จะทำให้ตัวจับเวลาในแท็บเบื้องหลังทำงานช้าลง แต่เวลาที่แสดงยังคงแม่นยำ",
+  "clock.pause": "หยุดชั่วคราว",
+  "clock.reset": "รีเซ็ต",
+  "clock.resume": "ทำต่อ",
+  "clock.seconds": "วินาที",
+  "clock.start": "เริ่ม",
+  "clock.stopwatch": "นาฬิกาจับเวลา",
+  "clock.timer": "ตัวนับถอยหลัง",
+  "random.count": "จำนวน",
+  "random.errorCount": "เลือกจำนวนตัวเลขระหว่าง {min} ถึง {max}",
+  "random.errorGeneric": "โปรดตรวจสอบตัวเลข",
+  "random.errorRange": "ป้อนจำนวนเต็ม โดยค่าต่ำสุดต้องไม่มากกว่าค่าสูงสุด",
+  "random.errorTooLarge": "ช่วงตัวเลขกว้างเกินไป (สูงสุด {max} ค่า)",
+  "random.errorUnique": {
+    "other": "ในช่วงนี้มีตัวเลขที่ไม่ซ้ำกันเพียง {count} ตัว"
+  },
+  "random.generate": "สุ่ม",
+  "random.max": "ค่าสูงสุด",
+  "random.min": "ค่าต่ำสุด",
+  "random.note": "ใช้ตัวสุ่มเชิงวิทยาการเข้ารหัสของเบราว์เซอร์ จึงไม่มีความลำเอียง",
+  "random.result": {
+    "other": "ตัวเลข {count} ตัว"
+  },
+  "random.sorted": "เรียงลำดับผลลัพธ์",
+  "random.unique": "ไม่ซ้ำกัน"
+}

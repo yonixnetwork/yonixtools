@@ -1,4 +1,5 @@
 import { escapeHtml } from "./formats";
+import { UserError } from "@/i18n/errors";
 
 // ── Sitemap ─────────────────────────────────────────────────────────────────
 
@@ -31,7 +32,7 @@ export function parseUrlList(text: string): { urls: string[]; invalid: string[] 
 }
 
 export function sitemapXml(urls: string[], o: SitemapOptions = {}): string {
-  if (urls.length > 50_000) throw new Error("A sitemap can list at most 50,000 URLs. Split it into several files.");
+  if (urls.length > 50_000) throw new UserError("sitemap.tooMany", { max: 50_000 }, "A sitemap can list at most 50,000 URLs. Split it into several files.");
   const body = urls
     .map((u) => {
       const parts = [`    <loc>${xmlEscape(u)}</loc>`];
@@ -96,6 +97,7 @@ export interface SocialMeta {
   url: string;
   siteName: string;
   twitterCard: string;
+  /** Translation keys (tools-seo2 namespace) of the problems found, e.g. "og.warnMissingUrl". */
   warnings: string[];
 }
 
@@ -125,12 +127,12 @@ export function parseSocialMeta(html: string): SocialMeta {
     twitterCard: metas["twitter:card"] || "",
     warnings: [],
   };
-  if (!metas["og:title"]) m.warnings.push("Missing og:title, so platforms will fall back to the <title> tag.");
-  if (!metas["og:description"]) m.warnings.push("Missing og:description.");
-  if (!m.image) m.warnings.push("Missing og:image: links will be shared without a picture.");
-  else if (!/^https:\/\//i.test(m.image)) m.warnings.push("og:image should be an absolute https:// URL.");
-  if (!metas["og:url"]) m.warnings.push("Missing og:url.");
-  if (!metas["twitter:card"]) m.warnings.push("Missing twitter:card: X will use a small summary card.");
+  if (!metas["og:title"]) m.warnings.push("og.warnMissingTitle");
+  if (!metas["og:description"]) m.warnings.push("og.warnMissingDescription");
+  if (!m.image) m.warnings.push("og.warnMissingImage");
+  else if (!/^https:\/\//i.test(m.image)) m.warnings.push("og.warnImageNotHttps");
+  if (!metas["og:url"]) m.warnings.push("og.warnMissingUrl");
+  if (!metas["twitter:card"]) m.warnings.push("og.warnMissingTwitterCard");
   return m;
 }
 

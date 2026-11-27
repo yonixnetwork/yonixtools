@@ -1,0 +1,19 @@
+{
+  "copied": "Copiado",
+  "copy": "Copiar",
+  "copyFailed": "No se ha podido copiar",
+  "download": "Descargar",
+  "downloadPanel.checkDownloads": "Consulte las descargas de su navegador.",
+  "downloadPanel.close": "Cerrar",
+  "downloadPanel.closeAria": "Cerrar panel",
+  "downloadPanel.started": "Descarga iniciada",
+  "files.dropMany": "Elija archivos o arrástrelos aquí",
+  "files.dropOne": "Elija un archivo o arrástrelo aquí",
+  "files.listLabel": "Archivos",
+  "files.moveDown": "Bajar {name}",
+  "files.moveUp": "Subir {name}",
+  "files.remove": "Quitar {name}",
+  "loadingTool": "Cargando herramienta…",
+  "outputPlaceholder": "El resultado aparecerá aquí",
+  "processedOnDevice": "Procesado en su dispositivo"
+}

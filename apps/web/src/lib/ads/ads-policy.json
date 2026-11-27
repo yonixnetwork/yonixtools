@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "lastReviewed": "2026-11-14",
+  "notes": "Single source of truth for advertising eligibility. Ads run only when provider.verification.status is VERIFIED, confirmedDate and evidenceRef are set, every requiredBlockedCategories id is listed in confirmedBlockedCategories, the visitor's country is known, and no countryRules entry suppresses it. Anything else suppresses ads (fail closed). Copies: apps/web/src/lib/ads/ads-policy.json and services/downloader/app/ads_policy.json (scripts/sync-ads-policy.sh; tests fail if they differ). See docs/ADVERTISING_SAFETY_REPORT.md.",
+  "provider": {
+    "name": "Adsterra",
+    "units": ["native", "banner300x250", "banner728x90", "banner320x50"],
+    "verification": {
+      "status": "UNVERIFIED",
+      "confirmedDate": null,
+      "evidenceRef": null,
+      "confirmedBlockedCategories": [],
+      "notes": "No written confirmation from Adsterra yet that each required category can be blocked for this publisher account. Record the written evidence (e.g. support ticket id / email date, stored by the owner) in evidenceRef, the date in confirmedDate, and only the categories the evidence explicitly confirms in confirmedBlockedCategories."
+    }
+  },
+  "prohibitedCategories": [
+    { "id": "real_money_gambling", "label": "Real-money gambling" },
+    { "id": "sports_betting", "label": "Sports betting" },
+    { "id": "online_casinos", "label": "Online casinos" },
+    { "id": "adult_content", "label": "Adult content" },
+    { "id": "ponzi_schemes", "label": "Ponzi and pyramid schemes" },
+    { "id": "investment_scams", "label": "Investment scams" },
+    { "id": "fake_financial_opportunities", "label": "Fake financial opportunities" },
+    { "id": "malware", "label": "Malware" },
+    { "id": "phishing", "label": "Phishing" },
+    { "id": "deceptive_downloads", "label": "Deceptive downloads and fake download buttons" },
+    { "id": "misleading_system_warnings", "label": "Misleading system warnings (fake virus or update alerts)" },
+    { "id": "other_unsafe", "label": "Other prohibited or unsafe advertising" }
+  ],
+  "requiredBlockedCategories": [
+    "real_money_gambling",
+    "sports_betting",
+    "online_casinos",
+    "adult_content",
+    "ponzi_schemes",
+    "investment_scams",
+    "fake_financial_opportunities",
+    "malware",
+    "phishing",
+    "deceptive_downloads",
+    "misleading_system_warnings",
+    "other_unsafe"
+  ],
+  "permittedCategories": [],
+  "permittedCategoriesNotes": "Empty on purpose: no advertising category is treated as permitted until the provider's written confirmation lists what will be served. Informational; eligibility does not read it.",
+  "countryRules": [],
+  "countryRulesNotes": "Country-specific rules, maintained separately from the global prohibitions (which apply everywhere). Empty: no country rule has been legally verified. Do not add a rule without a cited source. Entry shape: {\"country\": \"ISO 3166-1 alpha-2\", \"rule\": \"suppress\" | \"allow\", \"reason\": \"...\", \"source\": \"citation\", \"needsLegalVerification\": true, \"reviewed\": \"YYYY-MM-DD\"}. A rule never enables ads that the global policy suppresses.",
+  "geolocation": {
+    "provider": "DB-IP Lite",
+    "database": "dbip-country-lite (MMDB)",
+    "license": "CC BY 4.0",
+    "licenseUrl": "https://creativecommons.org/licenses/by/4.0/",
+    "attribution": "IP geolocation by DB-IP (https://db-ip.com), licensed under CC BY 4.0",
+    "use": "Country only, server-side only, only for ad eligibility. Never for language. Raw IP addresses are not stored or logged.",
+    "update": "Monthly: deploy/scripts/update-geoip.sh",
+    "failClosed": true
+  },
+  "sources": [
+    { "id": "owner-requirements", "title": "Owner advertising-safety requirements (global expansion)", "ref": "docs/ADVERTISING_SAFETY_REPORT.md" },
+    { "id": "adsterra-controls", "title": "Research: Adsterra publisher controls", "ref": "docs/i18n/ADSTERRA_CONTROLS_RESEARCH.md" },
+    { "id": "dbip-lite", "title": "DB-IP Lite free IP to Country database", "ref": "https://db-ip.com/db/download/ip-to-country-lite" },
+    { "id": "cc-by-4", "title": "Creative Commons Attribution 4.0 International", "ref": "https://creativecommons.org/licenses/by/4.0/" }
+  ]
+}

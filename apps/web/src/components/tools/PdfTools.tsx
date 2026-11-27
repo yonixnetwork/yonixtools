@@ -1,7 +1,10 @@
 "use client";
 import { Archive, Download, LoaderCircle } from "lucide-react";
 import { useEffect, useState } from "react";
-import { baseName, downloadZip, FileDrop, FileOrderList, fmtBytes, toBlob, uid } from "./files";
+import { useFormat, useT } from "@/i18n/client";
+import { isUserError, UserError } from "@/i18n/errors";
+import type { Translator } from "@/i18n/translator";
+import { baseName, downloadZip, FileDrop, FileOrderList, toBlob, uid, useFileSize } from "./files";
 import { announceDownload, downloadBlob, Field, Notice, Segmented } from "./ui";
 import { imagesToPdf, MAX_PDF_BYTES, mergePdfs, optimizePdf, pageCount, parseRanges, rotatePdf, splitPdf, type PageSize, type PdfImage } from "@/lib/tools/pdf";
 
@@ -9,12 +12,21 @@ type Picked = { id: string; name: string; size: number; file: File; note?: strin
 
 const readBytes = async (f: File) => new Uint8Array(await f.arrayBuffer());
 
-function tooBig(files: File[]): string | null {
-  const big = files.find((f) => f.size > MAX_PDF_BYTES);
-  return big ? `${big.name} is larger than ${MAX_PDF_BYTES / 1_000_000} MB, which is too large to process in a browser.` : null;
+/** Text for a caught error: translated UserError, or a generic message. */
+const errText = (t: Translator, e: unknown) => (isUserError(e) ? t(e.key, e.vars) : t("errors.generic"));
+
+function useTooBig() {
+  const t = useT("tools-pdf");
+  const f = useFormat();
+  return (files: File[]): string | null => {
+    const big = files.find((x) => x.size > MAX_PDF_BYTES);
+    return big ? t("errors.tooBig", { name: big.name, size: f.number(MAX_PDF_BYTES / 1_000_000, { maximumFractionDigits: 4 }) }) : null;
+  };
 }
 
 function useSinglePdf() {
+  const t = useT("tools-pdf");
+  const tooBig = useTooBig();
   const [file, setFile] = useState<File | null>(null);
   const [pages, setPages] = useState<number | null>(null);
   const [error, setError] = useState("");
@@ -22,7 +34,7 @@ function useSinglePdf() {
     const f = files[0];
     setError("");
     setPages(null);
-    if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) return setError("That file isn't a PDF.");
+    if (!/pdf$/i.test(f.type) && !/\.pdf$/i.test(f.name)) return setError(t("errors.notPdf"));
     const big = tooBig([f]);
     if (big) return setError(big);
     try {
@@ -30,7 +42,7 @@ function useSinglePdf() {
       setFile(f);
     } catch (e) {
       setFile(null);
-      setError((e as Error).message);
+      setError(errText(t, e));
     }
   };
   return { file, pages, error, setError, pick };
@@ -47,6 +59,9 @@ function Busy({ text }: { text: string }) {
 // ── Merge ───────────────────────────────────────────────────────────────────
 
 export function PdfMerger() {
+  const t = useT("tools-pdf");
+  const size = useFileSize();
+  const tooBig = useTooBig();
   const [items, setItems] = useState<Picked[]>([]);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -55,14 +70,14 @@ export function PdfMerger() {
     setError("");
     setDone(null);
     const pdfs = files.filter((f) => /pdf$/i.test(f.type) || /\.pdf$/i.test(f.name));
-    if (pdfs.length < files.length) setError("Some files were skipped because they aren't PDFs.");
+    if (pdfs.length < files.length) setError(t("merger.skipped"));
     const big = tooBig(pdfs);
     if (big) return setError(big);
     const withPages = await Promise.all(pdfs.map(async (f): Promise<Picked | null> => {
       try {
-        return { id: uid(), name: f.name, size: f.size, file: f, note: ((n) => `${n} page${n === 1 ? "" : "s"}`)(await pageCount(await readBytes(f))) };
+        return { id: uid(), name: f.name, size: f.size, file: f, note: t("merger.pageNote", { count: await pageCount(await readBytes(f)) }) };
       } catch (e) {
-        setError(`${f.name}: ${(e as Error).message}`);
+        setError(t("merger.fileError", { name: f.name, message: errText(t, e) }));
         return null;
       }
     }));
@@ -83,16 +98,16 @@ export function PdfMerger() {
   };
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="application/pdf,.pdf" multiple onFiles={add} label="Choose PDF files or drop them here" hint="Add two or more. Files never leave your device." testId="pdf-input" />
+      <FileDrop accept="application/pdf,.pdf" multiple onFiles={add} label={t("merger.dropLabel")} hint={t("merger.dropHint")} testId="pdf-input" />
       {items.length > 0 && <FileOrderList items={items} onChange={(x) => (setItems(x), setDone(null))} />}
       {error && <Notice kind="error">{error}</Notice>}
       <div className="row">
         <button type="button" className="btn btn-primary" disabled={items.length < 2 || busy} onClick={merge}>
-          {busy ? <LoaderCircle className="spin" aria-hidden /> : <Download aria-hidden />} Merge {items.length > 1 ? `${items.length} PDFs` : "PDFs"}
+          {busy ? <LoaderCircle className="spin" aria-hidden /> : <Download aria-hidden />} {items.length > 1 ? t("merger.mergeCount", { count: items.length }) : t("merger.merge")}
         </button>
-        {items.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => (setItems([]), setDone(null))}>Clear</button>}
+        {items.length > 0 && <button type="button" className="btn btn-ghost" onClick={() => (setItems([]), setDone(null))}>{t("common.clear")}</button>}
       </div>
-      {done && <Notice kind="success">Merged {done.pages} pages into merged.pdf ({fmtBytes(done.size)}). Your download has started.</Notice>}
+      {done && <Notice kind="success">{t("merger.done", { count: done.pages, size: size(done.size) })}</Notice>}
     </div>
   );
 }
@@ -100,6 +115,8 @@ export function PdfMerger() {
 // ── Split ───────────────────────────────────────────────────────────────────
 
 export function PdfSplitter() {
+  const t = useT("tools-pdf");
+  const size = useFileSize();
   const { file, pages, error, setError, pick } = useSinglePdf();
   const [mode, setMode] = useState<"ranges" | "every">("ranges");
   const [spec, setSpec] = useState("1-2");
@@ -110,7 +127,7 @@ export function PdfSplitter() {
     try {
       parseRanges(spec, pages);
     } catch (e) {
-      specError = (e as Error).message;
+      specError = errText(t, e);
     }
   }
   const split = async () => {
@@ -120,39 +137,39 @@ export function PdfSplitter() {
     try {
       setParts(await splitPdf(await readBytes(file), mode === "every" ? { kind: "every" } : { kind: "ranges", spec }));
     } catch (e) {
-      setError((e as Error).message);
+      setError(errText(t, e));
     } finally {
       setBusy(false);
     }
   };
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setParts([]), pick(f))} label={file ? file.name : "Choose a PDF or drop it here"} hint={pages ? `${pages} pages · click to change` : "Processed on your device"} testId="pdf-input" />
+      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setParts([]), pick(f))} label={file ? file.name : t("common.dropLabel")} hint={pages ? t("common.pagesChange", { count: pages }) : t("common.processedLocally")} testId="pdf-input" />
       {error && <Notice kind="error">{error}</Notice>}
       {file && pages && (
         <>
-          <Segmented label="Split mode" value={mode} onChange={(m) => (setMode(m), setParts([]))} options={[{ value: "ranges", label: "Page ranges" }, { value: "every", label: `Every page (${pages} files)` }]} />
+          <Segmented label={t("splitter.mode")} value={mode} onChange={(m) => (setMode(m), setParts([]))} options={[{ value: "ranges", label: t("splitter.ranges") }, { value: "every", label: t("splitter.every", { count: pages }) }]} />
           {mode === "ranges" && (
-            <Field label="Ranges (one output file per range)" htmlFor="split-spec" hint={specError ? <span style={{ color: "var(--danger)" }}>{specError}</span> : "Example: 1-3, 5, 8-"}>
+            <Field label={t("splitter.rangesLabel")} htmlFor="split-spec" hint={specError ? <span style={{ color: "var(--danger)" }}>{specError}</span> : t("splitter.rangesHint")}>
               <input id="split-spec" className="input mono" value={spec} onChange={(e) => (setSpec(e.target.value), setParts([]))} />
             </Field>
           )}
           <div className="row">
-            <button type="button" className="btn btn-primary" disabled={busy || !!specError} onClick={split}>{busy ? <LoaderCircle className="spin" aria-hidden /> : null} Split PDF</button>
+            <button type="button" className="btn btn-primary" disabled={busy || !!specError} onClick={split}>{busy ? <LoaderCircle className="spin" aria-hidden /> : null} {t("splitter.split")}</button>
           </div>
         </>
       )}
       {parts.length > 0 && file && (
         <div className="stack">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <strong data-testid="split-count">{parts.length} file{parts.length === 1 ? "" : "s"} ready</strong>
-            <button type="button" className="btn btn-sm" onClick={() => downloadZip(parts, `${baseName(file.name)}-split.zip`)}><Archive aria-hidden /> Download all (ZIP)</button>
+            <strong data-testid="split-count">{t("splitter.ready", { count: parts.length })}</strong>
+            <button type="button" className="btn btn-sm" onClick={() => downloadZip(parts, `${baseName(file.name)}-split.zip`)}><Archive aria-hidden /> {t("common.downloadZip")}</button>
           </div>
           <ul className="file-list">
             {parts.map((p) => (
               <li key={p.name}>
-                <span className="file-name">{p.name}<span className="muted"> · {fmtBytes(p.bytes.length)}</span></span>
-                <button type="button" className="btn btn-sm" onClick={() => downloadBlob(toBlob(p.bytes, "application/pdf"), `${baseName(file.name)}-${p.name}`)}><Download aria-hidden /> Download</button>
+                <span className="file-name">{p.name}<span className="muted"> · {size(p.bytes.length)}</span></span>
+                <button type="button" className="btn btn-sm" onClick={() => downloadBlob(toBlob(p.bytes, "application/pdf"), `${baseName(file.name)}-${p.name}`)}><Download aria-hidden /> {t("common.download")}</button>
               </li>
             ))}
           </ul>
@@ -165,6 +182,9 @@ export function PdfSplitter() {
 // ── Compress ────────────────────────────────────────────────────────────────
 
 export function PdfCompressor() {
+  const t = useT("tools-pdf");
+  const f = useFormat();
+  const size = useFileSize();
   const { file, pages, error, setError, pick } = useSinglePdf();
   const [mode, setMode] = useState<"lossless" | "strong">("lossless");
   const [quality, setQuality] = useState(60);
@@ -179,17 +199,17 @@ export function PdfCompressor() {
     try {
       const bytes = await readBytes(file);
       if (mode === "lossless") {
-        setBusy("Optimising…");
+        setBusy(t("compressor.optimising"));
         setResult(await optimizePdf(bytes));
       } else {
         const { renderPdfPages } = await import("@/lib/tools/pdfjs");
-        const rendered = await renderPdfPages(bytes, { scale: dpi / 72, type: "image/jpeg", quality: quality / 100, onPage: (_, total) => setBusy(`Rendering page ${Math.min(total, _.index + 1)} of ${total}…`) });
-        setBusy("Building PDF…");
+        const rendered = await renderPdfPages(bytes, { scale: dpi / 72, type: "image/jpeg", quality: quality / 100, onPage: (_, total) => setBusy(t("common.renderingPage", { page: Math.min(total, _.index + 1), total })) });
+        setBusy(t("compressor.building"));
         const images: PdfImage[] = await Promise.all(rendered.map(async (r) => ({ bytes: new Uint8Array(await r.blob.arrayBuffer()), type: "jpeg" as const, width: (r.width * 72) / dpi, height: (r.height * 72) / dpi })));
         setResult(await imagesToPdf(images, { pageSize: "fit", margin: 0 }));
       }
     } catch (e) {
-      setError((e as Error).message);
+      setError(errText(t, e));
     } finally {
       setBusy("");
     }
@@ -197,32 +217,32 @@ export function PdfCompressor() {
   const saving = file && result ? 1 - result.length / file.size : 0;
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="application/pdf,.pdf" onFiles={pick} label={file ? file.name : "Choose a PDF or drop it here"} hint={file ? `${pages} pages · ${fmtBytes(file.size)} · click to change` : "Processed on your device"} testId="pdf-input" />
+      <FileDrop accept="application/pdf,.pdf" onFiles={pick} label={file ? file.name : t("common.dropLabel")} hint={file ? t("common.pagesSizeChange", { count: pages ?? 0, size: size(file.size) }) : t("common.processedLocally")} testId="pdf-input" />
       {error && <Notice kind="error">{error}</Notice>}
       {file && (
         <>
-          <Segmented label="Compression" value={mode} onChange={setMode} options={[{ value: "lossless", label: "Lossless (keeps text)" }, { value: "strong", label: "Strong (pages become images)" }]} />
+          <Segmented label={t("compressor.mode")} value={mode} onChange={setMode} options={[{ value: "lossless", label: t("compressor.lossless") }, { value: "strong", label: t("compressor.strong") }]} />
           {mode === "strong" && (
             <div className="form-grid cols-2">
-              <Field label={`JPEG quality: ${quality}%`} htmlFor="pc-q"><input id="pc-q" type="range" min={20} max={95} value={quality} onChange={(e) => setQuality(+e.target.value)} /></Field>
-              <Field label={`Resolution: ${dpi} DPI`} htmlFor="pc-dpi"><input id="pc-dpi" type="range" min={72} max={200} step={2} value={dpi} onChange={(e) => setDpi(+e.target.value)} /></Field>
+              <Field label={t("compressor.quality", { value: quality })} htmlFor="pc-q"><input id="pc-q" type="range" min={20} max={95} value={quality} onChange={(e) => setQuality(+e.target.value)} /></Field>
+              <Field label={t("compressor.resolution", { value: dpi })} htmlFor="pc-dpi"><input id="pc-dpi" type="range" min={72} max={200} step={2} value={dpi} onChange={(e) => setDpi(+e.target.value)} /></Field>
             </div>
           )}
-          {mode === "strong" && <Notice kind="warn">Strong compression turns each page into an image, so text will no longer be selectable or searchable.</Notice>}
+          {mode === "strong" && <Notice kind="warn">{t("compressor.strongWarn")}</Notice>}
           <div className="row">
-            <button type="button" className="btn btn-primary" disabled={!!busy} onClick={run}>Compress</button>
+            <button type="button" className="btn btn-primary" disabled={!!busy} onClick={run}>{t("compressor.compress")}</button>
           </div>
           {busy && <Busy text={busy} />}
           {result && (
             <>
               <div className="stat-grid">
-                <div className="stat"><div className="v">{fmtBytes(file.size)}</div><div className="k">Original</div></div>
-                <div className="stat"><div className="v" data-testid="pdf-result-size">{fmtBytes(result.length)}</div><div className="k">Compressed</div></div>
-                <div className="stat"><div className="v" style={{ color: saving > 0 ? "var(--success)" : undefined }}>{`${saving >= 0 ? "−" : "+"}${Math.abs(saving * 100).toFixed(0)}%`}</div><div className="k">Change</div></div>
+                <div className="stat"><div className="v">{size(file.size)}</div><div className="k">{t("compressor.original")}</div></div>
+                <div className="stat"><div className="v" data-testid="pdf-result-size">{size(result.length)}</div><div className="k">{t("compressor.compressed")}</div></div>
+                <div className="stat"><div className="v" style={{ color: saving > 0 ? "var(--success)" : undefined }}>{`${saving >= 0 ? "−" : "+"}${f.number(Math.abs(saving), { style: "percent", maximumFractionDigits: 0 })}`}</div><div className="k">{t("compressor.change")}</div></div>
               </div>
-              {saving <= 0.01 && <Notice kind="info">The file couldn&apos;t be made meaningfully smaller with this setting. {mode === "lossless" ? "Try strong compression for scanned or image-heavy PDFs." : "Lower the quality or resolution, or keep the original."}</Notice>}
+              {saving <= 0.01 && <Notice kind="info">{t(mode === "lossless" ? "compressor.notSmallerLossless" : "compressor.notSmallerStrong")}</Notice>}
               <div className="row">
-                <button type="button" className="btn btn-primary" onClick={() => downloadBlob(toBlob(result, "application/pdf"), `${baseName(file.name)}-compressed.pdf`)}><Download aria-hidden /> Download compressed PDF</button>
+                <button type="button" className="btn btn-primary" onClick={() => downloadBlob(toBlob(result, "application/pdf"), `${baseName(file.name)}-compressed.pdf`)}><Download aria-hidden /> {t("compressor.download")}</button>
               </div>
             </>
           )}
@@ -235,6 +255,7 @@ export function PdfCompressor() {
 // ── PDF → images ────────────────────────────────────────────────────────────
 
 export function PdfToImage() {
+  const t = useT("tools-pdf");
   const { file, pages, error, setError, pick } = useSinglePdf();
   const [type, setType] = useState<"image/jpeg" | "image/png">("image/jpeg");
   const [dpi, setDpi] = useState<"72" | "150" | "300">("150");
@@ -248,41 +269,41 @@ export function PdfToImage() {
     setOut([]);
     try {
       const { renderPdfPages } = await import("@/lib/tools/pdfjs");
-      const rendered = await renderPdfPages(await readBytes(file), { scale: Number(dpi) / 72, type, quality: 0.92, onPage: (p, total) => setBusy(`Rendering page ${p.index + 1} of ${total}…`) });
+      const rendered = await renderPdfPages(await readBytes(file), { scale: Number(dpi) / 72, type, quality: 0.92, onPage: (p, total) => setBusy(t("common.renderingPage", { page: p.index + 1, total })) });
       setOut(rendered.map((r) => ({ name: `${baseName(file.name)}-page-${r.index + 1}.${ext}`, url: URL.createObjectURL(r.blob), blob: r.blob })));
     } catch (e) {
-      setError((e as Error).message);
+      setError(errText(t, e));
     } finally {
       setBusy("");
     }
   };
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setOut([]), pick(f))} label={file ? file.name : "Choose a PDF or drop it here"} hint={pages ? `${pages} pages · click to change` : "Rendered on your device with pdf.js"} testId="pdf-input" />
+      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setOut([]), pick(f))} label={file ? file.name : t("common.dropLabel")} hint={pages ? t("common.pagesChange", { count: pages }) : t("toImage.dropHint")} testId="pdf-input" />
       {error && <Notice kind="error">{error}</Notice>}
       {file && (
         <>
           <div className="row">
-            <Segmented label="Format" value={type} onChange={setType} options={[{ value: "image/jpeg", label: "JPG" }, { value: "image/png", label: "PNG" }]} />
-            <Segmented label="Resolution" value={dpi} onChange={setDpi} options={[{ value: "72", label: "72 DPI" }, { value: "150", label: "150 DPI" }, { value: "300", label: "300 DPI" }]} />
-            <button type="button" className="btn btn-primary" disabled={!!busy} onClick={run}>Convert {pages} page{pages === 1 ? "" : "s"}</button>
+            <Segmented label={t("toImage.format")} value={type} onChange={setType} options={[{ value: "image/jpeg", label: "JPG" }, { value: "image/png", label: "PNG" }]} />
+            <Segmented label={t("toImage.resolution")} value={dpi} onChange={setDpi} options={(["72", "150", "300"] as const).map((v) => ({ value: v, label: t("toImage.dpi", { value: Number(v) }) }))} />
+            <button type="button" className="btn btn-primary" disabled={!!busy} onClick={run}>{t("toImage.convert", { count: pages ?? 0 })}</button>
           </div>
-          {pages && pages > 50 && dpi === "300" && <Notice kind="warn">Rendering many pages at 300 DPI uses a lot of memory and can be slow.</Notice>}
+          {pages && pages > 50 && dpi === "300" && <Notice kind="warn">{t("toImage.memoryWarn")}</Notice>}
         </>
       )}
       {busy && <Busy text={busy} />}
       {out.length > 0 && (
         <div className="stack">
           <div className="row" style={{ justifyContent: "space-between" }}>
-            <strong data-testid="image-count">{out.length} image{out.length === 1 ? "" : "s"}</strong>
-            <button type="button" className="btn btn-sm" onClick={async () => downloadZip(await Promise.all(out.map(async (o) => ({ name: o.name, bytes: new Uint8Array(await o.blob.arrayBuffer()) }))), `${baseName(file!.name)}-images.zip`)}><Archive aria-hidden /> Download all (ZIP)</button>
+            <strong data-testid="image-count">{t("toImage.count", { count: out.length })}</strong>
+            <button type="button" className="btn btn-sm" onClick={async () => downloadZip(await Promise.all(out.map(async (o) => ({ name: o.name, bytes: new Uint8Array(await o.blob.arrayBuffer()) }))), `${baseName(file!.name)}-images.zip`)}><Archive aria-hidden /> {t("common.downloadZip")}</button>
           </div>
           <div className="page-grid">
             {out.map((o, i) => (
               <figure key={o.name}>
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={o.url} alt={`Page ${i + 1}`} loading="lazy" />
-                <a className="link" href={o.url} download={o.name} onClick={() => announceDownload(o.name)}>Page {i + 1}</a>
+                <img src={o.url} alt={t("toImage.page", { page: i + 1 })} loading="lazy" />
+                <a className="link" href={o.url} download={o.name} onClick={() => announceDownload(o.name)}>{t("toImage.page", { page: i + 1 })}</a>
               </figure>
             ))}
           </div>
@@ -296,7 +317,7 @@ export function PdfToImage() {
 
 async function toPdfImage(file: File): Promise<PdfImage> {
   const bitmap = await createImageBitmap(file).catch(() => {
-    throw new Error(`${file.name} couldn't be opened as an image.`);
+    throw new UserError("errors.imageOpen", { name: file.name }, `${file.name} couldn't be opened as an image.`);
   });
   const { width, height } = bitmap;
   if (file.type === "image/jpeg" || file.type === "image/png") {
@@ -309,11 +330,13 @@ async function toPdfImage(file: File): Promise<PdfImage> {
   canvas.height = height;
   canvas.getContext("2d")!.drawImage(bitmap, 0, 0);
   bitmap.close();
-  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("Encoding failed."))), "image/png"));
+  const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new UserError("errors.encodeFailed", undefined, "Encoding failed."))), "image/png"));
   return { bytes: new Uint8Array(await blob.arrayBuffer()), type: "png", width, height };
 }
 
 export function ImageToPdf() {
+  const t = useT("tools-pdf");
+  const fileSize = useFileSize();
   const [items, setItems] = useState<Picked[]>([]);
   const [size, setSize] = useState<PageSize>("a4");
   const [margin, setMargin] = useState<"0" | "20" | "40">("20");
@@ -324,7 +347,7 @@ export function ImageToPdf() {
     setError("");
     setDone(null);
     const imgs = files.filter((f) => f.type.startsWith("image/"));
-    if (imgs.length < files.length) setError("Some files were skipped because they aren't images.");
+    if (imgs.length < files.length) setError(t("imageToPdf.skipped"));
     setItems((cur) => [...cur, ...imgs.map((f) => ({ id: uid(), name: f.name, size: f.size, file: f }))]);
   };
   const build = async () => {
@@ -337,24 +360,24 @@ export function ImageToPdf() {
       setDone(pdf.length);
       downloadBlob(toBlob(pdf, "application/pdf"), items.length === 1 ? `${baseName(items[0].name)}.pdf` : "images.pdf");
     } catch (e) {
-      setError((e as Error).message);
+      setError(errText(t, e));
     } finally {
       setBusy(false);
     }
   };
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="image/*" multiple onFiles={add} label="Choose images or drop them here" hint="JPG, PNG, WebP. One image per page." testId="image-input" />
+      <FileDrop accept="image/*" multiple onFiles={add} label={t("imageToPdf.dropLabel")} hint={t("imageToPdf.dropHint")} testId="image-input" />
       {items.length > 0 && <FileOrderList items={items} onChange={(x) => (setItems(x), setDone(null))} />}
       <div className="row">
-        <Segmented label="Page size" value={size} onChange={setSize} options={[{ value: "a4", label: "A4" }, { value: "letter", label: "Letter" }, { value: "fit", label: "Image size" }]} />
-        <Segmented label="Margin" value={margin} onChange={setMargin} options={[{ value: "0", label: "No margin" }, { value: "20", label: "Small" }, { value: "40", label: "Large" }]} />
+        <Segmented label={t("imageToPdf.pageSize")} value={size} onChange={setSize} options={[{ value: "a4", label: t("imageToPdf.a4") }, { value: "letter", label: t("imageToPdf.letter") }, { value: "fit", label: t("imageToPdf.imageSize") }]} />
+        <Segmented label={t("imageToPdf.margin")} value={margin} onChange={setMargin} options={[{ value: "0", label: t("imageToPdf.noMargin") }, { value: "20", label: t("imageToPdf.small") }, { value: "40", label: t("imageToPdf.large") }]} />
       </div>
       {error && <Notice kind="error">{error}</Notice>}
       <div className="row">
-        <button type="button" className="btn btn-primary" disabled={!items.length || busy} onClick={build}>{busy ? <LoaderCircle className="spin" aria-hidden /> : <Download aria-hidden />} Create PDF</button>
+        <button type="button" className="btn btn-primary" disabled={!items.length || busy} onClick={build}>{busy ? <LoaderCircle className="spin" aria-hidden /> : <Download aria-hidden />} {t("imageToPdf.create")}</button>
       </div>
-      {done !== null && <Notice kind="success">Created a {items.length}-page PDF ({fmtBytes(done)}). Your download has started.</Notice>}
+      {done !== null && <Notice kind="success">{t("imageToPdf.done", { count: items.length, size: fileSize(done) })}</Notice>}
     </div>
   );
 }
@@ -362,6 +385,7 @@ export function ImageToPdf() {
 // ── Rotate ──────────────────────────────────────────────────────────────────
 
 export function RotatePdf() {
+  const t = useT("tools-pdf");
   const { file, pages, error, setError, pick } = useSinglePdf();
   const [angle, setAngle] = useState<"90" | "180" | "270">("90");
   const [which, setWhich] = useState<"all" | "some">("all");
@@ -374,7 +398,7 @@ export function RotatePdf() {
     try {
       indices = [...new Set(parseRanges(spec, pages).flat())];
     } catch (e) {
-      specError = (e as Error).message;
+      specError = errText(t, e);
     }
   }
   const run = async () => {
@@ -386,30 +410,30 @@ export function RotatePdf() {
       downloadBlob(toBlob(out, "application/pdf"), `${baseName(file.name)}-rotated.pdf`);
       setDone(true);
     } catch (e) {
-      setError((e as Error).message);
+      setError(errText(t, e));
     } finally {
       setBusy(false);
     }
   };
   return (
     <div className="stack" style={{ gap: 16 }}>
-      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setDone(false), pick(f))} label={file ? file.name : "Choose a PDF or drop it here"} hint={pages ? `${pages} pages · click to change` : "Processed on your device"} testId="pdf-input" />
+      <FileDrop accept="application/pdf,.pdf" onFiles={(f) => (setDone(false), pick(f))} label={file ? file.name : t("common.dropLabel")} hint={pages ? t("common.pagesChange", { count: pages }) : t("common.processedLocally")} testId="pdf-input" />
       {error && <Notice kind="error">{error}</Notice>}
       {file && (
         <>
           <div className="row">
-            <Segmented label="Angle" value={angle} onChange={setAngle} options={[{ value: "90", label: "90° right" }, { value: "180", label: "180°" }, { value: "270", label: "90° left" }]} />
-            <Segmented label="Pages" value={which} onChange={setWhich} options={[{ value: "all", label: "All pages" }, { value: "some", label: "Selected pages" }]} />
+            <Segmented label={t("rotate.angle")} value={angle} onChange={setAngle} options={[{ value: "90", label: t("rotate.right") }, { value: "180", label: t("rotate.half") }, { value: "270", label: t("rotate.left") }]} />
+            <Segmented label={t("rotate.pages")} value={which} onChange={setWhich} options={[{ value: "all", label: t("rotate.all") }, { value: "some", label: t("rotate.some") }]} />
           </div>
           {which === "some" && (
-            <Field label="Pages to rotate" htmlFor="rot-spec" hint={specError ? <span style={{ color: "var(--danger)" }}>{specError}</span> : "Example: 1, 3-4"}>
+            <Field label={t("rotate.pagesLabel")} htmlFor="rot-spec" hint={specError ? <span style={{ color: "var(--danger)" }}>{specError}</span> : t("rotate.hint")}>
               <input id="rot-spec" className="input mono" value={spec} onChange={(e) => setSpec(e.target.value)} />
             </Field>
           )}
           <div className="row">
-            <button type="button" className="btn btn-primary" disabled={busy || !!specError} onClick={run}><Download aria-hidden /> Rotate &amp; download</button>
+            <button type="button" className="btn btn-primary" disabled={busy || !!specError} onClick={run}><Download aria-hidden /> {t("rotate.run")}</button>
           </div>
-          {done && <Notice kind="success">Rotated PDF downloaded.</Notice>}
+          {done && <Notice kind="success">{t("rotate.done")}</Notice>}
         </>
       )}
     </div>

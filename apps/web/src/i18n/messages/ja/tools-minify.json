@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} を圧縮",
+  "minify.errorAt": "{line} 行目、{column} 列目：{message}",
+  "minify.failed": "このコードを圧縮できませんでした。",
+  "minify.input": "{lang} の入力",
+  "minify.keepComments": "コメントを残す",
+  "minify.keepLicenceComments": "ライセンスコメントを残す",
+  "minify.mangle": "変数名を短縮する",
+  "minify.output": "圧縮結果",
+  "minify.stats": "{before} → {after} バイト（{percent}% 削減）"
+}

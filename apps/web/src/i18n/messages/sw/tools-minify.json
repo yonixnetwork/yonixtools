@@ -1,0 +1,11 @@
+{
+  "minify.button": "Punguza msimbo wa {lang}",
+  "minify.errorAt": "Mstari {line}, safu {column}: {message}",
+  "minify.failed": "Msimbo huu haukuweza kupunguzwa.",
+  "minify.input": "Msimbo wa {lang} wa kuingiza",
+  "minify.keepComments": "Hifadhi maoni",
+  "minify.keepLicenceComments": "Hifadhi maoni ya leseni",
+  "minify.mangle": "Fupisha majina",
+  "minify.output": "Uliopunguzwa",
+  "minify.stats": "Baiti {before} → {after} (ndogo kwa {percent}%)"
+}

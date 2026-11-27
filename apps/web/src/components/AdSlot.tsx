@@ -1,6 +1,8 @@
 "use client";
+import { useT } from "@/i18n/client";
 import { useEffect, useId, useRef, useState } from "react";
 import { reportAd } from "@/lib/ads/report";
+import { adsEligible } from "@/lib/ads/eligibility";
 import { AD_ORIGIN, AD_SANDBOX, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_MS, type AdUnitId } from "@/lib/ads/config";
 
 /**
@@ -16,6 +18,9 @@ import { AD_ORIGIN, AD_SANDBOX, AD_UNITS, ADS_ENABLED, adFrameUrl, FILL_TIMEOUT_
  * - Collapses when nothing renders: at once if the ad scripts fail (ad blocker,
  *   network), otherwise after about 8 s without a creative.
  * - One instance of each unit per page: a second mount of the same unit stays empty.
+ * - Advertising policy (lib/ads/policy.ts): renders nothing at all unless the build's policy is
+ *   satisfied, and creates no frame until this page view's eligibility check (lib/ads/eligibility.ts)
+ *   answered "eligible". Failure, timeout or "not eligible": the slot is dropped, nothing loads.
  */
 type Props = {
   unit?: AdUnitId;
@@ -36,6 +41,7 @@ function pick(unit: AdUnitId | undefined, responsive: Props["responsive"]): AdUn
 }
 
 export function AdSlot({ unit, responsive, className, duplicate, placement }: Props) {
+  const t = useT("common");
   const ref = useRef<HTMLDivElement>(null);
   const frame = useRef<HTMLIFrameElement>(null);
   const slotId = useId().replace(/[^a-zA-Z0-9]/g, "");
@@ -45,17 +51,26 @@ export function AdSlot({ unit, responsive, className, duplicate, placement }: Pr
   const [height, setHeight] = useState<number | null>(null);
   const [dropped, setDropped] = useState(false); // this page already shows the unit, or ads are off
 
-  // Decide the unit on the client (depends on screen width) and claim it for this page.
+  // First the page view's eligibility answer (no frame before it), then decide the unit on the
+  // client (depends on screen width) and claim it for this page.
   useEffect(() => {
     if (!ADS_ENABLED) return;
-    const u = pick(unit, responsive);
-    if (!u) return setDropped(true);
-    if (duplicate) return setChosen(u);
-    if (mounted.has(u)) return setDropped(true); // already shown on this page: never duplicate a unit
-    mounted.add(u);
-    setChosen(u);
+    let cancelled = false;
+    let claimed: AdUnitId | null = null;
+    adsEligible().then((eligible) => {
+      if (cancelled) return;
+      if (!eligible) return setDropped(true);
+      const u = pick(unit, responsive);
+      if (!u) return setDropped(true);
+      if (duplicate) return setChosen(u);
+      if (mounted.has(u)) return setDropped(true); // already shown on this page: never duplicate a unit
+      mounted.add(u);
+      claimed = u;
+      setChosen(u);
+    });
     return () => {
-      mounted.delete(u);
+      cancelled = true;
+      if (claimed) mounted.delete(claimed);
     };
   }, [unit, responsive, duplicate]);
 
@@ -134,7 +149,7 @@ export function AdSlot({ unit, responsive, className, duplicate, placement }: Pr
     const fixed = unit ? AD_UNITS[unit] : null;
     return (
       <aside ref={ref} className={`ad-slot ad-reserve${responsive ? " ad-leaderboard" : ""}${unit ? ` ad-${unit}` : ""}${className ? ` ${className}` : ""}`} aria-hidden="true">
-        <span className="ad-label">Advertisement</span>
+        <span className="ad-label">{t("ads.label")}</span>
         <div className="ad-box" style={fixed ? { width: fixed.fluid ? "100%" : fixed.width, maxWidth: "100%", height: fixed.height } : undefined} />
       </aside>
     );
@@ -143,13 +158,13 @@ export function AdSlot({ unit, responsive, className, duplicate, placement }: Pr
   const fluid = u.fluid;
   const h = fluid ? (height ?? u.height) : u.height;
   return (
-    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label="Advertisement" data-ad-unit={chosen} data-ad-state={state} data-ad-placement={placement}>
-      <span className="ad-label">Advertisement</span>
+    <aside ref={ref} className={`ad-slot ad-${chosen}${className ? ` ${className}` : ""}`} aria-label={t("ads.label")} data-ad-unit={chosen} data-ad-state={state} data-ad-placement={placement}>
+      <span className="ad-label">{t("ads.label")}</span>
       <div className="ad-box" style={{ width: fluid ? "100%" : u.width, maxWidth: "100%", height: h }}>
         {near && (
           <iframe
             ref={frame}
-            title="Advertisement"
+            title={t("ads.label")}
             className="ad-frame"
             width={fluid ? "100%" : u.width}
             height={h}

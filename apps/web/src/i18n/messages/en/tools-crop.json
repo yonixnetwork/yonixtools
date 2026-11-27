@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Aspect ratio",
+  "crop.choose": "Choose an image or drop it here",
+  "crop.chooseHint": "Cropped on your device, never uploaded",
+  "crop.download": "Download {width}×{height}",
+  "crop.errorNotImage": "That file isn't an image.",
+  "crop.errorOpen": "This image couldn't be opened in your browser.",
+  "crop.free": "Free",
+  "crop.height": "Height (px)",
+  "crop.imageAlt": "Image being cropped",
+  "crop.left": "Left (px)",
+  "crop.sourceInfo": "{width}×{height} · click to change",
+  "crop.top": "Top (px)",
+  "crop.width": "Width (px)"
+}

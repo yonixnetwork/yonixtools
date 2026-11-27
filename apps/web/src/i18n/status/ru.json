@@ -1,0 +1,17 @@
+{
+  "method": "machine",
+  "translator": "AI machine translation (Claude); not reviewed by a person",
+  "translatedAt": "2026-11-20",
+  "intentionalSame": [
+    "tools-pdf:imageToPdf.letter",
+    "tools-seo2:sitemap.output",
+    "tools-seo:meta.twitterPlaceholder",
+    "tools-seo:robots.userAgent",
+    "tools-text:case.camel",
+    "tools-text:case.constant",
+    "tools-text:case.kebab",
+    "tools-text:case.pascal",
+    "tools-text:case.snake"
+  ],
+  "reviews": {}
+}

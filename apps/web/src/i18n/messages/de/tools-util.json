@@ -1,0 +1,35 @@
+{
+  "clock.done": "Die Zeit ist abgelaufen.",
+  "clock.lap": "Runde",
+  "clock.lapNumber": "Runde {n}",
+  "clock.lapTotal": "gesamt {time}",
+  "clock.minutes": "Minuten",
+  "clock.mode": "Modus",
+  "clock.note": "Lassen Sie diesen Tab geöffnet: Browser verlangsamen Timer in Hintergrund-Tabs, die angezeigte Zeit bleibt aber genau.",
+  "clock.pause": "Pause",
+  "clock.reset": "Zurücksetzen",
+  "clock.resume": "Fortsetzen",
+  "clock.seconds": "Sekunden",
+  "clock.start": "Starten",
+  "clock.stopwatch": "Stoppuhr",
+  "clock.timer": "Countdown-Timer",
+  "random.count": "Anzahl",
+  "random.errorCount": "Wählen Sie zwischen {min} und {max} Zahlen.",
+  "random.errorGeneric": "Überprüfen Sie die Zahlen.",
+  "random.errorRange": "Geben Sie ganze Zahlen ein; das Minimum darf nicht über dem Maximum liegen.",
+  "random.errorTooLarge": "Der Bereich ist zu groß (maximal {max} Werte).",
+  "random.errorUnique": {
+    "one": "In diesem Bereich gibt es nur {count} verschiedene Zahl.",
+    "other": "In diesem Bereich gibt es nur {count} verschiedene Zahlen."
+  },
+  "random.generate": "Generieren",
+  "random.max": "Maximum",
+  "random.min": "Minimum",
+  "random.note": "Nutzt den kryptografischen Zufallsgenerator Ihres Browsers, ohne Verzerrung.",
+  "random.result": {
+    "one": "Ihre Zahl",
+    "other": "{count} Zahlen"
+  },
+  "random.sorted": "Ergebnisse sortieren",
+  "random.unique": "Keine Wiederholungen"
+}

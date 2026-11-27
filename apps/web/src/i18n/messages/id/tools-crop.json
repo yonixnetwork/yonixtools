@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Rasio aspek",
+  "crop.choose": "Pilih gambar atau letakkan di sini",
+  "crop.chooseHint": "Dipotong di perangkat Anda, tidak pernah diunggah",
+  "crop.download": "Unduh {width}×{height}",
+  "crop.errorNotImage": "File tersebut bukan gambar.",
+  "crop.errorOpen": "Gambar ini tidak dapat dibuka di browser Anda.",
+  "crop.free": "Bebas",
+  "crop.height": "Tinggi (px)",
+  "crop.imageAlt": "Gambar yang sedang dipotong",
+  "crop.left": "Kiri (px)",
+  "crop.sourceInfo": "{width}×{height} · klik untuk mengganti",
+  "crop.top": "Atas (px)",
+  "crop.width": "Lebar (px)"
+}

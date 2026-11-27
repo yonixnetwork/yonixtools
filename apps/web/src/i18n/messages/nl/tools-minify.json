@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} minificeren",
+  "minify.errorAt": "Regel {line}, kolom {column}: {message}",
+  "minify.failed": "Deze code kon niet worden geminificeerd.",
+  "minify.input": "{lang}-invoer",
+  "minify.keepComments": "Opmerkingen behouden",
+  "minify.keepLicenceComments": "Licentieopmerkingen behouden",
+  "minify.mangle": "Namen inkorten",
+  "minify.output": "Geminificeerd",
+  "minify.stats": "{before} → {after} bytes ({percent}% kleiner)"
+}

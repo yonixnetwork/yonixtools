@@ -129,7 +129,7 @@ describe("SEO extras", () => {
     expect(m.title).toBe('OG "Title"');
     expect(m.description).toBe("Desc");
     expect(m.image).toBe("https://x/i.png");
-    expect(m.warnings.some((w) => w.includes("og:url"))).toBe(true);
+    expect(m.warnings).toContain("og.warnMissingUrl");
   });
 
   it("generates keyword and title ideas", () => {

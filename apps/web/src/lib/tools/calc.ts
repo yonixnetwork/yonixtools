@@ -62,12 +62,20 @@ export function calculateAge(birth: Date, on: Date): AgeResult | null {
 
 export const bmi = (weightKg: number, heightCm: number) => weightKg / (heightCm / 100) ** 2;
 
-export function bmiCategory(v: number): string {
-  if (v < 18.5) return "Underweight";
-  if (v < 25) return "Healthy weight";
-  if (v < 30) return "Overweight";
-  return "Obesity";
+export type BmiCategoryId = "underweight" | "healthy" | "overweight" | "obesity";
+
+/** Stable category id (the UI translates it: tools-calc "bmi.category.<id>"). */
+export function bmiCategoryId(v: number): BmiCategoryId {
+  if (v < 18.5) return "underweight";
+  if (v < 25) return "healthy";
+  if (v < 30) return "overweight";
+  return "obesity";
 }
+
+const BMI_CATEGORY_EN: Record<BmiCategoryId, string> = { underweight: "Underweight", healthy: "Healthy weight", overweight: "Overweight", obesity: "Obesity" };
+
+/** English category name (logs/tests). The UI uses bmiCategoryId and translations. */
+export const bmiCategory = (v: number): string => BMI_CATEGORY_EN[bmiCategoryId(v)];
 
 export const healthyRangeKg = (heightCm: number): [number, number] => [18.5 * (heightCm / 100) ** 2, 24.9 * (heightCm / 100) ** 2];
 

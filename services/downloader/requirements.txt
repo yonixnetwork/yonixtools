@@ -4,6 +4,8 @@ starlette==1.10.0
 uvicorn==0.54.0
 httpx==0.28.1
 pydantic==2.13.4
+# DB-IP Lite country lookup for ad eligibility (app/geoip.py)
+maxminddb==3.2.0
 # [default] adds yt-dlp-ejs (YouTube challenge solving, needs a JS runtime: Deno)
 # [pin-curl-cffi] adds browser TLS impersonation (Vimeo, Reddit, others need it)
 yt-dlp[default,pin-curl-cffi]==2026.10.26

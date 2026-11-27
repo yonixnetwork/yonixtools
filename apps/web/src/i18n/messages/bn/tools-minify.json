@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} মিনিফাই করুন",
+  "minify.errorAt": "লাইন {line}, কলাম {column}: {message}",
+  "minify.failed": "এই কোডটি মিনিফাই করা যায়নি।",
+  "minify.input": "{lang} ইনপুট",
+  "minify.keepComments": "কমেন্ট রাখুন",
+  "minify.keepLicenceComments": "লাইসেন্স কমেন্ট রাখুন",
+  "minify.mangle": "নাম ছোট করুন (mangle)",
+  "minify.output": "মিনিফাই করা কোড",
+  "minify.stats": "{before} → {after} বাইট ({percent}% ছোট)"
+}

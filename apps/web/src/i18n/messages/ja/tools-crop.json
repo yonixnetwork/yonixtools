@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "縦横比",
+  "crop.choose": "画像を選択するか、ここにドロップしてください",
+  "crop.chooseHint": "トリミングはお使いの端末上で行われ、アップロードされることはありません",
+  "crop.download": "{width}×{height} をダウンロード",
+  "crop.errorNotImage": "このファイルは画像ではありません。",
+  "crop.errorOpen": "この画像はお使いのブラウザで開けませんでした。",
+  "crop.free": "自由",
+  "crop.height": "高さ（px）",
+  "crop.imageAlt": "トリミング中の画像",
+  "crop.left": "左（px）",
+  "crop.sourceInfo": "{width}×{height} · クリックして変更",
+  "crop.top": "上（px）",
+  "crop.width": "幅（px）"
+}

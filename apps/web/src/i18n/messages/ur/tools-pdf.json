@@ -1,0 +1,119 @@
+{
+  "common.clear": "صاف کریں",
+  "common.download": "ڈاؤن لوڈ کریں",
+  "common.downloadZip": "سب ڈاؤن لوڈ کریں (ZIP)",
+  "common.dropLabel": "PDF منتخب کریں یا یہاں ڈراپ کریں",
+  "common.pagesChange": {
+    "one": "{count} صفحہ · تبدیل کرنے کے لیے کلک کریں",
+    "other": "{count} صفحات · تبدیل کرنے کے لیے کلک کریں"
+  },
+  "common.pagesSizeChange": {
+    "one": "{count} صفحہ · {size} · تبدیل کرنے کے لیے کلک کریں",
+    "other": "{count} صفحات · {size} · تبدیل کرنے کے لیے کلک کریں"
+  },
+  "common.processedLocally": "آپ کے آلے پر پروسیس کیا گیا",
+  "common.renderingPage": "صفحہ {page} از {total} رینڈر ہو رہا ہے…",
+  "compressor.building": "PDF بن رہی ہے…",
+  "compressor.change": "تبدیل کریں",
+  "compressor.compress": "کمپریس کریں",
+  "compressor.compressed": "کمپریس شدہ",
+  "compressor.download": "کمپریس شدہ PDF ڈاؤن لوڈ کریں",
+  "compressor.lossless": "بغیر نقصان کے (متن برقرار رہتا ہے)",
+  "compressor.mode": "کمپریشن",
+  "compressor.notSmallerLossless": "اس سیٹنگ سے فائل کا سائز خاطر خواہ کم نہیں ہو سکا۔ اسکین شدہ یا تصاویر سے بھری PDFs کے لیے مضبوط کمپریشن آزمائیں۔",
+  "compressor.notSmallerStrong": "اس سیٹنگ سے فائل کا سائز خاطر خواہ کم نہیں ہو سکا۔ کوالٹی یا ریزولوشن کم کریں، یا اصل فائل ہی رکھیں۔",
+  "compressor.optimising": "بہتر بنایا جا رہا ہے…",
+  "compressor.original": "اصل",
+  "compressor.quality": "JPEG کوالٹی: {value}%",
+  "compressor.resolution": "ریزولوشن: {value} DPI",
+  "compressor.strong": "مضبوط (صفحات تصاویر بن جاتے ہیں)",
+  "compressor.strongWarn": "مضبوط کمپریشن ہر صفحے کو تصویر میں بدل دیتا ہے، اس لیے متن نہ منتخب ہو سکے گا اور نہ تلاش کیا جا سکے گا۔",
+  "errors.addImage": "کم از کم ایک تصویر شامل کریں۔",
+  "errors.encodeFailed": "انکوڈنگ ناکام ہو گئی۔",
+  "errors.encrypted": "یہ PDF پاس ورڈ سے محفوظ ہے۔ پہلے پاس ورڈ ہٹائیں، پھر دوبارہ کوشش کریں۔",
+  "errors.encryptedShort": "یہ PDF پاس ورڈ سے محفوظ ہے۔ پہلے پاس ورڈ ہٹائیں۔",
+  "errors.generic": "کچھ غلط ہو گیا۔ براہِ کرم دوبارہ کوشش کریں۔",
+  "errors.imageOpen": "{name} تصویر کے طور پر نہیں کھل سکی۔",
+  "errors.mergeTwo": "ملانے کے لیے کم از کم دو PDFs شامل کریں۔",
+  "errors.notPdf": "یہ فائل PDF نہیں ہے۔",
+  "errors.pageTooLarge": "ایک صفحہ اس ریزولوشن پر رینڈر کرنے کے لیے بہت بڑا ہے۔ کم DPI منتخب کریں۔",
+  "errors.rangeBackwards": "“{part}” الٹی ترتیب میں ہے۔",
+  "errors.rangeEmpty": "کم از کم ایک صفحہ یا رینج درج کریں، مثلاً 1-3, 5۔",
+  "errors.rangeInvalid": "“{part}” درست صفحہ یا رینج نہیں ہے۔",
+  "errors.rangeOutside": {
+    "one": "“{part}” دستاویز سے باہر ہے (اس میں {count} صفحہ ہے)۔",
+    "other": "“{part}” دستاویز سے باہر ہے (اس میں {count} صفحات ہیں)۔"
+  },
+  "errors.renderFailed": "رینڈرنگ ناکام ہو گئی۔",
+  "errors.tooBig": "{name} کا سائز {size} MB سے زیادہ ہے، جو براؤزر میں پروسیس کرنے کے لیے بہت بڑا ہے۔",
+  "errors.unreadable": "یہ فائل PDF کے طور پر نہیں پڑھی جا سکی۔ ہو سکتا ہے یہ خراب ہو یا PDF ہی نہ ہو۔",
+  "errors.unreadableShort": "یہ فائل PDF کے طور پر نہیں پڑھی جا سکی۔",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "PDF بنائیں",
+  "imageToPdf.done": {
+    "one": "{count} صفحے کی PDF ({size}) بن گئی۔ آپ کا ڈاؤن لوڈ شروع ہو گیا ہے۔",
+    "other": "{count} صفحات کی PDF ({size}) بن گئی۔ آپ کا ڈاؤن لوڈ شروع ہو گیا ہے۔"
+  },
+  "imageToPdf.dropHint": "JPG، PNG، WebP۔ ہر صفحے پر ایک تصویر۔",
+  "imageToPdf.dropLabel": "تصاویر منتخب کریں یا یہاں ڈراپ کریں",
+  "imageToPdf.imageSize": "تصویر کا سائز",
+  "imageToPdf.large": "بڑا",
+  "imageToPdf.letter": "لیٹر (Letter)",
+  "imageToPdf.margin": "حاشیہ",
+  "imageToPdf.noMargin": "کوئی حاشیہ نہیں",
+  "imageToPdf.pageSize": "صفحے کا سائز",
+  "imageToPdf.skipped": "کچھ فائلیں چھوڑ دی گئیں کیونکہ وہ تصاویر نہیں ہیں۔",
+  "imageToPdf.small": "چھوٹا",
+  "merger.done": {
+    "one": "{count} صفحہ merged.pdf ({size}) میں ملا دیا گیا۔ آپ کا ڈاؤن لوڈ شروع ہو گیا ہے۔",
+    "other": "{count} صفحات merged.pdf ({size}) میں ملا دیے گئے۔ آپ کا ڈاؤن لوڈ شروع ہو گیا ہے۔"
+  },
+  "merger.dropHint": "دو یا زیادہ شامل کریں۔ فائلیں کبھی آپ کے آلے سے باہر نہیں جاتیں۔",
+  "merger.dropLabel": "PDF فائلیں منتخب کریں یا یہاں ڈراپ کریں",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "PDFs ملائیں",
+  "merger.mergeCount": "{count} PDFs ملائیں",
+  "merger.pageNote": {
+    "one": "{count} صفحہ",
+    "other": "{count} صفحات"
+  },
+  "merger.skipped": "کچھ فائلیں چھوڑ دی گئیں کیونکہ وہ PDF نہیں ہیں۔",
+  "rotate.all": "تمام صفحات",
+  "rotate.angle": "زاویہ",
+  "rotate.done": "گھمائی گئی PDF ڈاؤن لوڈ ہو گئی۔",
+  "rotate.half": "180°",
+  "rotate.hint": "مثال: 1, 3-4",
+  "rotate.left": "90° بائیں",
+  "rotate.pages": "صفحات",
+  "rotate.pagesLabel": "گھمانے کے لیے صفحات",
+  "rotate.right": "90° دائیں",
+  "rotate.run": "گھمائیں اور ڈاؤن لوڈ کریں",
+  "rotate.some": "منتخب صفحات",
+  "splitter.every": {
+    "one": "ہر صفحہ ({count} فائل)",
+    "other": "ہر صفحہ ({count} فائلیں)"
+  },
+  "splitter.mode": "تقسیم کا طریقہ",
+  "splitter.ranges": "صفحات کی رینجز",
+  "splitter.rangesHint": "مثال: 1-3, 5, 8-",
+  "splitter.rangesLabel": "رینجز (ہر رینج کے لیے ایک آؤٹ پٹ فائل)",
+  "splitter.ready": {
+    "one": "{count} فائل تیار ہے",
+    "other": "{count} فائلیں تیار ہیں"
+  },
+  "splitter.split": "PDF تقسیم کریں",
+  "toImage.convert": {
+    "one": "{count} صفحہ تبدیل کریں",
+    "other": "{count} صفحات تبدیل کریں"
+  },
+  "toImage.count": {
+    "one": "{count} تصویر",
+    "other": "{count} تصاویر"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "pdf.js کے ذریعے آپ کے آلے پر رینڈر کیا جاتا ہے",
+  "toImage.format": "فارمیٹ",
+  "toImage.memoryWarn": "300 DPI پر بہت سے صفحات رینڈر کرنے میں کافی میموری لگتی ہے اور یہ سست ہو سکتا ہے۔",
+  "toImage.page": "صفحہ {page}",
+  "toImage.resolution": "ریزولوشن"
+}

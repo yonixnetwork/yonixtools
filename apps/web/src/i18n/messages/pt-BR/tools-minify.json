@@ -1,0 +1,11 @@
+{
+  "minify.button": "Minificar {lang}",
+  "minify.errorAt": "Linha {line}, coluna {column}: {message}",
+  "minify.failed": "Não foi possível minificar este código.",
+  "minify.input": "Entrada {lang}",
+  "minify.keepComments": "Manter comentários",
+  "minify.keepLicenceComments": "Manter comentários de licença",
+  "minify.mangle": "Encurtar nomes",
+  "minify.output": "Minificado",
+  "minify.stats": "{before} → {after} bytes ({percent}% menor)"
+}

@@ -16,6 +16,14 @@ case "${AD_ORIGIN:-}" in
 esac
 if [ -n "${AD_FRAME_PARENT:-}" ] && [ "$AD_FRAME_PARENT" != "https://yonixtools.com" ]; then echo "AD_FRAME_PARENT must be https://yonixtools.com."; exit 1; fi
 
+# Advertising policy (config/ads-policy.json): the test-only override must never reach a production
+# build (the build also refuses it for the production site). Ads stay suppressed until the policy is verified.
+unset NEXT_PUBLIC_ADS_POLICY_OVERRIDE ADS_ELIGIBILITY_STUB
+# DB-IP Lite country database for ad eligibility (mounted read-only into the downloader).
+# Missing = ads suppressed (fail closed); install/refresh monthly: bash deploy/scripts/update-geoip.sh
+mkdir -p deploy/geoip
+[ -s deploy/geoip/dbip-country-lite.mmdb ] || echo "NOTE: deploy/geoip/dbip-country-lite.mmdb missing: ad eligibility answers 'geo_unavailable' (no ads). Run: bash deploy/scripts/update-geoip.sh"
+
 bash deploy/scripts/preflight.sh || { echo "Fix preflight problems first."; exit 1; }
 if [ "${DEPLOY_PULL:-0}" = "1" ]; then git fetch origin && git merge --ff-only "origin/$(git rev-parse --abbrev-ref HEAD)"; fi
 rev="$(git rev-parse --short HEAD)"

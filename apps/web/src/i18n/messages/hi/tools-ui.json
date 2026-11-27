@@ -1,0 +1,19 @@
+{
+  "copied": "कॉपी हो गया",
+  "copy": "कॉपी करें",
+  "copyFailed": "कॉपी नहीं हो सका",
+  "download": "डाउनलोड करें",
+  "downloadPanel.checkDownloads": "अपने ब्राउज़र के डाउनलोड देखें।",
+  "downloadPanel.close": "बंद करें",
+  "downloadPanel.closeAria": "पैनल बंद करें",
+  "downloadPanel.started": "डाउनलोड शुरू हो गया",
+  "files.dropMany": "फ़ाइलें चुनें या उन्हें यहाँ ड्रॉप करें",
+  "files.dropOne": "कोई फ़ाइल चुनें या उसे यहाँ ड्रॉप करें",
+  "files.listLabel": "फ़ाइलें",
+  "files.moveDown": "{name} को नीचे ले जाएँ",
+  "files.moveUp": "{name} को ऊपर ले जाएँ",
+  "files.remove": "{name} हटाएँ",
+  "loadingTool": "टूल लोड हो रहा है…",
+  "outputPlaceholder": "आउटपुट यहाँ दिखेगा",
+  "processedOnDevice": "आपके डिवाइस पर प्रोसेस किया गया"
+}

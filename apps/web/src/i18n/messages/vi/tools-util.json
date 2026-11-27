@@ -1,0 +1,33 @@
+{
+  "clock.done": "Hết giờ.",
+  "clock.lap": "Vòng",
+  "clock.lapNumber": "Vòng {n}",
+  "clock.lapTotal": "tổng {time}",
+  "clock.minutes": "Phút",
+  "clock.mode": "Chế độ",
+  "clock.note": "Hãy để tab này mở: trình duyệt làm chậm bộ hẹn giờ ở các tab chạy nền, nhưng thời gian hiển thị vẫn chính xác.",
+  "clock.pause": "Tạm dừng",
+  "clock.reset": "Đặt lại",
+  "clock.resume": "Tiếp tục",
+  "clock.seconds": "Giây",
+  "clock.start": "Bắt đầu",
+  "clock.stopwatch": "Đồng hồ bấm giờ",
+  "clock.timer": "Hẹn giờ đếm ngược",
+  "random.count": "Số lượng",
+  "random.errorCount": "Hãy chọn từ {min} đến {max} số.",
+  "random.errorGeneric": "Hãy kiểm tra lại các số.",
+  "random.errorRange": "Hãy nhập số nguyên, với giá trị nhỏ nhất không lớn hơn giá trị lớn nhất.",
+  "random.errorTooLarge": "Khoảng quá lớn (tối đa {max} giá trị).",
+  "random.errorUnique": {
+    "other": "Trong khoảng này chỉ có {count} số khác nhau."
+  },
+  "random.generate": "Tạo số",
+  "random.max": "Lớn nhất",
+  "random.min": "Nhỏ nhất",
+  "random.note": "Sử dụng bộ sinh số ngẫu nhiên mật mã của trình duyệt, không thiên lệch.",
+  "random.result": {
+    "other": "{count} số"
+  },
+  "random.sorted": "Sắp xếp kết quả",
+  "random.unique": "Không lặp lại"
+}

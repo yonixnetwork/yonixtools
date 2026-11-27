@@ -1,0 +1,19 @@
+{
+  "copied": "복사됨",
+  "copy": "복사",
+  "copyFailed": "복사하지 못했습니다",
+  "download": "다운로드",
+  "downloadPanel.checkDownloads": "브라우저의 다운로드 목록을 확인하세요.",
+  "downloadPanel.close": "닫기",
+  "downloadPanel.closeAria": "패널 닫기",
+  "downloadPanel.started": "다운로드가 시작되었습니다",
+  "files.dropMany": "파일을 선택하거나 여기에 끌어다 놓으세요",
+  "files.dropOne": "파일을 선택하거나 여기에 끌어다 놓으세요",
+  "files.listLabel": "파일",
+  "files.moveDown": "{name} 아래로 이동",
+  "files.moveUp": "{name} 위로 이동",
+  "files.remove": "{name} 삭제",
+  "loadingTool": "도구를 불러오는 중…",
+  "outputPlaceholder": "결과가 여기에 표시됩니다",
+  "processedOnDevice": "기기에서 처리됨"
+}

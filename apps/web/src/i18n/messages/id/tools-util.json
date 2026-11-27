@@ -1,0 +1,33 @@
+{
+  "clock.done": "Waktu habis.",
+  "clock.lap": "Putaran",
+  "clock.lapNumber": "Putaran {n}",
+  "clock.lapTotal": "total {time}",
+  "clock.minutes": "Menit",
+  "clock.mode": "Mode",
+  "clock.note": "Biarkan tab ini tetap terbuka: browser memperlambat timer di tab latar belakang, tetapi waktu yang ditampilkan tetap akurat.",
+  "clock.pause": "Jeda",
+  "clock.reset": "Atur ulang",
+  "clock.resume": "Lanjutkan",
+  "clock.seconds": "Detik",
+  "clock.start": "Mulai",
+  "clock.stopwatch": "Stopwatch",
+  "clock.timer": "Timer hitung mundur",
+  "random.count": "Jumlah",
+  "random.errorCount": "Pilih antara {min} dan {max} angka.",
+  "random.errorGeneric": "Periksa kembali angkanya.",
+  "random.errorRange": "Masukkan bilangan bulat dengan nilai minimum tidak melebihi nilai maksimum.",
+  "random.errorTooLarge": "Rentangnya terlalu besar (maksimum {max} nilai).",
+  "random.errorUnique": {
+    "other": "Hanya ada {count} angka berbeda dalam rentang tersebut."
+  },
+  "random.generate": "Buat",
+  "random.max": "Maksimum",
+  "random.min": "Minimum",
+  "random.note": "Menggunakan generator acak kriptografis bawaan browser Anda, tanpa bias.",
+  "random.result": {
+    "other": "{count} angka"
+  },
+  "random.sorted": "Urutkan hasil",
+  "random.unique": "Tanpa pengulangan"
+}

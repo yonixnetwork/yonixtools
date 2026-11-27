@@ -1,0 +1,19 @@
+{
+  "copied": "コピーしました",
+  "copy": "コピー",
+  "copyFailed": "コピーできませんでした",
+  "download": "ダウンロード",
+  "downloadPanel.checkDownloads": "ブラウザのダウンロードをご確認ください。",
+  "downloadPanel.close": "閉じる",
+  "downloadPanel.closeAria": "パネルを閉じる",
+  "downloadPanel.started": "ダウンロードを開始しました",
+  "files.dropMany": "ファイルを選択するか、ここにドロップしてください",
+  "files.dropOne": "ファイルを選択するか、ここにドロップしてください",
+  "files.listLabel": "ファイル",
+  "files.moveDown": "{name} を下へ移動",
+  "files.moveUp": "{name} を上へ移動",
+  "files.remove": "{name} を削除",
+  "loadingTool": "ツールを読み込んでいます…",
+  "outputPlaceholder": "ここに結果が表示されます",
+  "processedOnDevice": "お使いの端末上で処理しました"
+}

@@ -1,8 +1,11 @@
 "use client";
 import { Check, Copy, Download } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
+import { useFormat, useT } from "@/i18n/client";
+import { formatNumber } from "@/i18n/format";
 
-export function CopyButton({ text, label = "Copy", disabled }: { text: string; label?: string; disabled?: boolean }) {
+export function CopyButton({ text, label, disabled }: { text: string; label?: string; disabled?: boolean }) {
+  const t = useT("tools-ui");
   const [done, setDone] = useState<"ok" | "fail" | null>(null);
   const copy = async () => {
     try {
@@ -16,7 +19,7 @@ export function CopyButton({ text, label = "Copy", disabled }: { text: string; l
   return (
     <button type="button" className="btn btn-sm" onClick={copy} disabled={disabled || !text} aria-live="polite">
       {done === "ok" ? <Check aria-hidden /> : <Copy aria-hidden />}
-      {done === "ok" ? "Copied" : done === "fail" ? "Copy failed" : label}
+      {done === "ok" ? t("copied") : done === "fail" ? t("copyFailed") : (label ?? t("copy"))}
     </button>
   );
 }
@@ -40,10 +43,11 @@ export function announceDownload(filename: string) {
   }
 }
 
-export function DownloadTextButton({ text, filename, label = "Download", type = "text/plain" }: { text: string; filename: string; label?: string; type?: string }) {
+export function DownloadTextButton({ text, filename, label, type = "text/plain" }: { text: string; filename: string; label?: string; type?: string }) {
+  const t = useT("tools-ui");
   return (
     <button type="button" className="btn btn-sm" disabled={!text} onClick={() => downloadBlob(new Blob([text], { type }), filename)}>
-      <Download aria-hidden /> {label}
+      <Download aria-hidden /> {label ?? t("download")}
     </button>
   );
 }
@@ -60,7 +64,8 @@ export function Segmented<T extends string>({ value, onChange, options, label }:
   );
 }
 
-export function Output({ label, text, filename, placeholder = "Output appears here", mono = true }: { label: string; text: string; filename?: string; placeholder?: string; mono?: boolean }) {
+export function Output({ label, text, filename, placeholder, mono = true }: { label: string; text: string; filename?: string; placeholder?: string; mono?: boolean }) {
+  const t = useT("tools-ui");
   return (
     <div className="output">
       <div className="output-head">
@@ -71,7 +76,7 @@ export function Output({ label, text, filename, placeholder = "Output appears he
         </span>
       </div>
       <pre aria-label={label} style={mono ? undefined : { fontFamily: "var(--font)", fontSize: "0.95rem" }}>
-        {text || <span className="muted">{placeholder}</span>}
+        {text || <span className="muted">{placeholder ?? t("outputPlaceholder")}</span>}
       </pre>
     </div>
   );
@@ -110,6 +115,13 @@ export function Notice({ kind, children }: { kind: "error" | "info" | "success" 
 
 export const num = (s: string) => (s.trim() === "" ? NaN : Number(s));
 
-export function money(v: number, digits = 2) {
-  return Number.isFinite(v) ? v.toLocaleString("en-US", { minimumFractionDigits: digits, maximumFractionDigits: digits }) : "—";
+/** Number with a fixed number of decimals, for amounts. Pass the locale (useFormat().locale), or use useMoney(). */
+export function money(v: number, digits = 2, locale = "en-US") {
+  return Number.isFinite(v) ? formatNumber(locale, v, { minimumFractionDigits: digits, maximumFractionDigits: digits }) : "—";
+}
+
+/** money() bound to the current locale: const money = useMoney(); money(1234.5) → "1,234.50" (en). */
+export function useMoney(): (v: number, digits?: number) => string {
+  const { locale } = useFormat();
+  return useCallback((v: number, digits = 2) => money(v, digits, locale), [locale]);
 }

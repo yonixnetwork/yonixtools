@@ -1,0 +1,11 @@
+{
+  "minify.button": "压缩 {lang}",
+  "minify.errorAt": "第 {line} 行，第 {column} 列：{message}",
+  "minify.failed": "无法压缩此代码。",
+  "minify.input": "{lang} 输入",
+  "minify.keepComments": "保留注释",
+  "minify.keepLicenceComments": "保留许可证注释",
+  "minify.mangle": "混淆变量名",
+  "minify.output": "压缩结果",
+  "minify.stats": "{before} → {after} 字节（缩小 {percent}%）"
+}

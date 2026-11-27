@@ -1,4 +1,5 @@
 import { degrees, PDFDocument } from "pdf-lib";
+import { UserError } from "@/i18n/errors";
 
 export const MAX_PDF_BYTES = 200 * 1024 * 1024;
 
@@ -7,8 +8,8 @@ export async function loadPdf(bytes: Uint8Array | ArrayBuffer): Promise<PDFDocum
     return await PDFDocument.load(bytes, { ignoreEncryption: false, updateMetadata: false });
   } catch (e) {
     const msg = String((e as Error)?.message || e);
-    if (/encrypt/i.test(msg)) throw new Error("This PDF is password-protected. Remove the password first, then try again.");
-    throw new Error("This file couldn't be read as a PDF. It may be damaged or not a PDF.");
+    if (/encrypt/i.test(msg)) throw new UserError("errors.encrypted", undefined, "This PDF is password-protected. Remove the password first, then try again.");
+    throw new UserError("errors.unreadable", undefined, "This file couldn't be read as a PDF. It may be damaged or not a PDF.");
   }
 }
 
@@ -18,20 +19,20 @@ export async function loadPdf(bytes: Uint8Array | ArrayBuffer): Promise<PDFDocum
  */
 export function parseRanges(spec: string, pageCount: number): number[][] {
   const parts = spec.split(/[,;]+/).map((s) => s.trim()).filter(Boolean);
-  if (!parts.length) throw new Error("Enter at least one page or range, e.g. 1-3, 5.");
+  if (!parts.length) throw new UserError("errors.rangeEmpty", undefined, "Enter at least one page or range, e.g. 1-3, 5.");
   return parts.map((part) => {
     const m = /^(\d+)?\s*(?:(-)\s*(\d+)?)?$/.exec(part);
-    if (!m || (!m[1] && !m[3])) throw new Error(`“${part}” isn't a valid page or range.`);
+    if (!m || (!m[1] && !m[3])) throw new UserError("errors.rangeInvalid", { part }, `“${part}” isn't a valid page or range.`);
     const start = m[1] ? Number(m[1]) : 1;
     const end = m[2] ? (m[3] ? Number(m[3]) : pageCount) : start;
-    if (start < 1 || end < 1 || start > pageCount || end > pageCount) throw new Error(`“${part}” is outside the document (it has ${pageCount} pages).`);
-    if (end < start) throw new Error(`“${part}” goes backwards.`);
+    if (start < 1 || end < 1 || start > pageCount || end > pageCount) throw new UserError("errors.rangeOutside", { part, count: pageCount }, `“${part}” is outside the document (it has ${pageCount} pages).`);
+    if (end < start) throw new UserError("errors.rangeBackwards", { part }, `“${part}” goes backwards.`);
     return Array.from({ length: end - start + 1 }, (_, i) => start - 1 + i);
   });
 }
 
 export async function mergePdfs(files: Array<Uint8Array | ArrayBuffer>): Promise<Uint8Array> {
-  if (files.length < 2) throw new Error("Add at least two PDFs to merge.");
+  if (files.length < 2) throw new UserError("errors.mergeTwo", undefined, "Add at least two PDFs to merge.");
   const out = await PDFDocument.create();
   for (const f of files) {
     const doc = await loadPdf(f);
@@ -95,7 +96,7 @@ export interface PdfImage {
 
 /** Build a PDF from JPEG/PNG images, one per page. Width/height in pixels (used for aspect ratio). */
 export async function imagesToPdf(images: PdfImage[], opts: { pageSize: PageSize; margin: number; landscape?: boolean }): Promise<Uint8Array> {
-  if (!images.length) throw new Error("Add at least one image.");
+  if (!images.length) throw new UserError("errors.addImage", undefined, "Add at least one image.");
   const doc = await PDFDocument.create();
   for (const img of images) {
     const embedded = img.type === "png" ? await doc.embedPng(img.bytes) : await doc.embedJpg(img.bytes);

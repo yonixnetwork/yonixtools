@@ -158,8 +158,8 @@ test("when the ad network is unreachable (or blocked), slots collapse within sec
   await expect.poll(async () => (await slots.evaluateAll((els) => els.map((e) => e.getAttribute("data-ad-state")))).every((st) => st === "empty" || st === null), { timeout: 8_000 }).toBe(true);
   await expect(page.locator("aside.ad-slot .ad-label:visible")).toHaveCount(0); // no "Advertisement" over empty space
   // Slots still in view collapse on the next interaction (no layout shift while being looked at).
-  await page.keyboard.press("Shift");
-  await expect(page.locator("aside.ad-slot[data-ad-unit]")).toHaveCount(0, { timeout: 4_000 });
+  // (Slots mount only after the per-page-view eligibility answer, so the last one may become empty a moment later.)
+  await expect.poll(async () => (await page.keyboard.press("Shift"), await page.locator("aside.ad-slot[data-ad-unit]").count()), { timeout: 8_000 }).toBe(0);
   // The tool is unaffected.
   await page.locator("textarea").first().fill("one two three");
   await expect(page.getByText("3", { exact: true }).first()).toBeVisible();

@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Uwiano wa vipimo",
+  "crop.choose": "Chagua picha au iburute hapa",
+  "crop.chooseHint": "Hukatwa kwenye kifaa chako, haipakiwi kamwe",
+  "crop.download": "Pakua {width}×{height}",
+  "crop.errorNotImage": "Faili hilo si picha.",
+  "crop.errorOpen": "Picha hii haikuweza kufunguliwa kwenye kivinjari chako.",
+  "crop.free": "Huru",
+  "crop.height": "Urefu (px)",
+  "crop.imageAlt": "Picha inayokatwa",
+  "crop.left": "Kushoto (px)",
+  "crop.sourceInfo": "{width}×{height} · bofya ili kubadilisha",
+  "crop.top": "Juu (px)",
+  "crop.width": "Upana (px)"
+}

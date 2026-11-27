@@ -11,6 +11,8 @@
  *    seeing it means the response headers reached the browser, i.e. the
  *    download really started. (Only possible same-origin, as in production.)
  */
+import { UserError } from "@/i18n/errors";
+
 export type DownloadStart = "started" | "requested";
 
 export function randomToken(): string {
@@ -35,8 +37,8 @@ export function withParam(url: string, key: string, value: string) {
 export async function startBrowserDownload(fileUrl: string, opts: { timeoutMs?: number; fetchImpl?: typeof fetch } = {}): Promise<DownloadStart> {
   const f = opts.fetchImpl ?? fetch;
   const head = await f(fileUrl, { method: "HEAD", cache: "no-store" });
-  if (head.status === 410) throw new Error("This download has expired. Choose the quality again to prepare it once more.");
-  if (!head.ok) throw new Error("The file isn't available any more. Choose the quality again.");
+  if (head.status === 410) throw new UserError("client.fileExpired", undefined, "This download has expired. Choose the quality again to prepare it once more.");
+  if (!head.ok) throw new UserError("client.fileGone", undefined, "The file isn't available any more. Choose the quality again.");
 
   const token = randomToken();
   const cookie = `ytx_dl_${token}`;

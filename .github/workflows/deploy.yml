@@ -105,7 +105,13 @@ jobs:
           check "robots.txt names the sitemap" grep -qx 'Sitemap: https://yonixtools.com/sitemap.xml' <<<"$R"
           check "robots.txt keeps /admin/ out" grep -qx 'Disallow: /admin/' <<<"$R"
           check "main site never serves the ad frame (404)" test "$(code https://yonixtools.com/ad-frame.html)" = 404
-          check "Adsterra units in the ad frame" grep -q 620b3190e30ed523091b51770aea0b40 <<<"$F"
+          # Advertising policy (config/ads-policy.json) is UNVERIFIED: the public frame must be the
+          # suppressed one (fetched, marked) and contain none of the Adsterra unit keys.
+          # shellcheck disable=SC2329  # called through check()
+          no_ad_code() { grep -q 'ytx-ads-policy: suppressed' <<<"$F" && ! grep -qE '620b3190e30ed523091b51770aea0b40|087c1ea1a028c67071c19090b33ca01b|184daaa0dde35a067c7494257f37cd70|cdabddda1b7a8e769299c93b91d77822|bellnewyork' <<<"$F"; }
+          check "public ad frame contains no ad code while policy unverified" no_ad_code
+          E="$(curl -fsS https://yonixtools.com/api/v1/ad-eligibility || true)"
+          check "ad eligibility answers not eligible (provider_unverified)" grep -q '"eligible":false,"reason":"provider_unverified"' <<<"$E"
           # shellcheck disable=SC2329  # called through check()
           no_monetag() { ! grep -qE 'nap5k|n6wxm|12218944|12218952' <<<"$F"; }
           check "Monetag disabled (no Monetag code in the ad frame)" no_monetag

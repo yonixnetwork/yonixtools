@@ -1,0 +1,119 @@
+{
+  "common.clear": "Futa",
+  "common.download": "Pakua",
+  "common.downloadZip": "Pakua zote (ZIP)",
+  "common.dropLabel": "Chagua PDF au iburute hapa",
+  "common.pagesChange": {
+    "one": "Ukurasa {count} · bofya ili kubadilisha",
+    "other": "Kurasa {count} · bofya ili kubadilisha"
+  },
+  "common.pagesSizeChange": {
+    "one": "Ukurasa {count} · {size} · bofya ili kubadilisha",
+    "other": "Kurasa {count} · {size} · bofya ili kubadilisha"
+  },
+  "common.processedLocally": "Imechakatwa kwenye kifaa chako",
+  "common.renderingPage": "Inachora ukurasa {page} kati ya {total}…",
+  "compressor.building": "Inaunda PDF…",
+  "compressor.change": "Mabadiliko",
+  "compressor.compress": "Punguza ukubwa",
+  "compressor.compressed": "Iliyopunguzwa",
+  "compressor.download": "Pakua PDF iliyopunguzwa",
+  "compressor.lossless": "Bila kupoteza ubora (huhifadhi maandishi)",
+  "compressor.mode": "Ubanaji",
+  "compressor.notSmallerLossless": "Faili halikuweza kupunguzwa ukubwa kwa kiasi cha maana kwa mpangilio huu. Jaribu ubanaji mkali kwa PDF zilizoskaniwa au zenye picha nyingi.",
+  "compressor.notSmallerStrong": "Faili halikuweza kupunguzwa ukubwa kwa kiasi cha maana kwa mpangilio huu. Punguza ubora au ubora wa picha (resolution), au baki na faili asili.",
+  "compressor.optimising": "Inaboresha…",
+  "compressor.original": "Asili",
+  "compressor.quality": "Ubora wa JPEG: {value}%",
+  "compressor.resolution": "Ubora wa picha: {value} DPI",
+  "compressor.strong": "Mkali (kurasa zinakuwa picha)",
+  "compressor.strongWarn": "Ubanaji mkali hugeuza kila ukurasa kuwa picha, kwa hiyo maandishi hayataweza tena kuchaguliwa wala kutafutwa.",
+  "errors.addImage": "Ongeza angalau picha moja.",
+  "errors.encodeFailed": "Usimbaji umeshindwa.",
+  "errors.encrypted": "PDF hii imelindwa kwa nenosiri. Ondoa nenosiri kwanza, kisha ujaribu tena.",
+  "errors.encryptedShort": "PDF hii imelindwa kwa nenosiri. Ondoa nenosiri kwanza.",
+  "errors.generic": "Hitilafu imetokea. Tafadhali jaribu tena.",
+  "errors.imageOpen": "{name} haikuweza kufunguliwa kama picha.",
+  "errors.mergeTwo": "Ongeza angalau PDF mbili ili kuziunganisha.",
+  "errors.notPdf": "Faili hilo si PDF.",
+  "errors.pageTooLarge": "Ukurasa mmoja ni mkubwa mno kuchorwa kwa ubora huu wa picha. Chagua DPI ya chini zaidi.",
+  "errors.rangeBackwards": "“{part}” inarudi nyuma.",
+  "errors.rangeEmpty": "Weka angalau ukurasa mmoja au masafa, k.m. 1-3, 5.",
+  "errors.rangeInvalid": "“{part}” si ukurasa wala masafa halali.",
+  "errors.rangeOutside": {
+    "one": "“{part}” iko nje ya hati (ina ukurasa {count}).",
+    "other": "“{part}” iko nje ya hati (ina kurasa {count})."
+  },
+  "errors.renderFailed": "Uchoraji umeshindwa.",
+  "errors.tooBig": "{name} ni kubwa kuliko MB {size}, kiasi ambacho ni kikubwa mno kuchakatwa kwenye kivinjari.",
+  "errors.unreadable": "Faili hili halikuweza kusomwa kama PDF. Huenda limeharibika au si PDF.",
+  "errors.unreadableShort": "Faili hili halikuweza kusomwa kama PDF.",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "Tengeneza PDF",
+  "imageToPdf.done": {
+    "one": "PDF ya ukurasa {count} imetengenezwa ({size}). Upakuaji wako umeanza.",
+    "other": "PDF ya kurasa {count} imetengenezwa ({size}). Upakuaji wako umeanza."
+  },
+  "imageToPdf.dropHint": "JPG, PNG, WebP. Picha moja kwa kila ukurasa.",
+  "imageToPdf.dropLabel": "Chagua picha au uziburute hapa",
+  "imageToPdf.imageSize": "Ukubwa wa picha",
+  "imageToPdf.large": "Kubwa",
+  "imageToPdf.letter": "Letter (inchi 8.5×11)",
+  "imageToPdf.margin": "Pambizo",
+  "imageToPdf.noMargin": "Bila pambizo",
+  "imageToPdf.pageSize": "Ukubwa wa ukurasa",
+  "imageToPdf.skipped": "Baadhi ya faili zimerukwa kwa sababu si picha.",
+  "imageToPdf.small": "Ndogo",
+  "merger.done": {
+    "one": "Ukurasa {count} umeunganishwa kuwa merged.pdf ({size}). Upakuaji wako umeanza.",
+    "other": "Kurasa {count} zimeunganishwa kuwa merged.pdf ({size}). Upakuaji wako umeanza."
+  },
+  "merger.dropHint": "Ongeza mbili au zaidi. Faili haziondoki kamwe kwenye kifaa chako.",
+  "merger.dropLabel": "Chagua faili za PDF au uziburute hapa",
+  "merger.fileError": "{name}: {message}",
+  "merger.merge": "Unganisha PDF",
+  "merger.mergeCount": "Unganisha PDF {count}",
+  "merger.pageNote": {
+    "one": "Ukurasa {count}",
+    "other": "Kurasa {count}"
+  },
+  "merger.skipped": "Baadhi ya faili zimerukwa kwa sababu si PDF.",
+  "rotate.all": "Kurasa zote",
+  "rotate.angle": "Pembe",
+  "rotate.done": "PDF iliyozungushwa imepakuliwa.",
+  "rotate.half": "180°",
+  "rotate.hint": "Mfano: 1, 3-4",
+  "rotate.left": "90° kushoto",
+  "rotate.pages": "Kurasa",
+  "rotate.pagesLabel": "Kurasa za kuzungusha",
+  "rotate.right": "90° kulia",
+  "rotate.run": "Zungusha na upakue",
+  "rotate.some": "Kurasa zilizochaguliwa",
+  "splitter.every": {
+    "one": "Kila ukurasa (faili {count})",
+    "other": "Kila ukurasa (faili {count})"
+  },
+  "splitter.mode": "Njia ya kugawanya",
+  "splitter.ranges": "Masafa ya kurasa",
+  "splitter.rangesHint": "Mfano: 1-3, 5, 8-",
+  "splitter.rangesLabel": "Masafa (faili moja la matokeo kwa kila masafa)",
+  "splitter.ready": {
+    "one": "Faili {count} liko tayari",
+    "other": "Faili {count} ziko tayari"
+  },
+  "splitter.split": "Gawanya PDF",
+  "toImage.convert": {
+    "one": "Badilisha ukurasa {count}",
+    "other": "Badilisha kurasa {count}"
+  },
+  "toImage.count": {
+    "one": "Picha {count}",
+    "other": "Picha {count}"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "Huchorwa kwenye kifaa chako kwa pdf.js",
+  "toImage.format": "Muundo",
+  "toImage.memoryWarn": "Kuchora kurasa nyingi kwa 300 DPI hutumia kumbukumbu nyingi na kunaweza kuwa polepole.",
+  "toImage.page": "Ukurasa {page}",
+  "toImage.resolution": "Ubora wa picha (resolution)"
+}

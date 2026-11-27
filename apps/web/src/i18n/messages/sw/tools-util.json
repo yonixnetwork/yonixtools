@@ -1,0 +1,35 @@
+{
+  "clock.done": "Muda umekwisha.",
+  "clock.lap": "Mzunguko",
+  "clock.lapNumber": "Mzunguko {n}",
+  "clock.lapTotal": "jumla {time}",
+  "clock.minutes": "Dakika",
+  "clock.mode": "Hali",
+  "clock.note": "Acha kichupo hiki wazi: vivinjari hupunguza kasi ya vipima muda katika vichupo vya nyuma, lakini muda unaoonyeshwa unabaki sahihi.",
+  "clock.pause": "Sitisha",
+  "clock.reset": "Weka upya",
+  "clock.resume": "Endelea",
+  "clock.seconds": "Sekunde",
+  "clock.start": "Anza",
+  "clock.stopwatch": "Saa ya kupima muda",
+  "clock.timer": "Kipima muda cha kuhesabu kurudi nyuma",
+  "random.count": "Ngapi",
+  "random.errorCount": "Chagua kati ya namba {min} na {max}.",
+  "random.errorGeneric": "Kagua namba.",
+  "random.errorRange": "Weka namba kamili, na kiwango cha chini kisizidi kiwango cha juu.",
+  "random.errorTooLarge": "Masafa ni makubwa mno (thamani {max} kwa upeo).",
+  "random.errorUnique": {
+    "one": "Kuna namba {count} tu tofauti katika masafa hayo.",
+    "other": "Kuna namba {count} tu tofauti katika masafa hayo."
+  },
+  "random.generate": "Tengeneza",
+  "random.max": "Kiwango cha juu",
+  "random.min": "Kiwango cha chini",
+  "random.note": "Hutumia kitengeneza namba nasibu cha kriptografia cha kivinjari chako, bila upendeleo.",
+  "random.result": {
+    "one": "Namba yako",
+    "other": "Namba {count}"
+  },
+  "random.sorted": "Panga matokeo",
+  "random.unique": "Bila kurudia"
+}

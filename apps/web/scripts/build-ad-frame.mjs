@@ -18,7 +18,28 @@
 // Both also install a best-effort cookie guard before the publisher code runs: cookies the ad code
 // sets lose any Domain attribute (so they stay on the ad host instead of being set for the whole
 // yonixtools.com domain). Not a guarantee: see docs/RELEASE_ADS_ADMIN_PWA.md section 11.
-import { readFileSync, writeFileSync } from "node:fs";
+//
+// ADVERTISING POLICY (src/lib/ads/policy-core.mjs, config/ads-policy.json): while the policy is not
+// satisfied (provider not VERIFIED in writing for every required category), the PUBLIC frame is built
+// WITHOUT any publisher code: it loads nothing and tells its parent to collapse (reason "policy").
+// The admin-only ad-test.html keeps the snippets for manual testing, under a "Public ads suppressed by
+// policy" banner. NEXT_PUBLIC_ADS_POLICY_OVERRIDE=test-verified (local e2e builds only) is refused here
+// for a production site URL or a non-local ad origin, which fails the build.
+// AD_FRAME_OUT_DIR (tests only) writes the two documents to another directory instead of public/.
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import { providerStatus, resolveOverride } from "../src/lib/ads/policy-core.mjs";
+
+const policy = JSON.parse(readFileSync(new URL("../src/lib/ads/ads-policy.json", import.meta.url), "utf8"));
+let OVERRIDE;
+try {
+  OVERRIDE = resolveOverride({ override: process.env.NEXT_PUBLIC_ADS_POLICY_OVERRIDE, siteUrl: process.env.NEXT_PUBLIC_SITE_URL, adOrigin: process.env.NEXT_PUBLIC_AD_ORIGIN });
+} catch (e) {
+  console.error("build-ad-frame: " + e.message);
+  process.exit(1);
+}
+const POLICY = OVERRIDE ? { ok: true, reason: "test_override" } : providerStatus(policy);
 
 const adsterra = JSON.parse(readFileSync(new URL("../src/lib/ads/units.json", import.meta.url), "utf8"));
 const monetag = JSON.parse(readFileSync(new URL("../src/lib/ads/monetag.json", import.meta.url), "utf8"));
@@ -32,7 +53,7 @@ const monetagUnits = {
   monetagVignette: { snippet: monetag.vignette.snippet, width: 0, height: 0 },
 };
 const units = { ...adsterra, ...monetagUnits }; // everything the admin test knows
-const publicUnits = MONETAG_ON ? units : { ...adsterra }; // what the public frame can run
+const publicUnits = MONETAG_ON ? units : { ...adsterra }; // what the public frame can run (only when the policy is satisfied)
 const snippetsOf = (u) => JSON.stringify(Object.fromEntries(Object.entries(u).map(([k, v]) => [k, v.snippet]))).replace(/</g, "\\u003c");
 const NATIVE_CONTAINER = "container-cdabddda1b7a8e769299c93b91d77822";
 const SIZES = Object.fromEntries(Object.entries(units).map(([k, v]) => [k, [v.width, v.height]]));
@@ -175,6 +196,22 @@ ${detect(false)}
 </body></html>
 `;
 
+// Policy not satisfied: no publisher code at all, nothing loaded; the parent is told to collapse.
+const suppressedFrame = `<!doctype html>
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="robots" content="noindex, nofollow">
+<title>Advertisement</title><style>html,body{margin:0;padding:0;background:transparent;overflow:hidden}</style>
+</head><body>
+<!-- ytx-ads-policy: suppressed (${POLICY.reason}) -->
+<script>
+(function () {
+  if (parent === window) return;
+  var s = new URLSearchParams(location.search).get("s") || "";
+  parent.postMessage({ ytxAd: s, state: "empty", height: 0, reason: "policy" }, "*");
+})();
+</script>
+</body></html>
+`;
+
 // ── ADMIN test document ──────────────────────────────────────────────────────────────────────
 const TEST_TIMEOUT_MS = { adsterra: 20000, monetag: 90000 };
 const SANDBOX = "allow-scripts allow-same-origin allow-popups allow-popups-to-escape-sandbox";
@@ -182,7 +219,10 @@ const LABELS = [
   ["banner320x50", "Adsterra banner 320 × 50"], ["banner300x250", "Adsterra banner 300 × 250"], ["banner728x90", "Adsterra banner 728 × 90"],
   ["native", "Adsterra native banner"], ["monetagPush", "Monetag In-Page Push (zone 12218944)"], ["monetagVignette", "Monetag Vignette (zone 12218952): test only, disabled on the site"],
 ];
-const test = `${head("Admin · ad test (ad origin)", "[data-ytx-ui]{font:13px/1.45 system-ui,sans-serif;text-align:left;color:#111;background:#fff}")}
+const POLICY_BANNER = POLICY.ok ? "" : "Public ads suppressed by policy: " + POLICY.reason + (POLICY.detail ? " (" + POLICY.detail + ")" : "") + ". The public ad frame contains no ad code; this admin page still runs the publisher codes for manual testing.";
+const test = `${head("Admin · ad test (ad origin)", "[data-ytx-ui]{font:13px/1.45 system-ui,sans-serif;text-align:left;color:#111;background:#fff}#ytx-policy{position:sticky;top:0;z-index:2147483647;margin:0;padding:10px;background:#b3261e;color:#fff;font:700 14px/1.4 system-ui,sans-serif;text-align:left}")}
+${POLICY_BANNER ? `<p id="ytx-policy" data-ytx-ui>${POLICY_BANNER.replace(/[<>&]/g, "")}</p>
+<script>if (new URLSearchParams(location.search).get("embed") === "1") document.getElementById("ytx-policy").remove(); // framed runs: the index page shows it</script>` : ""}
 <script>
 ${COOKIE_GUARD}
 </script>
@@ -294,6 +334,8 @@ ${detect(true)}
 </body></html>
 `;
 
-writeFileSync(new URL("../public/ad-frame.html", import.meta.url), frame);
-writeFileSync(new URL("../public/ad-test.html", import.meta.url), test);
-console.log("public/ad-frame.html and public/ad-test.html written (Monetag " + (MONETAG_ON ? "ON" : "OFF: not in the public frame") + ")");
+const outDir = process.env.AD_FRAME_OUT_DIR || fileURLToPath(new URL("../public/", import.meta.url));
+mkdirSync(outDir, { recursive: true });
+writeFileSync(join(outDir, "ad-frame.html"), POLICY.ok ? frame : suppressedFrame);
+writeFileSync(join(outDir, "ad-test.html"), test);
+console.log(`ad-frame.html and ad-test.html written to ${outDir} (policy: ${POLICY.ok ? "satisfied (" + POLICY.reason + "), publisher codes in the public frame" : "NOT satisfied (" + POLICY.reason + "): public frame has NO ad code"}; Monetag ${MONETAG_ON && POLICY.ok ? "ON" : "OFF: not in the public frame"})`);

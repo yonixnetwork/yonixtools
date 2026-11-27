@@ -1,0 +1,19 @@
+{
+  "copied": "Tersalin",
+  "copy": "Salin",
+  "copyFailed": "Gagal menyalin",
+  "download": "Unduh",
+  "downloadPanel.checkDownloads": "Periksa unduhan di browser Anda.",
+  "downloadPanel.close": "Tutup",
+  "downloadPanel.closeAria": "Tutup panel",
+  "downloadPanel.started": "Unduhan dimulai",
+  "files.dropMany": "Pilih file atau letakkan di sini",
+  "files.dropOne": "Pilih file atau letakkan di sini",
+  "files.listLabel": "File",
+  "files.moveDown": "Pindahkan {name} ke bawah",
+  "files.moveUp": "Pindahkan {name} ke atas",
+  "files.remove": "Hapus {name}",
+  "loadingTool": "Memuat alat…",
+  "outputPlaceholder": "Hasil akan muncul di sini",
+  "processedOnDevice": "Diproses di perangkat Anda"
+}

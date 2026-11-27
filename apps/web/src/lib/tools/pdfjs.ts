@@ -1,4 +1,6 @@
 /* Browser-only helpers around Mozilla pdf.js (Apache-2.0), loaded on demand. */
+import { UserError } from "@/i18n/errors";
+
 type PdfJs = typeof import("pdfjs-dist");
 let loading: Promise<PdfJs> | null = null;
 
@@ -30,7 +32,7 @@ export async function renderPdfPages(
     doc = await task.promise;
   } catch (e) {
     const name = (e as { name?: string })?.name;
-    throw new Error(name === "PasswordException" ? "This PDF is password-protected. Remove the password first." : "This file couldn't be read as a PDF.");
+    throw name === "PasswordException" ? new UserError("errors.encryptedShort", undefined, "This PDF is password-protected. Remove the password first.") : new UserError("errors.unreadableShort", undefined, "This file couldn't be read as a PDF.");
   }
   const indices = opts.pages ?? Array.from({ length: doc.numPages }, (_, i) => i);
   const out: RenderedPage[] = [];
@@ -42,12 +44,12 @@ export async function renderPdfPages(
       const canvas = document.createElement("canvas");
       canvas.width = Math.floor(viewport.width);
       canvas.height = Math.floor(viewport.height);
-      if (canvas.width * canvas.height > 40_000_000) throw new Error("A page is too large to render at this resolution. Choose a lower DPI.");
+      if (canvas.width * canvas.height > 40_000_000) throw new UserError("errors.pageTooLarge", undefined, "A page is too large to render at this resolution. Choose a lower DPI.");
       const ctx = canvas.getContext("2d")!;
       ctx.fillStyle = "#fff";
       ctx.fillRect(0, 0, canvas.width, canvas.height);
       await page.render({ canvasContext: ctx, canvas, viewport }).promise;
-      const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new Error("Rendering failed."))), opts.type, opts.quality));
+      const blob = await new Promise<Blob>((res, rej) => canvas.toBlob((b) => (b ? res(b) : rej(new UserError("errors.renderFailed", undefined, "Rendering failed."))), opts.type, opts.quality));
       const r = { index: i, blob, width: canvas.width, height: canvas.height };
       out.push(r);
       opts.onPage?.(r, indices.length);

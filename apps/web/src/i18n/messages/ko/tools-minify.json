@@ -1,0 +1,11 @@
+{
+  "minify.button": "{lang} 압축",
+  "minify.errorAt": "{line}행 {column}열: {message}",
+  "minify.failed": "이 코드를 압축할 수 없습니다.",
+  "minify.input": "{lang} 입력",
+  "minify.keepComments": "주석 유지",
+  "minify.keepLicenceComments": "라이선스 주석 유지",
+  "minify.mangle": "이름 난독화(mangle)",
+  "minify.output": "압축 결과",
+  "minify.stats": "{before} → {after}바이트({percent}% 감소)"
+}

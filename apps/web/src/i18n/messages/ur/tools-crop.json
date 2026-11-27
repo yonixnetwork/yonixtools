@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "تناسبِ ابعاد",
+  "crop.choose": "تصویر منتخب کریں یا یہاں ڈراپ کریں",
+  "crop.chooseHint": "آپ کے آلے پر ہی کراپ ہوتی ہے، کبھی اپ لوڈ نہیں ہوتی",
+  "crop.download": "{width}×{height} ڈاؤن لوڈ کریں",
+  "crop.errorNotImage": "یہ فائل تصویر نہیں ہے۔",
+  "crop.errorOpen": "یہ تصویر آپ کے براؤزر میں نہیں کھل سکی۔",
+  "crop.free": "آزاد",
+  "crop.height": "اونچائی (px)",
+  "crop.imageAlt": "کراپ کی جا رہی تصویر",
+  "crop.left": "بائیں (px)",
+  "crop.sourceInfo": "{width}×{height} · تبدیل کرنے کے لیے کلک کریں",
+  "crop.top": "اوپر (px)",
+  "crop.width": "چوڑائی (px)"
+}

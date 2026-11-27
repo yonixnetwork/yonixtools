@@ -1,0 +1,35 @@
+{
+  "clock.done": "সময় শেষ।",
+  "clock.lap": "ল্যাপ",
+  "clock.lapNumber": "ল্যাপ {n}",
+  "clock.lapTotal": "মোট {time}",
+  "clock.minutes": "মিনিট",
+  "clock.mode": "মোড",
+  "clock.note": "এই ট্যাবটি খোলা রাখুন: ব্যাকগ্রাউন্ড ট্যাবে ব্রাউজার টাইমার ধীর করে দেয়, তবে দেখানো সময় সঠিকই থাকে।",
+  "clock.pause": "বিরতি",
+  "clock.reset": "রিসেট",
+  "clock.resume": "আবার শুরু",
+  "clock.seconds": "সেকেন্ড",
+  "clock.start": "শুরু",
+  "clock.stopwatch": "স্টপওয়াচ",
+  "clock.timer": "কাউন্টডাউন টাইমার",
+  "random.count": "কতগুলো",
+  "random.errorCount": "{min} থেকে {max}টির মধ্যে সংখ্যা বেছে নিন।",
+  "random.errorGeneric": "সংখ্যাগুলো যাচাই করুন।",
+  "random.errorRange": "পূর্ণসংখ্যা লিখুন, এবং সর্বনিম্ন মান যেন সর্বোচ্চের চেয়ে বেশি না হয়।",
+  "random.errorTooLarge": "পরিসরটি অনেক বড় (সর্বোচ্চ {max}টি মান)।",
+  "random.errorUnique": {
+    "one": "ওই পরিসরে মাত্র {count}টি ভিন্ন সংখ্যা আছে।",
+    "other": "ওই পরিসরে মাত্র {count}টি ভিন্ন সংখ্যা আছে।"
+  },
+  "random.generate": "তৈরি করুন",
+  "random.max": "সর্বোচ্চ",
+  "random.min": "সর্বনিম্ন",
+  "random.note": "আপনার ব্রাউজারের ক্রিপ্টোগ্রাফিক র‍্যান্ডম জেনারেটর ব্যবহার করে, কোনো পক্ষপাত ছাড়াই।",
+  "random.result": {
+    "one": "আপনার সংখ্যা",
+    "other": "{count}টি সংখ্যা"
+  },
+  "random.sorted": "ফলাফল সাজান",
+  "random.unique": "পুনরাবৃত্তি নয়"
+}

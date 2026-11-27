@@ -1,3 +1,5 @@
+import { UserError } from "@/i18n/errors";
+
 // ── Base64 (UTF-8 safe) ─────────────────────────────────────────────────────
 
 export function base64Encode(text: string, urlSafe = false): string {
@@ -10,9 +12,9 @@ export function base64Encode(text: string, urlSafe = false): string {
 
 export function base64DecodeBytes(input: string): Uint8Array {
   let s = input.replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
-  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(s)) throw new Error("Input contains characters that are not valid Base64.");
+  if (!/^[A-Za-z0-9+/]*={0,2}$/.test(s)) throw new UserError("errors.base64Chars", undefined, "Input contains characters that are not valid Base64.");
   s = s.replace(/=+$/, "");
-  if (s.length % 4 === 1) throw new Error("Input has an invalid length for Base64.");
+  if (s.length % 4 === 1) throw new UserError("errors.base64Length", undefined, "Input has an invalid length for Base64.");
   s += "=".repeat((4 - (s.length % 4)) % 4);
   const bin = atob(s);
   const bytes = new Uint8Array(bin.length);
@@ -25,7 +27,7 @@ export function base64Decode(input: string): string {
   try {
     return new TextDecoder("utf-8", { fatal: true }).decode(bytes);
   } catch {
-    throw new Error("Decoded data is binary, not UTF-8 text.");
+    throw new UserError("errors.base64Binary", undefined, "Decoded data is binary, not UTF-8 text.");
   }
 }
 
@@ -40,7 +42,7 @@ export function urlDecode(s: string, mode: "component" | "full", plusAsSpace = t
   try {
     return mode === "component" ? decodeURIComponent(input) : decodeURI(input);
   } catch {
-    throw new Error("The text contains a malformed percent-encoded sequence (for example a lone % sign).");
+    throw new UserError("errors.urlMalformed", undefined, "The text contains a malformed percent-encoded sequence (for example a lone % sign).");
   }
 }
 
@@ -57,15 +59,15 @@ export interface DecodedJwt {
 
 export function decodeJwt(token: string, now = Date.now()): DecodedJwt {
   const parts = token.trim().replace(/^Bearer\s+/i, "").split(".");
-  if (parts.length !== 3) throw new Error(`A JWT has three dot-separated parts; this has ${parts.length}.`);
-  const parse = (part: string, name: string) => {
+  if (parts.length !== 3) throw new UserError("errors.jwtParts", { count: parts.length }, `A JWT has three dot-separated parts; this has ${parts.length}.`);
+  const parse = (part: string, name: "header" | "payload") => {
     let obj: unknown;
     try {
       obj = JSON.parse(base64Decode(part));
     } catch {
-      throw new Error(`The ${name} is not valid Base64url-encoded JSON.`);
+      throw new UserError(name === "header" ? "errors.jwtHeaderNotJson" : "errors.jwtPayloadNotJson", undefined, `The ${name} is not valid Base64url-encoded JSON.`);
     }
-    if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw new Error(`The ${name} must be a JSON object.`);
+    if (!obj || typeof obj !== "object" || Array.isArray(obj)) throw new UserError(name === "header" ? "errors.jwtHeaderNotObject" : "errors.jwtPayloadNotObject", undefined, `The ${name} must be a JSON object.`);
     return obj as Record<string, unknown>;
   };
   const header = parse(parts[0], "header");

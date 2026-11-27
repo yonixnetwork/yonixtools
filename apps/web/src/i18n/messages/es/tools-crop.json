@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "Relación de aspecto",
+  "crop.choose": "Elija una imagen o arrástrela aquí",
+  "crop.chooseHint": "Se recorta en su dispositivo, nunca se sube",
+  "crop.download": "Descargar {width}×{height}",
+  "crop.errorNotImage": "Ese archivo no es una imagen.",
+  "crop.errorOpen": "No se ha podido abrir esta imagen en su navegador.",
+  "crop.free": "Libre",
+  "crop.height": "Alto (px)",
+  "crop.imageAlt": "Imagen que se está recortando",
+  "crop.left": "Izquierda (px)",
+  "crop.sourceInfo": "{width}×{height} · haga clic para cambiarla",
+  "crop.top": "Arriba (px)",
+  "crop.width": "Ancho (px)"
+}

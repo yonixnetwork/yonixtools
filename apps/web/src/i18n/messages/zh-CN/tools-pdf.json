@@ -1,0 +1,109 @@
+{
+  "common.clear": "清除",
+  "common.download": "下载",
+  "common.downloadZip": "全部下载（ZIP）",
+  "common.dropLabel": "选择 PDF 或拖放到此处",
+  "common.pagesChange": {
+    "other": "{count} 页 · 点击更换"
+  },
+  "common.pagesSizeChange": {
+    "other": "{count} 页 · {size} · 点击更换"
+  },
+  "common.processedLocally": "在您的设备上处理",
+  "common.renderingPage": "正在渲染第 {page} 页，共 {total} 页…",
+  "compressor.building": "正在生成 PDF…",
+  "compressor.change": "变化",
+  "compressor.compress": "压缩",
+  "compressor.compressed": "压缩后",
+  "compressor.download": "下载压缩后的 PDF",
+  "compressor.lossless": "无损（保留文字）",
+  "compressor.mode": "压缩方式",
+  "compressor.notSmallerLossless": "使用此设置无法明显减小文件体积。对于扫描件或图片较多的 PDF，请尝试强力压缩。",
+  "compressor.notSmallerStrong": "使用此设置无法明显减小文件体积。请降低质量或分辨率，或保留原文件。",
+  "compressor.optimising": "正在优化…",
+  "compressor.original": "原文件",
+  "compressor.quality": "JPEG 质量：{value}%",
+  "compressor.resolution": "分辨率：{value} DPI",
+  "compressor.strong": "强力（页面转为图片）",
+  "compressor.strongWarn": "强力压缩会将每一页转为图片，因此文字将无法再被选中或搜索。",
+  "errors.addImage": "请至少添加一张图片。",
+  "errors.encodeFailed": "编码失败。",
+  "errors.encrypted": "此 PDF 受密码保护。请先移除密码，然后重试。",
+  "errors.encryptedShort": "此 PDF 受密码保护。请先移除密码。",
+  "errors.generic": "出现问题，请重试。",
+  "errors.imageOpen": "无法将 {name} 作为图片打开。",
+  "errors.mergeTwo": "请至少添加两个 PDF 进行合并。",
+  "errors.notPdf": "该文件不是 PDF。",
+  "errors.pageTooLarge": "某一页过大，无法以此分辨率渲染。请选择更低的 DPI。",
+  "errors.rangeBackwards": "“{part}”的顺序是倒序的。",
+  "errors.rangeEmpty": "请至少输入一个页码或范围，例如 1-3, 5。",
+  "errors.rangeInvalid": "“{part}”不是有效的页码或范围。",
+  "errors.rangeOutside": {
+    "other": "“{part}”超出了文档范围（该文档共 {count} 页）。"
+  },
+  "errors.renderFailed": "渲染失败。",
+  "errors.tooBig": "{name} 超过 {size} MB，文件过大，无法在浏览器中处理。",
+  "errors.unreadable": "无法将此文件作为 PDF 读取。文件可能已损坏，或并非 PDF。",
+  "errors.unreadableShort": "无法将此文件作为 PDF 读取。",
+  "imageToPdf.a4": "A4",
+  "imageToPdf.create": "生成 PDF",
+  "imageToPdf.done": {
+    "other": "已生成 {count} 页的 PDF（{size}），下载已开始。"
+  },
+  "imageToPdf.dropHint": "支持 JPG、PNG、WebP。每张图片占一页。",
+  "imageToPdf.dropLabel": "选择图片或拖放到此处",
+  "imageToPdf.imageSize": "图片大小",
+  "imageToPdf.large": "大",
+  "imageToPdf.letter": "Letter（信纸）",
+  "imageToPdf.margin": "页边距",
+  "imageToPdf.noMargin": "无边距",
+  "imageToPdf.pageSize": "页面尺寸",
+  "imageToPdf.skipped": "部分文件不是图片，已跳过。",
+  "imageToPdf.small": "小",
+  "merger.done": {
+    "other": "已将 {count} 页合并为 merged.pdf（{size}），下载已开始。"
+  },
+  "merger.dropHint": "请添加两个或更多文件。文件不会离开您的设备。",
+  "merger.dropLabel": "选择 PDF 文件或拖放到此处",
+  "merger.fileError": "{name}：{message}",
+  "merger.merge": "合并 PDF",
+  "merger.mergeCount": "合并 {count} 个 PDF",
+  "merger.pageNote": {
+    "other": "{count} 页"
+  },
+  "merger.skipped": "部分文件不是 PDF，已跳过。",
+  "rotate.all": "所有页面",
+  "rotate.angle": "角度",
+  "rotate.done": "已下载旋转后的 PDF。",
+  "rotate.half": "180°",
+  "rotate.hint": "示例：1, 3-4",
+  "rotate.left": "向左 90°",
+  "rotate.pages": "页面",
+  "rotate.pagesLabel": "要旋转的页面",
+  "rotate.right": "向右 90°",
+  "rotate.run": "旋转并下载",
+  "rotate.some": "指定页面",
+  "splitter.every": {
+    "other": "每页一个文件（{count} 个文件）"
+  },
+  "splitter.mode": "拆分方式",
+  "splitter.ranges": "页面范围",
+  "splitter.rangesHint": "示例：1-3, 5, 8-",
+  "splitter.rangesLabel": "范围（每个范围输出一个文件）",
+  "splitter.ready": {
+    "other": "{count} 个文件已就绪"
+  },
+  "splitter.split": "拆分 PDF",
+  "toImage.convert": {
+    "other": "转换 {count} 页"
+  },
+  "toImage.count": {
+    "other": "{count} 张图片"
+  },
+  "toImage.dpi": "{value} DPI",
+  "toImage.dropHint": "使用 pdf.js 在您的设备上渲染",
+  "toImage.format": "格式",
+  "toImage.memoryWarn": "以 300 DPI 渲染大量页面会占用大量内存，速度也可能较慢。",
+  "toImage.page": "第 {page} 页",
+  "toImage.resolution": "分辨率"
+}

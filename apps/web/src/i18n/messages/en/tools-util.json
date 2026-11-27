@@ -1,0 +1,35 @@
+{
+  "clock.done": "Time's up.",
+  "clock.lap": "Lap",
+  "clock.lapNumber": "Lap {n}",
+  "clock.lapTotal": "total {time}",
+  "clock.minutes": "Minutes",
+  "clock.mode": "Mode",
+  "clock.note": "Keep this tab open: browsers slow down timers in background tabs, but the time shown stays accurate.",
+  "clock.pause": "Pause",
+  "clock.reset": "Reset",
+  "clock.resume": "Resume",
+  "clock.seconds": "Seconds",
+  "clock.start": "Start",
+  "clock.stopwatch": "Stopwatch",
+  "clock.timer": "Countdown timer",
+  "random.count": "How many",
+  "random.errorCount": "Choose between {min} and {max} numbers.",
+  "random.errorGeneric": "Check the numbers.",
+  "random.errorRange": "Enter whole numbers with the minimum not above the maximum.",
+  "random.errorTooLarge": "The range is too large (maximum {max} values).",
+  "random.errorUnique": {
+    "one": "Only {count} different number exists in that range.",
+    "other": "Only {count} different numbers exist in that range."
+  },
+  "random.generate": "Generate",
+  "random.max": "Maximum",
+  "random.min": "Minimum",
+  "random.note": "Uses your browser's cryptographic random generator, without bias.",
+  "random.result": {
+    "one": "Your number",
+    "other": "{count} numbers"
+  },
+  "random.sorted": "Sort results",
+  "random.unique": "No repeats"
+}

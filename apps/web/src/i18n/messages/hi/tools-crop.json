@@ -1,0 +1,15 @@
+{
+  "crop.aspectRatio": "आस्पेक्ट रेशियो",
+  "crop.choose": "कोई इमेज चुनें या उसे यहाँ ड्रॉप करें",
+  "crop.chooseHint": "आपके डिवाइस पर ही क्रॉप होती है, कभी अपलोड नहीं होती",
+  "crop.download": "{width}×{height} डाउनलोड करें",
+  "crop.errorNotImage": "यह फ़ाइल इमेज नहीं है।",
+  "crop.errorOpen": "यह इमेज आपके ब्राउज़र में नहीं खुल सकी।",
+  "crop.free": "फ़्री",
+  "crop.height": "ऊँचाई (px)",
+  "crop.imageAlt": "क्रॉप की जा रही इमेज",
+  "crop.left": "बाएँ से (px)",
+  "crop.sourceInfo": "{width}×{height} · बदलने के लिए क्लिक करें",
+  "crop.top": "ऊपर से (px)",
+  "crop.width": "चौड़ाई (px)"
+}
