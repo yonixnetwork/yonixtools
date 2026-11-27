@@ -14,8 +14,8 @@ const ROOT = path.join(process.cwd(), "out");
 const MSG = path.join(process.cwd(), "src", "i18n", "messages");
 const PUBLISHED = ["en", "es", "pt-BR", "fr", "de", "hi", "id", "ar", "zh-CN", "ja", "ru", "bn", "ur", "tr", "vi", "ko", "it", "nl", "th", "sw"];
 const RTL = new Set(["ar", "ur"]);
-const locales = PUBLISHED.filter((l) => fs.existsSync(path.join(ROOT, l.toLowerCase(), "index.html")));
-const others = locales.filter((l) => l !== "en");
+const others = PUBLISHED.filter((l) => l !== "en" && fs.existsSync(path.join(ROOT, l.toLowerCase(), "index.html")));
+const locales = ["en", ...others];
 
 type Msgs = Record<string, string | Record<string, string>>;
 const load = (l: string, ns: string): Msgs => {
@@ -42,8 +42,21 @@ function englishSentences(l: string, namespaces: string[]): string[] {
   return out;
 }
 
+/** The page's visible text in its own language: leaves out the language suggestion (shown in the
+ * suggested language on purpose) and anything marked with another language (native language names). */
 async function visibleText(page: Page) {
-  return page.evaluate(() => document.body.innerText);
+  return page.evaluate(() => {
+    const lang = document.documentElement.lang;
+    const keep: Array<[HTMLElement, string]> = [];
+    for (const el of document.querySelectorAll<HTMLElement>('[data-testid="lang-suggest"], [lang]')) {
+      if (el === document.documentElement || (el.getAttribute("lang") === lang && el.dataset.testid !== "lang-suggest")) continue;
+      keep.push([el, el.style.display]);
+      el.style.display = "none";
+    }
+    const text = document.body.innerText;
+    for (const [el, d] of keep) el.style.display = d;
+    return text;
+  });
 }
 
 test.describe("localized pages", () => {

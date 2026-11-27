@@ -99,7 +99,8 @@ test("carousel posts list every item", async ({ page }) => {
 
 test("unsafe links are rejected before any API call", async ({ page }) => {
   const apiCalls: string[] = [];
-  page.on("request", (r) => new URL(r.url()).pathname.startsWith(API) && apiCalls.push(r.url()));
+  // The per-page-view ad eligibility check is not a downloader call.
+  page.on("request", (r) => new URL(r.url()).pathname.startsWith(API) && !new URL(r.url()).pathname.endsWith("/v1/ad-eligibility") && apiCalls.push(r.url()));
   await page.goto("/");
   await page.locator("#dl-url").fill("http://169.254.169.254/latest/meta-data/");
   await page.getByRole("button", { name: "Download", exact: true }).click();
@@ -152,7 +153,8 @@ test("select several items and download them as one ZIP", async ({ page }) => {
 
 test("Reddit and Vimeo links are refused with the reason, without calling the API", async ({ page }) => {
   const apiCalls: string[] = [];
-  page.on("request", (r) => new URL(r.url()).pathname.startsWith(API) && apiCalls.push(r.url()));
+  // The per-page-view ad eligibility check is not a downloader call.
+  page.on("request", (r) => new URL(r.url()).pathname.startsWith(API) && !new URL(r.url()).pathname.endsWith("/v1/ad-eligibility") && apiCalls.push(r.url()));
   await page.goto("/");
   await page.locator("#dl-url").fill("https://www.reddit.com/r/videos/comments/abc123/x/");
   await page.getByRole("button", { name: "Download", exact: true }).click();
