@@ -20,14 +20,14 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | Measure | Count |
 |---|---|
 | Total requirements (rows in sections 1–12) | 90 |
-| VERIFIED COMPLETE | 82 |
-| TEST PASSED (verified locally, awaiting CI on the final commit) | 1 (I-12) |
+| VERIFIED COMPLETE | 83 |
+| TEST PASSED (verified locally, awaiting CI on the final commit) | 0 |
 | IMPLEMENTED (no automated test) | 3 (L-06, T-08, T-11) |
 | HUMAN REVIEW REQUIRED | 1 (Q-01, translation quality) |
 | BLOCKED (external confirmation or data needed) | 2 (A-04 Adsterra confirmation, K-04 keyword volumes) |
 | NOT STARTED | 1 (T-03, catalogues for the 80 extra locales) |
 | FAILED | 0 |
-| Incomplete (everything not VERIFIED COMPLETE) | 8 |
+| Incomplete (everything not VERIFIED COMPLETE) | 7 |
 | Rows that also need human review before indexing or sign-off (column "Human review") | 16 |
 
 **Production-release readiness:**
@@ -56,7 +56,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | T14 | `tests/e2e/a11y.spec.ts` (axe, WCAG 2.1 A/AA) | 26 passed, including /es/, /de/, /ar/, /ur/, /hi/, /ja/ and /th/ (home and tool page) and the open language selector |
 | T15 | Page weight and LCP, measured in Chromium on the local build | /pdf-merger/ 1,278 KB (LCP 120 ms); /es/unir-pdf/ 1,304 KB (120 ms); /ar/pdf-merger/ 1,313 KB (204 ms); / 947 KB; /ja/ 989 KB |
 | T16 | Visible-text diff of the new English pages against yonixtools.com (/, /pdf-merger/, /about/, /tools/, a category, a guide, /json-formatter/) | Identical apart from text-node splitting, the "Advertisement" labels (ads are now suppressed) and the backend-dependent downloader notice |
-| T17 | GitHub Actions CI on the final commit | see the pull request; CI result recorded in §17 |
+| T17 | GitHub Actions CI on commit 7139f87 (pull request #3) | **success**: run 46008394927 (push) and run 46008475847 (pull_request) |
 
 ## 1. Project approach and checklist (§1, §2, §14)
 
@@ -96,7 +96,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | I-09 | Localized accessibility labels | every `aria-label`/`title`/`alt` comes from the catalogue | VERIFIED COMPLETE | T14; T2 literal-key scan | — | No | Yes |
 | I-10 | Language never forced by IP | No IP use in the language code; the suggestion uses only browser settings | VERIFIED COMPLETE | T5 "suggests, in Spanish, never redirects"; code review: `LanguageSuggest.tsx` | — | No | Yes |
 | I-11 | Browser-language suggestion and persistence | `LanguageSuggest.tsx`, `localStorage["ytx-locale"]` | VERIFIED COMPLETE | T5 suggestion test, selector persistence test; `matchBrowserLanguage` unit test | — | No | Yes |
-| I-12 | Translation completeness checks in CI | `tests/unit/i18n-catalogue.test.ts`, `.github/workflows/ci.yml` (`npm run i18n:check`) | TEST PASSED | T2 locally | Awaiting CI (T17) | No | Yes |
+| I-12 | Translation completeness checks in CI | `tests/unit/i18n-catalogue.test.ts`, `.github/workflows/ci.yml` (`npm run i18n:check`) | VERIFIED COMPLETE | T2 locally; T17 CI green | — | No | Yes |
 
 ## 4. Language selector (§4)
 
@@ -219,7 +219,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | 5 | 20 priority locales complete | VERIFIED COMPLETE (machine translation) | T-02, Q-01 HUMAN REVIEW REQUIRED |
 | 6 | Other catalogues have a clear review status | VERIFIED COMPLETE (as NOT STARTED) | T-03, T-10 |
 | 7 | Every user-facing component covered by keys | VERIFIED COMPLETE | T-05, T-08 |
-| 8 | Missing-translation checks in CI | TEST PASSED (CI pending) | I-12 |
+| 8 | Missing-translation checks in CI | VERIFIED COMPLETE | I-12 |
 | 9 | API errors in the selected language | VERIFIED COMPLETE | I-07 |
 | 10 | RTL works | VERIFIED COMPLETE | I-06 |
 | 11 | Correct canonical URLs | VERIFIED COMPLETE | U-03 |
@@ -238,7 +238,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | 24 | No ads interrupt downloads | VERIFIED COMPLETE | A-09 |
 | 25 | Regression testing passes | VERIFIED COMPLETE | T5, T8, T9 |
 | 26 | Performance, privacy, security checks | VERIFIED COMPLETE | S-01…S-06 |
-| 27 | CI passes | see §17 | T17 |
+| 27 | CI passes | VERIFIED COMPLETE | T17 |
 | 28 | Checklist updated | VERIFIED COMPLETE | this file |
 | 29 | Outstanding issues reported | VERIFIED COMPLETE | §14 |
 | 30 | No production deployment | VERIFIED COMPLETE | D-02 |
@@ -296,4 +296,8 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 
 ## 17. CI result
 
-Recorded after pushing the final commit. See the pull request.
+GitHub Actions CI on commit 7139f87: **success** for both runs.
+- [Run 46008394927](https://github.com/yonixnetwork/yonixtools/actions/runs/46008394927) (push).
+- [Run 46008475847](https://github.com/yonixnetwork/yonixtools/actions/runs/46008475847) (pull request #3).
+
+Each run covers the backend pytest, the real DB-IP lookup, the website typecheck, i18n check, unit tests, production-like, integrated and test builds, e2e and real nginx, Docker images, and shellcheck with the deploy guards.
