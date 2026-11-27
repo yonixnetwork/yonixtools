@@ -1,6 +1,10 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { describe, expect, it, vi } from "vitest";
+
+// These tests scan every file of a built site (about 1,700 pages in 20 languages): give them time
+// when the whole suite runs in parallel.
+vi.setConfig({ testTimeout: 120_000 });
 import { allTools } from "@/lib/registry";
 
 describe("Monetag central policy", () => {

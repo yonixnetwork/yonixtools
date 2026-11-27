@@ -223,3 +223,17 @@ test("canonical, robots, lang and hreflang are consistent on every page; hreflan
     if (Object.keys(status.reviews ?? {}).length === 0) expect(locs.filter((u) => pathOf(u).startsWith(`/${l.toLowerCase()}/`)), l).toEqual([]);
   }
 });
+
+test.describe("language fallback", () => {
+  test.skip(!locales.includes("es"), "Spanish not built");
+
+  test("a switch without an equivalent page lands on the language's home page with a notice in that language", async ({ page }) => {
+    // The selector sends visitors here (targetFor) when the current page has no version in the chosen language.
+    await page.goto("/es/?lang-fallback=1");
+    const notice = page.getByTestId("lang-fallback");
+    await expect(notice).toBeVisible();
+    await expect(notice).toContainText(str(load("es", "common"), "lang.fallback"));
+    await notice.getByRole("button").click();
+    await expect(notice).toHaveCount(0);
+  });
+});

@@ -9,6 +9,7 @@ import { loadNamespace } from "@/i18n/server";
 import { errorMessage } from "@/lib/downloader/error-message";
 import { formatBytes, formatNumber, render } from "@/i18n/format";
 import { matchBrowserLanguage } from "@/components/LanguageSuggest";
+import { targetFor } from "@/components/LanguageSelector";
 
 const complete = localesOnDisk().filter((l) => localeReport(l).complete);
 
@@ -99,5 +100,13 @@ describe.each(complete.filter((l) => l !== "en"))("downloader API errors in %s",
       expect(msg).not.toBe(en[`code.${code}`]);
     }
     expect(errorMessage(t, { code: "login_required", platform: "instagram" })).toBe(loadNamespace(l, "errors")["platform.instagram.login_required"]);
+  });
+});
+
+describe("language selector target", () => {
+  it("opens the equivalent page, or the language's home page with the fallback notice", () => {
+    const es = { code: "es", native: "Español", name: "Spanish", dir: "ltr" as const, home: "/es/", status: "machine" as const };
+    expect(targetFor(es, { es: "/es/unir-pdf/" })).toBe("/es/unir-pdf/");
+    expect(targetFor(es, {})).toBe("/es/?lang-fallback=1");
   });
 });

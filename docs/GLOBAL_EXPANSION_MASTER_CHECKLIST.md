@@ -20,14 +20,14 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | Measure | Count |
 |---|---|
 | Total requirements (rows in sections 1–12) | 90 |
-| VERIFIED COMPLETE | 83 |
+| VERIFIED COMPLETE | 86 |
 | TEST PASSED (verified locally, awaiting CI on the final commit) | 0 |
-| IMPLEMENTED (no automated test) | 3 (L-06, T-08, T-11) |
+| IMPLEMENTED (no automated test) | 0 |
 | HUMAN REVIEW REQUIRED | 1 (Q-01, translation quality) |
 | BLOCKED (external confirmation or data needed) | 2 (A-04 Adsterra confirmation, K-04 keyword volumes) |
 | NOT STARTED | 1 (T-03, catalogues for the 80 extra locales) |
 | FAILED | 0 |
-| Incomplete (everything not VERIFIED COMPLETE) | 7 |
+| Incomplete (everything not VERIFIED COMPLETE) | 4 |
 | Rows that also need human review before indexing or sign-off (column "Human review") | 16 |
 
 **Production-release readiness:**
@@ -107,7 +107,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | L-03 | Keyboard navigation and screen readers | combobox/listbox roles, arrow keys, Home/End, Enter, Escape | VERIFIED COMPLETE | T5 keyboard-only switch; T14 open selector | — | No | Yes |
 | L-04 | Remembers the selection | `rememberLocale()` | VERIFIED COMPLETE | T5 checks `localStorage` | — | No | Yes |
 | L-05 | Opens the same page in the chosen language | `alternates.tsx` (`PageAlternates`) | VERIFIED COMPLETE | T5 /pdf-merger/ → /de/pdf-zusammenfuegen/ and back | — | No | Yes |
-| L-06 | Clear fallback when there is no equivalent page | `targetFor()` → `<home>?lang-fallback=1`, notice in `LanguageSuggest` | IMPLEMENTED | No path triggers it today: every built locale has every page | Untested in practice; add a test if partial locales are ever built | No | Yes |
+| L-06 | Clear fallback when there is no equivalent page | `targetFor()` → `<home>?lang-fallback=1`, notice in `LanguageSuggest` | VERIFIED COMPLETE | `i18n-routes.test.ts` "language selector target"; e2e "language fallback" (notice shown in Spanish, dismissible) | No page triggers it today (every built locale has every page) | No | Yes |
 | L-07 | RTL and every device size | `dir` on each native name; CSS | VERIFIED COMPLETE | T5 overflow test at 360 px for every locale; T14 | — | No | Yes |
 | L-08 | Unfinished languages never shown as fully translated | badge "Machine translation" and a note; incomplete locales are never built | VERIFIED COMPLETE | T5 badge test; `builtLocales()` refuses incomplete published locales (T2) | — | No | Yes |
 
@@ -122,10 +122,10 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 | T-05 | Every user-visible part translated (components, tools, errors, SEO, guides, legal pages, admin where applicable) | 21 namespaces; all tool components and pages moved to keys | VERIFIED COMPLETE | T2 literal-key scan (every `t("…")` key exists); T5 English-leftover check on home and tool pages in 19 locales; T4 0 markers | Admin pages are English on purpose (single administrator). No email templates exist. The site has no cookie notice and sets no consent cookies; consent is the ad network's responsibility once ads return (see A-10) | Yes | Yes (noindex) |
 | T-06 | Brands, URLs, code and user content not translated | `GLOSSARY` in `config.ts`; translator rules | VERIFIED COMPLETE | T2 (placeholders, tags and link targets must match) | — | Yes | Yes |
 | T-07 | Checker detects missing/duplicate keys and invalid placeholders and plurals, plus missing accessibility, SEO and error text | `catalogue.ts` `validateMessage`, `localeReport` | VERIFIED COMPLETE | Validator unit test; T2 | — | No | Yes |
-| T-08 | No new user-facing string without a key | literal-key scan in T2; DEVELOPER_GUIDE rule | IMPLEMENTED | The scan catches keys missing from the catalogue | Hard-coded English in JSX isn't detected automatically; the e2e English-leftover check catches sentences of 5 or more words | No | Yes |
+| T-08 | No new user-facing string without a key | `tests/unit/i18n-hardcoded.test.ts` (JSX text and aria-label/placeholder/title/alt scan, allowlist with reasons), literal-key scan in T2 | VERIFIED COMPLETE | Passes, plus a self-test proving it detects hard-coded text | Heuristic: unusual code shapes could slip through; the e2e English-leftover check is a second net | No | Yes |
 | T-09 | A locale can't be marked complete with strings missing; production safeguard | `builtLocales()` throws for a published, incomplete locale | VERIFIED COMPLETE | T2 (fails until complete); seen failing earlier in this work, until each locale finished | — | No | Yes |
 | T-10 | Translation status per locale: keys, missing, machine, reviewed, reviewer, review date, pages indexable or blocked | `src/i18n/report.ts`; `docs/i18n/TRANSLATION_COVERAGE.md`; admin page `/admin/translations/` (password-protected) | VERIFIED COMPLETE | `npm run i18n:report`; T6 admin protection | — | No | Yes |
-| T-11 | Human review workflow | `npm run i18n:review -- <locale> "<ns>:<glob>" "<Reviewer>"` (source and translation hashes; stale on change) | IMPLEMENTED | Command exists | No real review recorded yet. Flows tested indirectly; a review end to end only once a reviewer exists | Yes | Yes |
+| T-11 | Human review workflow | `npm run i18n:review -- <locale> "<ns>:<glob>" "<Reviewer>"` (source and translation hashes; stale on change) | VERIFIED COMPLETE | `tests/unit/i18n-review.test.ts`: machine page noindex; fully reviewed page becomes indexable with reciprocal hreflang + x-default; changed text makes the review stale and the page noindex again | No real review recorded yet (needs human reviewers) | Yes | Yes |
 | Q-01 | Translation quality: natural and accurate | the 19 catalogues | HUMAN REVIEW REQUIRED | Automated checks only | Per-locale notes from the translators are in the pull request and below (§16) | Yes | Yes (noindex) |
 
 ## 6. International URLs and SEO (§7)
@@ -214,7 +214,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 |---|---|---|---|
 | 1 | English URLs and functionality intact | VERIFIED COMPLETE | P-05, Q-02 |
 | 2 | i18n architecture works | VERIFIED COMPLETE | I-01…I-12 |
-| 3 | Selector on desktop and mobile | VERIFIED COMPLETE | L-01…L-08 (L-06 IMPLEMENTED) |
+| 3 | Selector on desktop and mobile | VERIFIED COMPLETE | L-01…L-08 |
 | 4 | Supports up to 100 locales | VERIFIED COMPLETE | T-01 |
 | 5 | 20 priority locales complete | VERIFIED COMPLETE (machine translation) | T-02, Q-01 HUMAN REVIEW REQUIRED |
 | 6 | Other catalogues have a clear review status | VERIFIED COMPLETE (as NOT STARTED) | T-03, T-10 |
@@ -252,7 +252,7 @@ A requirement is VERIFIED COMPLETE only when an automated test or a recorded mea
 5. **Owner actions on the server, at deploy time:**
    - run `deploy/scripts/update-geoip.sh` and add its monthly cron line;
    - optionally apply the anonymised edge log format.
-6. **Language fallback notice (L-06).** It is implemented but cannot occur today.
+6. **Language fallback notice (L-06).** It is tested, but cannot occur today because every built language has every page.
 7. **Page size (S-02).** English page HTML grew by about 20 KB, and the build is about 20× larger (1,686 pages).
 8. **404 page.** The search box was replaced by language links.
 9. **Next.js security notice.** During the build, Next.js printed a security advisory recommending an upgrade, and offered to run its upgrade tool. No upgrade was done in this work; that is a separate decision.

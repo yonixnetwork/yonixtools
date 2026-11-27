@@ -43,9 +43,20 @@ export interface LocaleStatusFile {
 }
 
 export const STATUS_DIR = path.join(process.cwd(), "src", "i18n", "status");
+const reportCache = new Map<string, LocaleReport>();
 const EMPTY_STATUS: LocaleStatusFile = { method: "none", translator: "", translatedAt: null, intentionalSame: [], reviews: {} };
 
+/** Tests only: an in-memory status for a locale (never written to disk). */
+const statusOverrides = new Map<string, LocaleStatusFile>();
+export function __setStatusForTest(locale: string, status: LocaleStatusFile | undefined) {
+  if (status) statusOverrides.set(locale, status);
+  else statusOverrides.delete(locale);
+  reportCache.clear();
+}
+
 export function readStatusFile(locale: string): LocaleStatusFile {
+  const o = statusOverrides.get(locale);
+  if (o) return o;
   const f = path.join(STATUS_DIR, `${locale}.json`);
   if (!fs.existsSync(f)) return EMPTY_STATUS;
   return { ...EMPTY_STATUS, ...(JSON.parse(fs.readFileSync(f, "utf8")) as Partial<LocaleStatusFile>) };
@@ -128,7 +139,6 @@ export interface LocaleReport {
   reviewers: string[];
 }
 
-const reportCache = new Map<string, LocaleReport>();
 
 export function localeReport(locale: string): LocaleReport {
   const hit = reportCache.get(locale);

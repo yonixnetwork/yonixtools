@@ -5,6 +5,10 @@ import { join } from "node:path";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// These tests scan every file of a built site (about 1,700 pages in 20 languages): give them time
+// when the whole suite runs in parallel.
+vi.setConfig({ testTimeout: 120_000 });
 import policy from "@/lib/ads/ads-policy.json";
 import { countryDecision, providerStatus, resolveOverride, validatePolicy } from "@/lib/ads/policy-core.mjs";
 

@@ -1,6 +1,10 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join, relative } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+
+// These tests scan every file of a built site (about 1,700 pages in 20 languages): give them time
+// when the whole suite runs in parallel.
+vi.setConfig({ testTimeout: 120_000 });
 import units from "@/lib/ads/units.json";
 import { AD_UNITS } from "@/lib/ads/config";
 
